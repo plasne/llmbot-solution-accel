@@ -22,3 +22,21 @@
 ## Proactive
 
 <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-proactive-message?view=azure-bot-service-4.0&tabs=csharp>
+
+## Config
+
+In bot create the following .env:
+
+```bash
+MicrosoftAppType=MultiTenant
+MicrosoftAppId=???
+MicrosoftAppPassword=???
+```
+
+In llm create the following .env:
+
+```bash
+LLM_DEPLOYMENT_NAME=???
+LLM_ENDPOINT_URI=https://???.openai.azure.com
+LLM_API_KEY=???
+```
