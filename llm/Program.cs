@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
 using NetBricks;
+using dotenv.net;
+
+DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,10 +18,10 @@ builder.Services.AddHostedService<LifecycleService>();
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<WeatherForecaster>();
 
-// disable TLS
-builder.WebHost.ConfigureKestrel(options =>
+// listen (disable TLS)
+builder.WebHost.UseKestrel(options =>
 {
-    options.ListenAnyIP(5210, listenOptions =>
+    options.ListenAnyIP(Config.PORT, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
     });

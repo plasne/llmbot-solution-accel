@@ -1,3 +1,5 @@
+namespace Weather;
+
 using System;
 using Grpc.Net.Client;
 using static WeatherForecast.WeatherForecasts;
@@ -10,9 +12,9 @@ public class WeatherChannel : IDisposable
 
     public WeatherForecastsClient Client => client;
 
-    public WeatherChannel()
+    public WeatherChannel(IConfig config)
     {
-        this.channel = GrpcChannel.ForAddress("http://localhost:5210");
+        this.channel = GrpcChannel.ForAddress(config.LLM_URI);
         this.client = new WeatherForecastsClient(channel);
     }
 

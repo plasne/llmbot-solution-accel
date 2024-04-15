@@ -1,4 +1,6 @@
-﻿using System;
+﻿namespace Bots;
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -9,19 +11,13 @@ using Grpc.Core;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
+using Weather;
 
-namespace Bots;
-
-public class WeatherBot : ActivityHandler
+public class WeatherBot(IConfig config, WeatherChannel weatherChannel) : ActivityHandler
 {
-    private readonly WeatherChannel weatherChannel;
-    private readonly string cardJson;
-
-    public WeatherBot(WeatherChannel weatherChannel)
-    {
-        this.weatherChannel = weatherChannel;
-        this.cardJson = File.ReadAllText("./card.json");
-    }
+    private readonly IConfig config = config;
+    private readonly WeatherChannel weatherChannel = weatherChannel;
+    private readonly string cardJson = File.ReadAllText("./card.json");
 
     private async Task<string> Dispatch(
         string? id,
@@ -71,7 +67,7 @@ public class WeatherBot : ActivityHandler
             await foreach (var weatherData in streamingCall.ResponseStream.ReadAllAsync(cancellationToken: cts.Token))
             {
                 summaries.Append(weatherData.Summary);
-                if (summaries.Length - lastSentAtLength > 200)
+                if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
                 {
                     lastSentAtLength = summaries.Length;
                     id = await Dispatch(id, "generating...", summaries.ToString(), turnContext, cancellationToken);
