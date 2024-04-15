@@ -1,0 +1,36 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.5",
+    "msteams": {
+        "width": "Full"
+    },
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "${status}"
+        },
+        {
+            "type": "TextBlock",
+            "text": "${body}",
+            "separator": true,
+            "wrap": true
+        },
+        {
+            "type": "Image",
+            "url": "https://static.vecteezy.com/system/resources/previews/000/409/436/original/illustration-of-thumbs-up-vector.jpg",
+            "size": "Small",
+            "selectAction": {
+                "type": "Action.Submit"
+            }
+        },
+        {
+            "type": "Image",
+            "url": "https://icon-library.com/images/thumbs-down-icon/thumbs-down-icon-12.jpg",
+            "size": "Small",
+            "selectAction": {
+                "type": "Action.Submit"
+            }
+        }
+    ]
+}
