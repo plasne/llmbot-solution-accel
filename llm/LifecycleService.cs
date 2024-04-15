@@ -1,7 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using dotenv.net;
 
 public class LifecycleService : IHostedService
 {
@@ -9,7 +8,6 @@ public class LifecycleService : IHostedService
 
     public LifecycleService(IConfig config)
     {
-        DotEnv.Load();
         this.config = config;
     }
 

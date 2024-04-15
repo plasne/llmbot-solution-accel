@@ -4,9 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
+    <NoWarn>SKEXP0001, SKEXP0010</NoWarn>
+    
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Search.Documents" Version="11.5.1" />
     <PackageReference Include="dotenv.net" Version="3.1.3" />
     <PackageReference Include="Grpc.AspNetCore" Version="2.62.0" />
     <PackageReference Include="Grpc.Tools" Version="2.62.0" PrivateAssets="All" />
@@ -17,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="../proto/weather.proto" GrpcServices="Server" />
+    <Protobuf Include="../proto/board-game-chats.proto" GrpcServices="Server" />
   </ItemGroup>
 
 </Project>

@@ -8,23 +8,43 @@ public class Config : IConfig
     {
         this.config = config;
         this.LLM_DEPLOYMENT_NAME = config.Get<string>("LLM_DEPLOYMENT_NAME");
+        this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
         this.LLM_API_KEY = config.Get<string>("LLM_API_KEY");
+        this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
+        this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
+        this.SEARCH_API_KEY = config.Get<string>("SEARCH_API_KEY");
+        this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
     }
 
     public static int PORT { get => NetBricks.Config.GetOnce("PORT").AsInt(() => 5210); }
 
     public string LLM_DEPLOYMENT_NAME { get; }
 
+    public string EMBEDDING_DEPLOYMENT_NAME { get; }
+
     public string LLM_ENDPOINT_URI { get; }
 
     public string LLM_API_KEY { get; }
+
+    public string SEARCH_INDEX { get; }
+
+    public string SEARCH_ENDPOINT_URI { get; }
+
+    public string SEARCH_API_KEY { get; }
+
+    public string SEARCH_SEMANTIC_CONFIG { get; }
 
     public void Validate()
     {
         this.config.Optional("PORT", PORT);
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
+        this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("LLM_ENDPOINT_URI", this.LLM_ENDPOINT_URI);
         this.config.Require("LLM_API_KEY", this.LLM_API_KEY, hideValue: true);
+        this.config.Require("SEARCH_INDEX", this.SEARCH_INDEX);
+        this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
+        this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
+        this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
     }
 }
