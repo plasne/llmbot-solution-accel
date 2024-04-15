@@ -6,17 +6,18 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using BoardGameChat;
+using Channels;
 using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Newtonsoft.Json;
-using Weather;
 
-public class WeatherBot(IConfig config, WeatherChannel weatherChannel) : ActivityHandler
+public class ChatBot(IConfig config, BotChannel channel) : ActivityHandler
 {
     private readonly IConfig config = config;
-    private readonly WeatherChannel weatherChannel = weatherChannel;
+    private readonly BotChannel channel = channel;
     private readonly string cardJson = File.ReadAllText("./card.json");
 
     private async Task<string> Dispatch(
@@ -58,15 +59,16 @@ public class WeatherBot(IConfig config, WeatherChannel weatherChannel) : Activit
 
         await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-        using var streamingCall = this.weatherChannel.Client.GetWeatherStream(new Empty(), cancellationToken: cts.Token);
+        var request = new ChatRequest { Usr = turnContext.Activity.Text };
+        using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cts.Token);
         try
         {
             string? id = null;
             StringBuilder summaries = new();
             int lastSentAtLength = 0;
-            await foreach (var weatherData in streamingCall.ResponseStream.ReadAllAsync(cancellationToken: cts.Token))
+            await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken: cts.Token))
             {
-                summaries.Append(weatherData.Summary);
+                summaries.Append(response.Msg);
                 if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
                 {
                     lastSentAtLength = summaries.Length;

@@ -20,8 +20,16 @@ Please see the README.MD files in each of these services to get up and going:
 
 ## Discussion
 
-- Is it maybe better to use a Unix Domain Socket instead of gRPC? I am just wondering because of the possible requirement for encryption.
-- There are a lot more than just Adaptive Cards (Hero Cards, Actions on Messages, Animation Cards, Audio Cards, Recipient Cards, Signin Cards, etc.)
+- Do you want LLM to be .NET and Python?
+- OK to use .NET 8?
+- Are we going to use separate services or a sidecar?
+- Protocol...
+  - gRPC
+  - web sockets
+  - async HTTP
+  - Server Sent Events
+  - Unix Domain Sockets
+- Do we require TLS between those services?
 - Are Adaptive Cards too narrow? Should we use one at the beginning and one at the end?
 - How should we notify of /stop? (db, event hub)
 

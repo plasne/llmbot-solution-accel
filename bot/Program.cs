@@ -6,7 +6,7 @@ using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
 using Bots;
-using Weather;
+using Channels;
 using NetBricks;
 using dotenv.net;
 
@@ -31,7 +31,7 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 });
 
 // add the weather channel
-builder.Services.AddSingleton<WeatherChannel>();
+builder.Services.AddSingleton<BotChannel>();
 
 // add bot framework authentication
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
@@ -40,7 +40,7 @@ builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFramew
 builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
 // create the bot as transient
-builder.Services.AddTransient<IBot, WeatherBot>();
+builder.Services.AddTransient<IBot, ChatBot>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

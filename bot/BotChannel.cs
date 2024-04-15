@@ -1,21 +1,21 @@
-namespace Weather;
+namespace Channels;
 
 using System;
 using Grpc.Net.Client;
-using static WeatherForecast.WeatherForecasts;
+using static BoardGameChat.BoardGameChats;
 
-public class WeatherChannel : IDisposable
+public class BotChannel : IDisposable
 {
     private readonly GrpcChannel channel;
-    private readonly WeatherForecastsClient client;
+    private readonly BoardGameChatsClient client;
     private bool disposed = false;
 
-    public WeatherForecastsClient Client => client;
+    public BoardGameChatsClient Client => client;
 
-    public WeatherChannel(IConfig config)
+    public BotChannel(IConfig config)
     {
         this.channel = GrpcChannel.ForAddress(config.LLM_URI);
-        this.client = new WeatherForecastsClient(channel);
+        this.client = new BoardGameChatsClient(channel);
     }
 
     protected virtual void Dispose(bool disposing)

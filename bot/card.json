@@ -14,7 +14,8 @@
             "type": "TextBlock",
             "text": "${body}",
             "separator": true,
-            "wrap": true
+            "wrap": true,
+            "targetWidth": "wide"
         },
         {
             "type": "Image",
