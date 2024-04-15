@@ -1,14 +1,20 @@
-# README
+# Bot Framework LLM Solution Accelerator
+
+This project provides you a simple starting point for a Bot Framework solution that uses an LLM to chat with the user.
+
+This includes streaming content to Teams.
+
+Please see the README.MD files in each of these services to get up and going:
+
+- [Bot](./bot/README.md)
+- [LLM](./llm/README.md)
 
 ## TODO
 
-- Add settings
-- Write docs
 - Test in Azure + Teams
 - Build out the sample to more accurately reflect chatting
 - Include in-memory history
 - Allow for interruptions: <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-handle-user-interrupt?view=azure-bot-service-4.0&tabs=csharp>
-- Clean all the junk out of bot sample
 
 - Could support different methods of communicating on different channels (turnContext.Activity.ChannelId).
 
@@ -22,21 +28,3 @@
 ## Proactive
 
 <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-proactive-message?view=azure-bot-service-4.0&tabs=csharp>
-
-## Config
-
-In bot create the following .env:
-
-```bash
-MicrosoftAppType=MultiTenant
-MicrosoftAppId=???
-MicrosoftAppPassword=???
-```
-
-In llm create the following .env:
-
-```bash
-LLM_DEPLOYMENT_NAME=???
-LLM_ENDPOINT_URI=https://???.openai.azure.com
-LLM_API_KEY=???
-```
