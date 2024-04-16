@@ -30,7 +30,8 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
     options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
 });
 
-// add the weather channel
+// add the services required for communicating with the bot
+builder.Services.AddSingleton<HistoryService>();
 builder.Services.AddSingleton<BotChannel>();
 
 // add bot framework authentication

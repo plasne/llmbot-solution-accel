@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+option csharp_namespace = "DistributedChat";
+package DistributedChat;
+
+service ChatService {
+  rpc Chat (ChatRequest) returns (stream ChatResponse);
+}
+
+message Turn {
+  string role = 1;
+  string msg = 2;
+}
+
+message ChatRequest {
+  repeated Turn turns = 1;
+}
+
+message ChatResponse {
+  string msg = 1;
+}

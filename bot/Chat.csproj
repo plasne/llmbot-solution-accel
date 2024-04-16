@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Protobuf Include="../proto/board-game-chats.proto" GrpcServices="Client" />
+    <Protobuf Include="../proto/distributed-chat.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

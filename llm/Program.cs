@@ -52,6 +52,6 @@ builder.WebHost.UseKestrel(options =>
 
 var app = builder.Build();
 
-app.MapGrpcService<BoardGameChatService>();
+app.MapGrpcService<ChatService>();
 
 app.Run();

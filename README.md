@@ -12,8 +12,6 @@ Please see the README.MD files in each of these services to get up and going:
 ## TODO
 
 - Test in Azure + Teams
-- Build out the sample to more accurately reflect chatting
-- Include in-memory history
 - Allow for interruptions: <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-handle-user-interrupt?view=azure-bot-service-4.0&tabs=csharp>
 
 - Could support different methods of communicating on different channels (turnContext.Activity.ChannelId).

@@ -6,18 +6,25 @@ using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using BoardGameChat;
 using Channels;
-using Google.Protobuf.WellKnownTypes;
+using DistributedChat;
 using Grpc.Core;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
-public class ChatBot(IConfig config, BotChannel channel) : ActivityHandler
+public class ChatBot(
+    IConfig config,
+    HistoryService historyService,
+    BotChannel channel,
+    ILogger<ChatBot> logger)
+    : ActivityHandler
 {
     private readonly IConfig config = config;
+    private readonly HistoryService historyService = historyService;
     private readonly BotChannel channel = channel;
+    private readonly ILogger<ChatBot> logger = logger;
     private readonly string cardJson = File.ReadAllText("./card.json");
 
     private async Task<string> Dispatch(
@@ -51,40 +58,49 @@ public class ChatBot(IConfig config, BotChannel channel) : ActivityHandler
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
+        // look for ratings
         if (turnContext.Activity.Text.StartsWith("/rate"))
         {
-            await turnContext.SendActivityAsync("Thanks for rating this response!");
+            await turnContext.SendActivityAsync("Thanks for rating this response!", cancellationToken: cancellationToken);
             return;
         }
 
+        // identify the user
+        var userId = turnContext.Activity.From.AadObjectId;
+        this.logger.LogInformation("User {user} sent: {text}", userId, turnContext.Activity.Text);
+
+        // get the history
+        this.historyService.Add(userId, "user", turnContext.Activity.Text);
+        var request = new ChatRequest();
+        foreach (var turn in this.historyService.Get(userId))
+        {
+            request.Turns.Add(turn);
+        }
+
+        // send the typing indicator
         await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
-        var request = new ChatRequest { Usr = turnContext.Activity.Text };
-        using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cts.Token);
-        try
+
+        // prepare to receive the async response
+        string? id = null;
+        StringBuilder summaries = new();
+        int lastSentAtLength = 0;
+
+        // send the request
+        using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
+
+        // start receiving the async responses
+        await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
-            string? id = null;
-            StringBuilder summaries = new();
-            int lastSentAtLength = 0;
-            await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken: cts.Token))
+            summaries.Append(response.Msg);
+            if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
             {
-                summaries.Append(response.Msg);
-                if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
-                {
-                    lastSentAtLength = summaries.Length;
-                    id = await Dispatch(id, "generating...", summaries.ToString(), turnContext, cancellationToken);
-                }
+                lastSentAtLength = summaries.Length;
+                id = await Dispatch(id, "generating...", summaries.ToString(), turnContext, cancellationToken);
             }
-            await Dispatch(id, "generated.", summaries.ToString(), turnContext, cancellationToken);
         }
-        catch (RpcException ex) when (ex.StatusCode == StatusCode.Cancelled)
-        {
-            Console.WriteLine("Stream cancelled.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex);
-        }
+
+        // dispatch the final response
+        await Dispatch(id, "generated.", summaries.ToString(), turnContext, cancellationToken);
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

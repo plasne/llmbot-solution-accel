@@ -1,8 +1,6 @@
 using System.Threading.Tasks;
-using BoardGameChat;
 using Grpc.Core;
 using Microsoft.SemanticKernel.ChatCompletion;
-using static BoardGameChat.BoardGameChats;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
@@ -12,31 +10,49 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using DistributedChat;
+using static DistributedChat.ChatService;
 
-public class BoardGameChatService(
+public class ChatService(
     Kernel kernel,
     SearchService searchService,
-    ILogger<BoardGameChatService> logger)
-    : BoardGameChatsBase
+    ILogger<ChatService> logger)
+    : ChatServiceBase
 {
     private readonly Kernel kernel = kernel;
     private readonly SearchService searchService = searchService;
-    private readonly ILogger<BoardGameChatService> logger = logger;
+    private readonly ILogger<ChatService> logger = logger;
 
     public override async Task Chat(
         ChatRequest request,
         IServerStreamWriter<ChatResponse> responseStream,
         ServerCallContext context)
     {
+        // build the history
         var history = new ChatHistory();
-        history.AddUserMessage(request.Usr);
-        await foreach (var chunk in this.GetBoardGameRules(history))
+        foreach (var turn in request.Turns)
         {
+            switch (turn.Role)
+            {
+                case "assistant":
+                    history.AddAssistantMessage(turn.Msg);
+                    break;
+                case "user":
+                    history.AddUserMessage(turn.Msg);
+                    break;
+            }
+        }
+
+        // continue the chat
+        await foreach (var chunk in this.ContinueChat(history))
+        {
+            // break if requested
             if (context.CancellationToken.IsCancellationRequested)
             {
                 break;
             }
 
+            // send the response
             var response = new ChatResponse
             {
                 Msg = chunk.ToString()
@@ -45,7 +61,7 @@ public class BoardGameChatService(
         }
     }
 
-    private async IAsyncEnumerable<StreamingKernelContent> GetBoardGameRules(ChatHistory history)
+    private async IAsyncEnumerable<StreamingKernelContent> ContinueChat(ChatHistory history)
     {
         // build the getIntent function
         var intentTemplate = File.ReadAllText("prompts/intent.txt");
@@ -79,7 +95,6 @@ public class BoardGameChatService(
                 {
                     int index = contextChunks.Count;
                     var chunk = "[doc" + index + "]\nTitle:" + result.Title + "\n" + result.Chunk + "\n[/doc" + index + "]";
-                    this.logger.LogDebug(chunk);
                     contextChunks.Add(chunk);
                 }
             }

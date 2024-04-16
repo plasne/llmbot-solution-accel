@@ -2,20 +2,20 @@ namespace Channels;
 
 using System;
 using Grpc.Net.Client;
-using static BoardGameChat.BoardGameChats;
+using static DistributedChat.ChatService;
 
 public class BotChannel : IDisposable
 {
     private readonly GrpcChannel channel;
-    private readonly BoardGameChatsClient client;
+    private readonly ChatServiceClient client;
     private bool disposed = false;
 
-    public BoardGameChatsClient Client => client;
+    public ChatServiceClient Client => client;
 
     public BotChannel(IConfig config)
     {
         this.channel = GrpcChannel.ForAddress(config.LLM_URI);
-        this.client = new BoardGameChatsClient(channel);
+        this.client = new ChatServiceClient(channel);
     }
 
     protected virtual void Dispose(bool disposing)
