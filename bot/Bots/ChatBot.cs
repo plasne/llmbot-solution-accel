@@ -1,11 +1,12 @@
 ﻿namespace Bots;
 
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using AdaptiveCards;
+using AdaptiveCards.Templating;
 using Channels;
 using DistributedChat;
 using Grpc.Core;
@@ -13,6 +14,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 public class ChatBot(
     IConfig config,
@@ -26,51 +28,60 @@ public class ChatBot(
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
     private readonly string cardJson = File.ReadAllText("./card.json");
+    private readonly string chatId = System.Guid.NewGuid().ToString();
 
     private async Task<string> Dispatch(
-        string? id,
+        string chatId,
+        string? activityId,
         string status,
-        string text,
+        string reply,
         ITurnContext<IMessageActivity> turnContext,
         CancellationToken cancellationToken)
     {
-        // var activity = MessageFactory.Text(text, text);
-
-        var valid = JsonConvert.ToString(text);
-        var json = cardJson.Replace("${status}", status).Replace("\"${body}\"", valid);
+        var template = new AdaptiveCardTemplate(cardJson);
+        var data = new { chatId, status, reply, showFeedback = status == "generated." };
         var attachment = new Attachment()
         {
-            ContentType = "application/vnd.microsoft.card.adaptive",
-            Content = JsonConvert.DeserializeObject(json),
+            ContentType = AdaptiveCard.ContentType,
+            Content = JsonConvert.DeserializeObject(template.Expand(data)),
         };
         var activity = MessageFactory.Attachment(attachment);
 
-        if (string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(activityId))
         {
             var response = await turnContext.SendActivityAsync(activity, cancellationToken);
             return response.Id;
         }
 
-        activity.Id = id;
+        activity.Id = activityId;
         await turnContext.UpdateActivityAsync(activity, cancellationToken);
-        return id;
+        return activityId;
     }
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
+        // identify the user
+        var userId = turnContext.Activity.From.AadObjectId;
+
         // look for ratings
-        if (turnContext.Activity.Text.StartsWith("/rate"))
+        this.logger.LogInformation("turnContext.Activity.Value: " + turnContext.Activity.Value);
+        this.logger.LogInformation("turnContext.Activity.Text: " + turnContext.Activity.Text);
+        var jaction = turnContext.Activity.Value as JObject;
+        var action = jaction?.ToObject<Action>();
+        if (action is not null)
         {
-            await turnContext.SendActivityAsync("Thanks for rating this response!", cancellationToken: cancellationToken);
+            this.logger.LogInformation("User {user} rated {id} as {value}", userId, action.ChatId, action.Rate);
+            var activity = MessageFactory.Text($"Thank you for rating '{action.Rate}' on chat '{action.ChatId}'.");
+            await turnContext.SendActivityAsync(activity, cancellationToken);
             return;
         }
 
-        // identify the user
-        var userId = turnContext.Activity.From.AadObjectId;
-        this.logger.LogInformation("User {user} sent: {text}", userId, turnContext.Activity.Text);
+        // get the text
+        var text = turnContext.Activity.Text;
+        this.logger.LogInformation("User {user} sent: {text}", userId, text);
 
         // get the history
-        this.historyService.Add(userId, "user", turnContext.Activity.Text);
+        this.historyService.Add(userId, "user", text);
         var request = new ChatRequest();
         foreach (var turn in this.historyService.Get(userId))
         {
@@ -81,7 +92,7 @@ public class ChatBot(
         await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
 
         // prepare to receive the async response
-        string? id = null;
+        string? activityId = null;
         StringBuilder summaries = new();
         int lastSentAtLength = 0;
 
@@ -95,12 +106,12 @@ public class ChatBot(
             if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
             {
                 lastSentAtLength = summaries.Length;
-                id = await Dispatch(id, "generating...", summaries.ToString(), turnContext, cancellationToken);
+                activityId = await Dispatch(this.chatId, activityId, "generating...", summaries.ToString(), turnContext, cancellationToken);
             }
         }
 
         // dispatch the final response
-        await Dispatch(id, "generated.", summaries.ToString(), turnContext, cancellationToken);
+        await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
