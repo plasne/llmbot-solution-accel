@@ -11,6 +11,7 @@ Please see the README.MD files in each of these services to get up and going:
 
 ## TODO
 
+- Add status when looking up
 - Implement links
 - Test in Azure + Teams
 - Allow for interruptions: <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-handle-user-interrupt?view=azure-bot-service-4.0&tabs=csharp>

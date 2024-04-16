@@ -1,7 +1,7 @@
 {
   "type": "AdaptiveCard",
   "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-  "version": "1.5",
+  "version": "1.6",
   "msteams": {
     "width": "Full"
   },
@@ -10,23 +10,30 @@
       "type": "Container",
       "items": [
         {
-          "type": "TextBlock",
-          "text": "${status}"
-        },
-        {
-          "type": "TextBlock",
-          "text": "Please note this response may not be accurate. Please reference the documentation.",
-          "wrap": true,
-          "weight": "bolder",
-          "size": "small",
-          "separator": true
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": 90,
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "${status}",
+                  "weight": "Bolder",
+                  "color": "Accent",
+                  "isSubtle": false
+                }
+              ]
+            }
+          ]
         },
         {
           "type": "TextBlock",
           "text": "${reply}",
           "wrap": true,
           "weight": "Lighter",
-          "size": "Medium"
+          "size": "Medium",
+          "separator": true
         }
       ]
     },
@@ -40,12 +47,16 @@
           "columns": [
             {
               "type": "Column",
-              "width": 90,
+              "width": 85,
               "items": [
                 {
                   "type": "TextBlock",
-                  "text": "Please rate your satisfaction with this answer...",
-                  "wrap": true
+                  "text": "AI-generated content may be incorrect. See [privacy policy](http://aka.ms/stuff).",
+                  "wrap": true,
+                  "weight": "Lighter",
+                  "color": "Accent",
+                  "isSubtle": true,
+                  "fontType": "Default"
                 }
               ]
             },
@@ -66,7 +77,9 @@
                     }
                   }
                 }
-              ]
+              ],
+              "spacing": "None",
+              "verticalContentAlignment": "Top"
             },
             {
               "type": "Column",
@@ -85,11 +98,80 @@
                     }
                   }
                 }
+              ],
+              "verticalContentAlignment": "Top",
+              "rtl": false
+            },
+            {
+              "type": "Column",
+              "width": 5,
+              "items": [
+                {
+                  "type": "Image",
+                  "url": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20453.7%20412.36%22%3E%3Cpath%20d%3D%22m410.25%2C0H43.45C19.46%2C0%2C0%2C19.46%2C0%2C43.46v232.29c0%2C24%2C19.46%2C43.46%2C43.45%2C43.46h129.62l53.78%2C93.16%2C53.78-93.16h129.61c24%2C0%2C43.45-19.46%2C43.45-43.46V43.46c0-24-19.45-43.46-43.45-43.46Zm12.69%2C275.74c0%2C7-5.69%2C12.7-12.69%2C12.7h-147.37l-36.03%2C62.4-36.02-62.4H43.45c-7%2C0-12.7-5.7-12.7-12.7V43.46c0-7%2C5.69-12.7%2C12.7-12.7h366.79c7%2C0%2C12.69%2C5.7%2C12.69%2C12.7v232.29Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Crect%20x%3D%2292.28%22%20y%3D%22110.94%22%20width%3D%22269.14%22%20height%3D%2230.76%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Crect%20x%3D%22130.73%22%20y%3D%22187.84%22%20width%3D%22192.25%22%20height%3D%2230.76%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3C%2Fsvg%3E",
+                  "width": "20px",
+                  "height": "20px",
+                  "selectAction": {
+                    "type": "Action.ToggleVisibility",
+                    "targetElements": [
+                      "freeFeedback"
+                    ],
+                    "tooltip": "Leave Feedback"
+                  }
+                }
               ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "id": "freeFeedback",
+          "isVisible": false,
+          "columns": [
+            {
+              "type": "Column",
+              "width": 95,
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "placeholder": "Please provide your feedback...",
+                  "isMultiline": true
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": 5,
+              "items": [
+                {
+                  "type": "Image",
+                  "url": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201615.07%201857.14%22%3E%3Cg%3E%3Cpolygon%20points%3D%2225.23%201831.92%20352.16%20928.58%2025.23%2025.23%201589.85%20928.58%2025.23%201831.92%22%20style%3D%22fill%3A%20%23fff%3B%20stroke-width%3A%20px%3B%22%2F%3E%3Cpath%20d%3D%22m0%2C1831.91c0-2.87.49-5.77%2C1.51-8.58l323.83-894.75L1.51%2C33.81C-2.09%2C23.85.91%2C12.69%2C9.03%2C5.89%2C17.16-.92%2C28.67-1.92%2C37.84%203.38l1564.62%2C903.36c7.81%2C4.51%2C12.61%2C12.83%2C12.61%2C21.85s-4.81%2C17.34-12.61%2C21.85L37.84%2C1853.76c-9.18%2C5.3-20.69%2C4.3-28.81-2.51C3.2%2C1846.37%2C0%2C1839.24%2C0%2C1831.91Zm1539.39-903.33L72.47%2C81.63l303.41%2C838.37c2.01%2C5.55%2C2.01%2C11.62%2C0%2C17.17L72.47%2C1775.51l1466.92-846.93Z%22%20style%3D%22fill%3A%20%231d1d1b%3B%20stroke-width%3A%200px%3B%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22m326.94%2C928.59c0-13.93%2C11.3-25.23%2C25.23-25.23h1237.68c13.93%2C0%2C25.23%2C11.29%2C25.23%2C25.23s-11.29%2C25.23-25.23%2C25.23H352.16c-13.93%2C0-25.23-11.29-25.23-25.23Z%22%20style%3D%22fill%3A%20%231d1d1b%3B%20stroke-width%3A%200px%3B%22%2F%3E%3C%2Fsvg%3E",
+                  "selectAction": {
+                    "type": "Action.Submit",
+                    "tooltip": "Submit"
+                  },
+                  "width": "20px",
+                  "height": "20px"
+                }
+              ],
+              "verticalContentAlignment": "Bottom"
             }
           ]
         }
       ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Stop Responding",
+      "iconUrl": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20416.92%20416.92%22%3E%3Cpath%20d%3D%22m208.36%2C0c115.18%2C0%2C208.56%2C93.18%2C208.56%2C208.36s-93.38%2C208.56-208.56%2C208.56S0%2C323.54%2C0%2C208.36%2C93.38%2C0%2C208.36%2C0h0Zm0%2C24.68c101.61%2C0%2C183.88%2C82.27%2C183.88%2C183.68s-82.27%2C183.68-183.88%2C183.68S24.68%2C309.76%2C24.68%2C208.36%2C106.96%2C24.68%2C208.36%2C24.68h0Z%22%20style%3D%22fill%3A%20%231b1b1e%3B%20fill-rule%3A%20evenodd%3B%20stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m154.06%2C134.93h108.81c10.49%2C0%2C19.13%2C8.64%2C19.13%2C19.13v108.81c0%2C10.49-8.64%2C18.92-19.13%2C18.92h-108.81c-10.49%2C0-19.13-8.43-19.13-18.92v-108.81c0-10.49%2C8.64-19.13%2C19.13-19.13h0Z%22%20style%3D%22fill%3A%20%231b1b1e%3B%20fill-rule%3A%20evenodd%3B%20stroke-width%3A%200px%3B%22%2F%3E%3C%2Fsvg%3E",
+      "$when": "${showStop == true}"
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Delete This Response",
+      "iconUrl": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20305.35%20451%22%3E%3Cg%20id%3D%22_15%22%20data-name%3D%2215%22%3E%3Cpath%20d%3D%22m152.67%2C9.96c22.26%2C0%2C40.88%2C14.14%2C45.81%2C33.12h10.24C203.68%2C18.59%2C180.49%2C0%2C152.67%2C0s-51.01%2C18.59-56.04%2C43.08h10.24c4.92-18.98%2C23.54-33.12%2C45.81-33.12Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m152.67%2C19.93c16.57%2C0%2C30.48%2C9.78%2C35.25%2C23.16h10.55c-4.93-18.98-23.55-33.12-45.81-33.12s-40.89%2C14.14-45.81%2C33.12h10.55c4.77-13.38%2C18.68-23.16%2C35.25-23.16Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m237.64%2C431.07H67.69l-25.02-289.98h-20l25.95%2C300.8c.44%2C5.15%2C4.76%2C9.11%2C9.93%2C9.11h188.23c5.17%2C0%2C9.48-3.95%2C9.92-9.11l25.96-300.8h-19.99l-25.03%2C289.98Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m235.06%2C43.08h-26.34c.66%2C3.23%2C1.04%2C6.55%2C1.04%2C9.96v.02h16.88c37.97%2C0%2C68.75-1.54%2C68.75%2C36.43%2C0%2C3.18-.3%2C38.59-.72%2C41.64h-11.14l-.86%2C9.96h12c4.97%2C0%2C9.19-3.67%2C9.87-8.6.58-4.23.81-42.63.81-43.01%2C0-46.4-40.62-46.4-70.29-46.4Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m10.66%2C131.13c-.4-3.05-.7-38.47-.7-41.64%2C0-37.97%2C30.78-36.43%2C68.75-36.43h16.88v-.02c0-3.41.38-6.73%2C1.04-9.96h-26.34c-29.66%2C0-70.29%2C0-70.29%2C46.4%2C0%2C.37.23%2C38.77.79%2C42.95.66%2C4.96%2C4.88%2C8.66%2C9.88%2C8.66h12.01l-.86-9.96h-11.15Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpolygon%20points%3D%22263.48%20131.76%2041.87%20131.76%2042.67%20141.09%20262.68%20141.09%20263.48%20131.76%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m189.83%2C53.04c0-3.5-.78-6.8-1.91-9.96h-70.51c-1.13%2C3.16-1.91%2C6.46-1.91%2C9.96v.02h74.32v-.02Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m95.59%2C53.05h9.96v-.02c0-3.43.48-6.76%2C1.32-9.96h-10.24c-.66%2C3.23-1.04%2C6.55-1.04%2C9.96v.02Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m199.8%2C53.04v.02h9.96v-.02c0-3.41-.38-6.73-1.04-9.96h-10.24c.83%2C3.2%2C1.32%2C6.52%2C1.32%2C9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m115.51%2C53.04c0-3.5.78-6.8%2C1.91-9.96h-10.55c-.83%2C3.2-1.32%2C6.52-1.32%2C9.96v.02h9.96v-.02Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m189.83%2C53.04v.02h9.96v-.02c0-3.43-.48-6.76-1.32-9.96h-10.55c1.13%2C3.16%2C1.91%2C6.46%2C1.91%2C9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpolygon%20points%3D%2221.82%20131.13%2022.67%20141.09%2042.67%20141.09%2041.87%20131.76%20263.48%20131.76%20262.68%20141.09%20282.67%20141.09%20283.53%20131.13%2021.82%20131.13%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m235.06%2C63.01c39.02%2C0%2C50.36%2C3.47%2C50.36%2C26.47%2C0%2C3.3-.16%2C20.71-.37%2C31.68h-.97c.03.5.23.98.18%2C1.49l-.73%2C8.48h11.14c.42-3.05.72-38.47.72-41.64%2C0-37.97-30.78-36.43-68.75-36.43h-16.88c0%2C3.41-.38%2C6.73-1.04%2C9.96h26.34Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m21.27%2C121.16h-.97c-.21-10.99-.37-28.39-.37-31.68%2C0-23%2C11.34-26.47%2C50.36-26.47h26.34c-.66-3.23-1.04-6.55-1.04-9.96h-16.88c-37.97%2C0-68.75-1.54-68.75%2C36.43%2C0%2C3.18.3%2C38.59.7%2C41.64h11.15l-.73-8.48c-.05-.51.15-.99.18-1.49Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m189.83%2C53.05h-74.32c0%2C3.5.78%2C6.8%2C1.91%2C9.96h70.51c1.13-3.16%2C1.91-6.46%2C1.91-9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m198.47%2C63.01h10.24c.66-3.23%2C1.04-6.55%2C1.04-9.96h-9.96c0%2C3.43-.49%2C6.76-1.32%2C9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m106.87%2C63.01c-.83-3.2-1.32-6.52-1.32-9.96h-9.96c0%2C3.41.38%2C6.73%2C1.04%2C9.96h10.24Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m187.93%2C63.01h10.55c.83-3.2%2C1.32-6.52%2C1.32-9.96h-9.96c0%2C3.5-.78%2C6.8-1.91%2C9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m117.42%2C63.01c-1.13-3.16-1.91-6.46-1.91-9.96h-9.96c0%2C3.43.49%2C6.76%2C1.32%2C9.96h10.55Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m284.08%2C121.16H21.27c-.03.5-.23.98-.18%2C1.49l.73%2C8.48h261.71l.73-8.48c.05-.51-.15-.99-.18-1.49Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m98.71%2C414.03c.13%2C0%2C.26%2C0%2C.4%2C0%2C5.5-.21%2C9.78-4.84%2C9.57-10.34l-8.42-216.55c-.22-5.5-4.93-9.93-10.34-9.57-5.5.21-9.78%2C4.84-9.57%2C10.35l8.42%2C216.55c.21%2C5.36%2C4.62%2C9.57%2C9.95%2C9.57Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m206.23%2C414.02c.13%2C0%2C.26%2C0%2C.4%2C0%2C5.32%2C0%2C9.74-4.21%2C9.95-9.57l8.42-216.55c.22-5.5-4.07-10.13-9.57-10.35-5.52-.37-10.13%2C4.07-10.34%2C9.57l-8.42%2C216.55c-.22%2C5.5%2C4.07%2C10.13%2C9.57%2C10.34Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3Cpath%20d%3D%22m152.86%2C412.66c5.5%2C0%2C9.96-4.46%2C9.96-9.96v-213.81c0-5.5-4.46-9.96-9.96-9.96s-9.96%2C4.46-9.96%2C9.96v213.81c0%2C5.5%2C4.46%2C9.96%2C9.96%2C9.96Z%22%20style%3D%22stroke-width%3A%200px%3B%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E"
     }
   ]
 }

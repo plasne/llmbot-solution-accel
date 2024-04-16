@@ -39,7 +39,8 @@ public class ChatBot(
         CancellationToken cancellationToken)
     {
         var template = new AdaptiveCardTemplate(cardJson);
-        var data = new { chatId, status, reply, showFeedback = status == "generated." };
+        var isGenerated = status == "generated.";
+        var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
         var attachment = new Attachment()
         {
             ContentType = AdaptiveCard.ContentType,
@@ -64,8 +65,6 @@ public class ChatBot(
         var userId = turnContext.Activity.From.AadObjectId;
 
         // look for ratings
-        this.logger.LogInformation("turnContext.Activity.Value: " + turnContext.Activity.Value);
-        this.logger.LogInformation("turnContext.Activity.Text: " + turnContext.Activity.Text);
         var jaction = turnContext.Activity.Value as JObject;
         var action = jaction?.ToObject<Action>();
         if (action is not null)
