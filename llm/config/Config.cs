@@ -17,7 +17,9 @@ public class Config : IConfig
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
     }
 
-    public static int PORT { get => NetBricks.Config.GetOnce("PORT").AsInt(() => 5210); }
+    public static int GRPC_PORT { get => NetBricks.Config.GetOnce("GRPC_PORT").AsInt(() => 5210); }
+
+    public static int WEB_PORT { get => NetBricks.Config.GetOnce("WEB_PORT").AsInt(() => 5211); }
 
     public string LLM_DEPLOYMENT_NAME { get; }
 
@@ -37,7 +39,8 @@ public class Config : IConfig
 
     public void Validate()
     {
-        this.config.Optional("PORT", PORT);
+        this.config.Optional("GRPC_PORT", GRPC_PORT);
+        this.config.Optional("WEB_PORT", WEB_PORT);
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("LLM_ENDPOINT_URI", this.LLM_ENDPOINT_URI);

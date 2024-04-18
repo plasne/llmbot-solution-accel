@@ -11,18 +11,23 @@ DotEnv.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
+// add logging
 builder.Logging.ClearProviders();
+builder.Services.AddSingleLineConsoleLogger();
 
 // add config
-builder.Services.AddSingleLineConsoleLogger();
 builder.Services.AddConfig();
 builder.Services.AddSingleton<IConfig, Config>();
 builder.Services.AddHostedService<LifecycleService>();
 
+// add swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 // add the kernel service
 builder.Services.AddSingleton(provider =>
 {
-    var config = provider.GetService<IConfig>()!;
+    var config = provider.GetRequiredService<IConfig>()!;
 
     var builder = Kernel.CreateBuilder();
     builder.Services
@@ -38,29 +43,41 @@ builder.Services.AddSingleton(provider =>
 });
 
 // add the workflow services
-builder.Services.AddSingleton<IContext, Context>();
+builder.Services.AddScoped<IContext, Context>();
 builder.Services.AddSingleton<IMemory, VolatileMemory>();
-builder.Services.AddSingleton<Workflow>();
-builder.Services.AddSingleton<DetermineIntent>();
-builder.Services.AddSingleton<GetDocuments>();
-builder.Services.AddSingleton<SelectGroundingData>();
-builder.Services.AddSingleton<GenerateAnswer>();
+builder.Services.AddTransient<Workflow>();
+builder.Services.AddTransient<DetermineIntent>();
+builder.Services.AddTransient<GetDocuments>();
+builder.Services.AddTransient<SelectGroundingData>();
+builder.Services.AddTransient<GenerateAnswer>();
 
 // add other services
 builder.Services.AddGrpc();
+builder.Services.AddControllers();
 builder.Services.AddSingleton<SearchService>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>
 {
-    options.ListenAnyIP(Config.PORT, listenOptions =>
+    options.ListenAnyIP(Config.GRPC_PORT, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
+    });
+    options.ListenAnyIP(Config.WEB_PORT, listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http1;
     });
 });
 
 var app = builder.Build();
 
+// use swagger
+app.UseSwagger();
+app.UseSwaggerUI();
+
+// use routing, gRPC, and controllers
+app.UseRouting();
 app.MapGrpcService<ChatService>();
+app.MapControllers();
 
 app.Run();

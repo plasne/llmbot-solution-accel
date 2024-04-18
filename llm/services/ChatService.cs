@@ -1,27 +1,15 @@
 using System.Threading.Tasks;
 using Grpc.Core;
-using Microsoft.SemanticKernel.ChatCompletion;
-using Microsoft.Extensions.Logging;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
-using Newtonsoft.Json;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
 using DistributedChat;
 using static DistributedChat.ChatService;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 
-public class ChatService(
-    IServiceProvider serviceProvider,
-    Workflow workflow)
+public class ChatService(IServiceProvider serviceProvider)
     : ChatServiceBase
 {
     private readonly IServiceProvider serviceProvider = serviceProvider;
-    private readonly Workflow workflow = workflow;
 
     public override async Task Chat(
         ChatRequest request,
@@ -38,9 +26,10 @@ public class ChatService(
             History = turns,
         };
 
-        // create scope and context
+        // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetService<IContext>();
+        var context = scope.ServiceProvider.GetRequiredService<IContext>();
+        var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
 
         // add status event
         context!.OnStatus += async (status) =>
@@ -61,6 +50,6 @@ public class ChatService(
         };
 
         // execute the workflow
-        await this.workflow.Execute(scope, groundingData); // serverCallContext.CancellationToken.IsCancellationRequested
+        await workflow.Execute(scope, groundingData); // serverCallContext.CancellationToken.IsCancellationRequested
     }
 }
