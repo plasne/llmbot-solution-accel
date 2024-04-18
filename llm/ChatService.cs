@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using DistributedChat;
 using static DistributedChat.ChatService;
+using llm;
 
 public class ChatService(
     Kernel kernel,
@@ -75,54 +76,65 @@ public class ChatService(
         );
 
         // get the intent
-        var intentResponse = await this.kernel.InvokeAsync(
+        Intent intent;
+        using (var determineIntentActivity = DiagnosticService.Source.StartActivity("determineIntentStep"))
+        {
+            var intentResponse = await this.kernel.InvokeAsync(
             getIntent,
             new()
             {
                 { "history", history }
             }
         );
-        var intent = JsonConvert.DeserializeObject<Intent>(intentResponse.ToString());
-        this.logger.LogDebug("intent: {i}", JsonConvert.SerializeObject(intent));
+            intent = JsonConvert.DeserializeObject<Intent>(intentResponse.ToString());
+            this.logger.LogDebug("intent: {i}", JsonConvert.SerializeObject(intent));
+        }
 
         // run the queries
         var contextChunks = new List<string>();
         if (intent?.SearchQueries is not null)
         {
-            foreach (var query in intent.SearchQueries)
+            using (var retrievedDocumentsActivity = DiagnosticService.Source.StartActivity("retrievedDocumentsStep"))
             {
-                await foreach (var result in searchService.SearchAsync(query))
+                foreach (var query in intent.SearchQueries)
                 {
-                    int index = contextChunks.Count;
-                    var chunk = "[doc" + index + "]\nTitle:" + result.Title + "\n" + result.Chunk + "\n[/doc" + index + "]";
-                    contextChunks.Add(chunk);
+                    await foreach (var result in searchService.SearchAsync(query))
+                    {
+                        int index = contextChunks.Count;
+                        var chunk = "[doc" + index + "]\nTitle:" + result.Title + "\n" + result.Chunk + "\n[/doc" + index + "]";
+                        contextChunks.Add(chunk);
+                    }
                 }
             }
         }
         var context = string.Join("\n", contextChunks);
         this.logger.LogDebug("contextChunks: {i}", contextChunks.Count);
 
-        // build the continueChat function
-        var chatTemplate = File.ReadAllText("prompts/chat.txt");
-        var continueChat = this.kernel.CreateFunctionFromPrompt(
-            new()
-            {
-                Template = chatTemplate,
-                TemplateFormat = "handlebars"
-            },
-            new HandlebarsPromptTemplateFactory()
-        );
+        IAsyncEnumerable<StreamingKernelContent> chatResponses;
+        using (var retrievedDocumentsActivity = DiagnosticService.Source.StartActivity("replyStep"))
+        {
+            // build the continueChat function
+            var chatTemplate = File.ReadAllText("prompts/chat.txt");
+            var continueChat = this.kernel.CreateFunctionFromPrompt(
+                new()
+                {
+                    Template = chatTemplate,
+                    TemplateFormat = "handlebars"
+                },
+                new HandlebarsPromptTemplateFactory()
+            );
 
-        // get the responses
-        var chatResponses = this.kernel.InvokeStreamingAsync(
-            continueChat,
-            new()
-            {
+            // get the responses
+            chatResponses = this.kernel.InvokeStreamingAsync(
+                continueChat,
+                new()
+                {
                 { "history", history },
                 { "query", intent?.Query ?? history.Last().ToString() },
                 { "context", context }
-            }
-        );
+                }
+            );
+        }
 
         // yield each response
         var totalResponse = new StringBuilder();

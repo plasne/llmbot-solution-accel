@@ -9,6 +9,8 @@ using Bots;
 using Channels;
 using NetBricks;
 using dotenv.net;
+using Shared;
+using llm;
 
 DotEnv.Load();
 
@@ -16,8 +18,7 @@ DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // add logging
-builder.Logging.AddDebug();
-builder.Logging.AddConsole();
+builder.AddOpenTelemetry(DiagnosticService.Source.Name, Config.OpenTelemetryConnectionString);
 
 // add config
 builder.Services.AddConfig();

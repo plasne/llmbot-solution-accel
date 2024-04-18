@@ -13,6 +13,8 @@ public class Config : IConfig
 
     public static int PORT { get => NetBricks.Config.GetOnce("PORT").AsInt(() => 3978); }
 
+    public static string OpenTelemetryConnectionString { get => NetBricks.Config.GetOnce("OPEN_TELEMETRY_CONNECTION_STRING"); }
+
     public string LLM_URI { get; }
 
     public int CHARACTERS_PER_UPDATE { get; }
@@ -24,5 +26,6 @@ public class Config : IConfig
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);
+        this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", OpenTelemetryConnectionString);
     }
 }

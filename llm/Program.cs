@@ -6,6 +6,8 @@ using Microsoft.SemanticKernel;
 using NetBricks;
 using dotenv.net;
 using Microsoft.Extensions.Logging;
+using Shared;
+using llm;
 
 DotEnv.Load();
 
@@ -14,7 +16,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.ClearProviders();
 
 // add config
-builder.Services.AddSingleLineConsoleLogger();
+//builder.Services.AddSingleLineConsoleLogger();
+builder.AddOpenTelemetry(DiagnosticService.Source.Name, Config.OpenTelemetryConnectionString);
 builder.Services.AddConfig();
 builder.Services.AddSingleton<IConfig, Config>();
 builder.Services.AddHostedService<LifecycleService>();

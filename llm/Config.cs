@@ -19,6 +19,8 @@ public class Config : IConfig
 
     public static int PORT { get => NetBricks.Config.GetOnce("PORT").AsInt(() => 5210); }
 
+    public static string OpenTelemetryConnectionString { get => NetBricks.Config.GetOnce("OPEN_TELEMETRY_CONNECTION_STRING"); }
+
     public string LLM_DEPLOYMENT_NAME { get; }
 
     public string EMBEDDING_DEPLOYMENT_NAME { get; }
