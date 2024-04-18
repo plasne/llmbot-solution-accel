@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 using OpenTelemetry.Resources;
+using Microsoft.SemanticKernel;
 
 namespace Shared;
 
@@ -41,5 +42,25 @@ public static class Extensions
                 tracing.AddConsoleExporter();
                 tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = openTelemetryConnectioString);
             });
+    }
+
+    public static void AddOpenTelemetry(this IKernelBuilder kernelBuilder, string applicationName, string openTelemetryConnectioString)
+    {
+        var loggerFactory = LoggerFactory.Create(config =>
+        {
+            // Add OpenTelemetry as a logging provider
+            config.AddOpenTelemetry(options =>
+            {
+                options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationName));
+
+                options.AddAzureMonitorLogExporter(o => o.ConnectionString = openTelemetryConnectioString);
+
+                options.IncludeScopes = true;
+                // Format log messages. This defaults to false.
+                options.IncludeFormattedMessage = true;
+            });
+        });
+
+        kernelBuilder.Services.AddSingleton(loggerFactory);
     }
 }

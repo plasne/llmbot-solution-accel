@@ -27,8 +27,8 @@ builder.Services.AddSingleton(provider =>
 {
     var config = provider.GetService<IConfig>()!;
 
-    var builder = Kernel.CreateBuilder();
-    builder.Services
+    var kernalBuilder = Kernel.CreateBuilder();
+    kernalBuilder.Services
         .AddAzureOpenAIChatCompletion(
             config.LLM_DEPLOYMENT_NAME,
             config.LLM_ENDPOINT_URI,
@@ -37,7 +37,9 @@ builder.Services.AddSingleton(provider =>
             config.EMBEDDING_DEPLOYMENT_NAME,
             config.LLM_ENDPOINT_URI,
             config.LLM_API_KEY);
-    return builder.Build();
+
+    kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, Config.OpenTelemetryConnectionString);
+    return kernalBuilder.Build();
 });
 
 // add other services
