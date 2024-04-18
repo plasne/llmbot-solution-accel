@@ -11,27 +11,23 @@ Please see the README.MD files in each of these services to get up and going:
 
 ## TODO
 
+- Configurable workflow steps​
+- Experimentation experience​
+  - Journaled steps​
+  - Multi-head steps (ex. HTTP, command line, workflow)​
+- Hyperlinks for citations​
+- Stop and delete (Event Hub)​
+- Pluggable history backend​
+  - Role, message, feedback, status (edited/deleted/etc.), telemetry, audit, etc.
+
+- Change thumbs-up/down card to highlight option and open further feedback
+- Support developer experience (command line, HTTP)
 - Add status when looking up
 - Implement links
 - Test in Azure + Teams
 - Allow for interruptions: <https://learn.microsoft.com/en-us/azure/bot-service/bot-builder-howto-handle-user-interrupt?view=azure-bot-service-4.0&tabs=csharp>
 
 - Could support different methods of communicating on different channels (turnContext.Activity.ChannelId).
-
-## Discussion
-
-- Do you want LLM to be .NET and Python?
-- OK to use .NET 8?
-- Are we going to use separate services or a sidecar?
-- Protocol...
-  - gRPC
-  - web sockets
-  - async HTTP
-  - Server Sent Events
-  - Unix Domain Sockets
-- Do we require TLS between those services?
-- Are Adaptive Cards too narrow? Should we use one at the beginning and one at the end?
-- How should we notify of /stop? (db, event hub)
 
 ## Proactive
 

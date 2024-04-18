@@ -56,4 +56,5 @@ Examine the provided JSON documents diligently, extracting information relevant 
 {{/each}}
 
 <message role="user">{{query}}</message>
+
 <message role="tool">{{context}}</message>

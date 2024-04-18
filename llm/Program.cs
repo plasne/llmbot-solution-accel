@@ -37,6 +37,15 @@ builder.Services.AddSingleton(provider =>
     return builder.Build();
 });
 
+// add the workflow services
+builder.Services.AddSingleton<IContext, Context>();
+builder.Services.AddSingleton<IMemory, VolatileMemory>();
+builder.Services.AddSingleton<Workflow>();
+builder.Services.AddSingleton<DetermineIntent>();
+builder.Services.AddSingleton<GetDocuments>();
+builder.Services.AddSingleton<SelectGroundingData>();
+builder.Services.AddSingleton<GenerateAnswer>();
+
 // add other services
 builder.Services.AddGrpc();
 builder.Services.AddSingleton<SearchService>();
