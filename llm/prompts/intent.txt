@@ -82,3 +82,5 @@ QUERY: Can you tell me a joke about board games?
 {{#each history}}
     <message role=""{{role}}"">{{content}}</message>
 {{/each}}
+
+<message role="user">{{query}}</message>

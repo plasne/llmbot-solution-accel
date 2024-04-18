@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-public class Context
+public class Doc
 {
     [JsonPropertyName("@search.score")]
     public double SearchScore { get; set; }
