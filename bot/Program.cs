@@ -16,8 +16,8 @@ DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // add logging
-builder.Logging.AddDebug();
-builder.Logging.AddConsole();
+builder.Logging.ClearProviders();
+builder.Services.AddSingleLineConsoleLogger();
 
 // add config
 builder.Services.AddConfig();
