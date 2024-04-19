@@ -39,7 +39,7 @@ public class ChatBot(
         CancellationToken cancellationToken)
     {
         var template = new AdaptiveCardTemplate(cardJson);
-        var isGenerated = status == "generated.";
+        var isGenerated = status == "Generated.";
         var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
         var attachment = new Attachment()
         {
@@ -77,11 +77,10 @@ public class ChatBot(
 
         // get the text
         var text = turnContext.Activity.Text;
-        this.logger.LogInformation("User {user} sent: {text}", userId, text);
 
         // get the history
         this.historyService.Add(userId, "user", text);
-        var request = new ChatRequest();
+        var request = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
         foreach (var turn in this.historyService.Get(userId))
         {
             request.Turns.Add(turn);
@@ -93,7 +92,6 @@ public class ChatBot(
         // prepare to receive the async response
         string? activityId = null;
         StringBuilder summaries = new();
-        int lastSentAtLength = 0;
 
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
@@ -101,16 +99,12 @@ public class ChatBot(
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
-            summaries.Append(response.Msg);
-            if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
+            if (!string.IsNullOrEmpty(response.Msg))
             {
-                lastSentAtLength = summaries.Length;
-                activityId = await Dispatch(this.chatId, activityId, "generating...", summaries.ToString(), turnContext, cancellationToken);
+                summaries.Append(response.Msg);
             }
+            activityId = await Dispatch(this.chatId, activityId, response.Status, summaries.ToString(), turnContext, cancellationToken);
         }
-
-        // dispatch the final response
-        await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

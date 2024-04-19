@@ -10,6 +10,7 @@ using Channels;
 using NetBricks;
 using dotenv.net;
 using Shared;
+using System;
 
 DotEnv.Load();
 
@@ -57,8 +58,7 @@ builder.WebHost.UseKestrel(options =>
 var app = builder.Build();
 
 // define the app's routes
-app.UseDefaultFiles()
-    .UseWebSockets()
+app.UseWebSockets()
     .UseRouting()
     .UseAuthorization()
     .UseEndpoints(endpoints =>

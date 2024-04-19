@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -8,7 +9,9 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
 {
     public override string Name => "SelectGroundingData";
 
-    public override Task<GroundingData> ExecuteInternal(GroundingData input)
+    public override Task<GroundingData> ExecuteInternal(
+        GroundingData input,
+        CancellationToken cancellationToken = default)
     {
         var output = new GroundingData();
 
