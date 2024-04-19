@@ -14,6 +14,7 @@ message Turn {
 
 message ChatRequest {
   repeated Turn turns = 1;
+  int32 minCharsToStream = 2;
 }
 
 message ChatResponse {

@@ -5,6 +5,7 @@ using DistributedChat;
 using static DistributedChat.ChatService;
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Text;
 
 public class ChatService(IServiceProvider serviceProvider)
     : ChatServiceBase
@@ -31,25 +32,46 @@ public class ChatService(IServiceProvider serviceProvider)
         var context = scope.ServiceProvider.GetRequiredService<IContext>();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
 
-        // add status event
-        context!.OnStatus += async (status) =>
-        {
-            var response = new ChatResponse { Status = status };
-            await responseStream.WriteAsync(response);
-        };
-
-        // add stream event
-        context!.OnStream += async (fragment) =>
+        // setup buffering
+        string? status = null;
+        var buffer = new StringBuilder();
+        var flush = new Func<Task>(async () =>
         {
             var response = new ChatResponse
             {
-                Status = "Generating answer...",
-                Msg = fragment,
+                Status = status,
+                Msg = buffer.ToString(),
             };
+            buffer.Clear();
             await responseStream.WriteAsync(response);
+        });
+
+        // add stream event
+        context.OnStream += async (proposedStatus, message) =>
+        {
+            buffer.Append(message);
+
+            // always flush if status changes
+            if (!string.IsNullOrEmpty(proposedStatus) && proposedStatus != status)
+            {
+                status = proposedStatus;
+                await flush();
+            }
+
+            // send if the buffer is full
+            if (buffer.Length >= request.MinCharsToStream)
+            {
+                await flush();
+            }
         };
 
         // execute the workflow
-        await workflow.Execute(groundingData); // serverCallContext.CancellationToken.IsCancellationRequested
+        await workflow.Execute(groundingData, serverCallContext.CancellationToken);
+
+        // flush any remaining content
+        if (buffer.Length > 0)
+        {
+            await flush();
+        }
     }
 }

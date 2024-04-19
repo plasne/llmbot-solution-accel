@@ -1,6 +1,6 @@
-using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
@@ -20,7 +20,9 @@ public class GenerateAnswer(
 
     public override string Name => "GenerateAnswer";
 
-    public override async Task<string> ExecuteInternal(IntentAndData input)
+    public override async Task<string> ExecuteInternal(
+        IntentAndData input,
+        CancellationToken cancellationToken = default)
     {
         // validate input
         var query = input.Intent?.Query ?? input.Data?.UserQuery;
@@ -56,17 +58,18 @@ public class GenerateAnswer(
                 { "history", history },
                 { "query", query },
                 { "context", input.Data?.Content }
-            }
-        );
+            },
+            cancellationToken);
 
         // stream each fragment
         var answer = new StringBuilder();
         await foreach (var fragment in response)
         {
             answer.Append(fragment.ToString());
-            await this.context.Stream(fragment.ToString());
+            await this.context.Stream("Generating answer...", fragment.ToString());
         }
 
+        await this.context.Stream("Generated.");
         return answer.ToString();
     }
 }
