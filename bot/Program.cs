@@ -15,6 +15,12 @@ DotEnv.Load();
 // create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
 
+// add config
+var netConfig = new NetBricks.Config();
+var config = new Config(netConfig);
+config.Validate();
+builder.Services.AddSingleton<IConfig>(config);
+
 // add logging
 builder.Logging.ClearProviders();
 builder.Services.AddSingleLineConsoleLogger();
@@ -22,7 +28,6 @@ builder.Services.AddSingleLineConsoleLogger();
 // add config
 builder.Services.AddConfig();
 builder.Services.AddSingleton<IConfig, Config>();
-builder.Services.AddHostedService<LifecycleService>();
 
 // add basic services
 builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
@@ -46,7 +51,7 @@ builder.Services.AddTransient<IBot, ChatBot>();
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>
 {
-    options.ListenAnyIP(Config.PORT);
+    options.ListenAnyIP(config.PORT);
 });
 
 // build the app
