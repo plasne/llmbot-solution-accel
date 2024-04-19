@@ -20,7 +20,7 @@ public class GenerateAnswer(
 
     public override string Name => "GenerateAnswer";
 
-    public override async Task<string> Execute(IntentAndData input)
+    public override async Task<string> ExecuteInternal(IntentAndData input)
     {
         // validate input
         var query = input.Intent?.Query ?? input.Data?.UserQuery;

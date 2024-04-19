@@ -8,7 +8,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
 {
     public override string Name => "SelectGroundingData";
 
-    public override Task<GroundingData> Execute(GroundingData input)
+    public override Task<GroundingData> ExecuteInternal(GroundingData input)
     {
         var output = new GroundingData();
 

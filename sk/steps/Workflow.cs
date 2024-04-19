@@ -1,36 +1,55 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 
-public class Workflow()
+public class Workflow(
+    DetermineIntent determineIntent,
+    GetDocuments getDocuments,
+    SelectGroundingData selectGroundingData,
+    GenerateAnswer generateAnswer)
 {
-    public async Task<WorkflowResponse> Execute(IServiceScope scope, GroundingData groundingData)
+    private readonly DetermineIntent determineIntent = determineIntent;
+    private readonly GetDocuments getDocuments = getDocuments;
+    private readonly SelectGroundingData selectGroundingData = selectGroundingData;
+    private readonly GenerateAnswer generateAnswer = generateAnswer;
+
+    public async Task<WorkflowResponse> Execute(GroundingData groundingData)
     {
         var response = new WorkflowResponse();
+        try
+        {
+            // STEP 1: determine intent
+            var step1 = new WorkflowStepResponse<GroundingData, Intent>("DetermineIntent", groundingData, this.determineIntent.Logs);
+            response.Steps.Add(step1);
+            step1.Output = await this.determineIntent.Execute(groundingData);
 
-        // STEP 1: determine intent
-        var determineIntent = scope.ServiceProvider.GetRequiredService<DetermineIntent>();
-        var intent = await determineIntent.Execute(groundingData);
-        response.Steps.Add(new WorkflowStepResponse<GroundingData, Intent>("DetermineIntent", groundingData, intent, determineIntent.Logs));
+            // STEP 2: get documents
+            var step2 = new WorkflowStepResponse<Intent, List<Doc>>("GetDocuments", step1.Output, this.getDocuments.Logs);
+            response.Steps.Add(step2);
+            step2.Output = await this.getDocuments.Execute(step1.Output);
 
-        // STEP 2: get documents
-        var getDocuments = scope.ServiceProvider.GetRequiredService<GetDocuments>();
-        var docs = await getDocuments.Execute(intent);
-        response.Steps.Add(new WorkflowStepResponse<Intent, List<Doc>>("GetDocuments", intent, docs, getDocuments.Logs));
+            // STEP 3: select grounding data
+            var step3 = new WorkflowStepResponse<List<Doc>, GroundingData>("SelectGroundingData", step2.Output, this.selectGroundingData.Logs);
 
-        // STEP 3: select grounding data
-        var selectGroundingData = scope.ServiceProvider.GetRequiredService<SelectGroundingData>();
-        var selectGroundingDataInput = new GroundingData { Docs = docs, History = groundingData.History };
-        var selectedGroundingData = await selectGroundingData.Execute(selectGroundingDataInput);
-        response.Steps.Add(new WorkflowStepResponse<GroundingData, GroundingData>("SelectGroundingData", groundingData, selectedGroundingData, selectGroundingData.Logs));
+            Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+            Console.WriteLine(this.selectGroundingData.Logs == step3.Logs);
 
-        // STEP 4: generate answer
-        var generateAnswer = scope.ServiceProvider.GetRequiredService<GenerateAnswer>();
-        var generateAnswerInput = new IntentAndData { Intent = intent, Data = selectedGroundingData };
-        var answer = await generateAnswer.Execute(generateAnswerInput);
-        response.Steps.Add(new WorkflowStepResponse<IntentAndData, string>("GenerateAnswer", generateAnswerInput, answer, generateAnswer.Logs));
+            response.Steps.Add(step3);
+            var step3Input = new GroundingData { Docs = step2.Output, History = groundingData.History };
+            step3.Output = await this.selectGroundingData.Execute(step3Input);
 
-        response.Answer = answer;
-        return response;
+            // STEP 4: generate answer
+            var step4 = new WorkflowStepResponse<GroundingData, string>("GenerateAnswer", step3.Output, this.generateAnswer.Logs);
+            response.Steps.Add(step4);
+            var step4Input = new IntentAndData { Intent = step1.Output, Data = step3.Output };
+            step4.Output = await this.generateAnswer.Execute(step4Input);
+
+            response.Answer = step4.Output;
+            return response;
+        }
+        catch (Exception ex)
+        {
+            throw new HttpExceptionWithResponse(500, ex.Message, response);
+        }
     }
 }

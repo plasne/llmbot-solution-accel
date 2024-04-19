@@ -2,10 +2,18 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 public class HttpException(int statusCode, string message) : Exception(message)
 {
     public int StatusCode { get; } = statusCode;
+    public object? ResponsePayload { get; set; }
+}
+
+public class HttpExceptionWithResponse(int statusCode, string message, object response) : Exception(message)
+{
+    public int StatusCode { get; } = statusCode;
+    public object Response { get; } = response;
 }
 
 public class HttpExceptionMiddleware(RequestDelegate next, ILogger<HttpExceptionMiddleware> logger)
@@ -18,6 +26,14 @@ public class HttpExceptionMiddleware(RequestDelegate next, ILogger<HttpException
         try
         {
             await this.next(context);
+        }
+        catch (HttpExceptionWithResponse ex)
+        {
+            this.logger.LogError(ex, "HTTP exception with response...");
+            context.Response.StatusCode = ex.StatusCode;
+            context.Response.ContentType = "application/json";
+            var response = JsonConvert.SerializeObject(ex.Response);
+            await context.Response.WriteAsync(response);
         }
         catch (HttpException ex)
         {

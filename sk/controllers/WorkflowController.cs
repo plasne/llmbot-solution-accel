@@ -15,7 +15,7 @@ public class WorkflowController : ControllerBase
     {
         using var scope = serviceProvider.CreateScope();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
-        var response = await workflow.Execute(scope, groundingData);
+        var response = await workflow.Execute(groundingData);
         return Ok(response);
     }
 
