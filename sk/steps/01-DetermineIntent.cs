@@ -21,7 +21,7 @@ public class DetermineIntent(
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<Intent> Execute(GroundingData input)
+    public override async Task<Intent> ExecuteInternal(GroundingData input)
     {
         // validate input
         if (string.IsNullOrEmpty(input?.UserQuery))

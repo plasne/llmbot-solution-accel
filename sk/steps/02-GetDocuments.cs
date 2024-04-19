@@ -9,7 +9,7 @@ public class GetDocuments(IContext context, SearchService searchService, ILogger
 
     public override string Name => "GetDocuments";
 
-    public override async Task<List<Doc>> Execute(Intent intent)
+    public override async Task<List<Doc>> ExecuteInternal(Intent intent)
     {
         // set status
         await this.context.SetStatus("Getting documents...");

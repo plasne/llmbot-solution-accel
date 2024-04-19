@@ -29,5 +29,10 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
         this.Logs.Add(new LogEntry("ERROR", message));
     }
 
-    public abstract Task<TOutput> Execute(TInput input);
+    public Task<TOutput> Execute(TInput input)
+    {
+        return this.ExecuteInternal(input);
+    }
+
+    public abstract Task<TOutput> ExecuteInternal(TInput input);
 }
