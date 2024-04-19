@@ -26,7 +26,7 @@ public class GenerateAnswer(
         var query = input.Intent?.Query ?? input.Data?.UserQuery;
         if (string.IsNullOrEmpty(query))
         {
-            throw new Exception("A query is required.");
+            throw new HttpException(400, "A query is required.");
         }
 
         // get or set the prompt template

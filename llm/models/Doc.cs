@@ -1,25 +1,25 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 public class Doc
 {
-    [JsonPropertyName("@search.score")]
+    [JsonProperty("@search.score")]
     public double SearchScore { get; set; }
 
-    [JsonPropertyName("chunk_id")]
+    [JsonProperty("chunk_id")]
     public string? ChunkId { get; set; }
 
-    [JsonPropertyName("parent_id")]
+    [JsonProperty("parent_id")]
     public string? ParentId { get; set; }
 
-    [JsonPropertyName("chunk")]
+    [JsonProperty("chunk")]
     public string? Chunk { get; set; }
 
-    [JsonPropertyName("title")]
+    [JsonProperty("title")]
     public string? Title { get; set; }
 
-    [JsonPropertyName("game_name")]
+    [JsonProperty("game_name")]
     public string? GameName { get; set; }
 
-    [JsonPropertyName("edition")]
+    [JsonProperty("edition")]
     public string? Edition { get; set; }
 }

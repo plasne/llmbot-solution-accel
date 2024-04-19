@@ -26,7 +26,7 @@ public class DetermineIntent(
         // validate input
         if (string.IsNullOrEmpty(input?.UserQuery))
         {
-            throw new Exception("UserQuery is required.");
+            throw new HttpException(400, "user_query is required.");
         }
 
         // set the status
@@ -61,7 +61,12 @@ public class DetermineIntent(
             }
         );
 
+        // deserialize the response
+        // NOTE: this could maybe be a retry (transient fault)
+        var intent = JsonConvert.DeserializeObject<Intent>(response.ToString())
+            ?? throw new HttpException(500, "Intent could not be deserialized.");
+
         // record to context
-        return JsonConvert.DeserializeObject<Intent>(response.ToString());
+        return intent;
     }
 }

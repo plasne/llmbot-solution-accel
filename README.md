@@ -11,7 +11,6 @@ Please see the README.MD files in each of these services to get up and going:
 
 ## TODO
 
-- Configurable workflow steps​
 - Experimentation experience​
   - Journaled steps​
   - Multi-head steps (ex. HTTP, command line, workflow)​
