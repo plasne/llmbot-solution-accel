@@ -66,7 +66,7 @@ public class ChatBot(
 
         // look for ratings
         var jaction = turnContext.Activity.Value as JObject;
-        var action = jaction?.ToObject<Action>();
+        var action = jaction?.ToObject<UserAction>();
         if (action is not null)
         {
             this.logger.LogInformation("User {user} rated {id} as {value}", userId, action.ChatId, action.Rate);

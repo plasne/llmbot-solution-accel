@@ -18,7 +18,10 @@ DotEnv.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // add logging
-builder.AddOpenTelemetry(DiagnosticService.Source.Name, Config.OpenTelemetryConnectionString);
+builder.Logging.ClearProviders();
+builder.Logging.AddOpenTelemetry(DiagnosticService.Source.Name, Config.OPEN_TELEMETRY_CONNECTION_STRING);
+builder.Services.AddSingleLineConsoleLogger();
+builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, Config.OPEN_TELEMETRY_CONNECTION_STRING);
 
 // add config
 builder.Services.AddConfig();

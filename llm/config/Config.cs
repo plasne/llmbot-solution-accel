@@ -1,3 +1,4 @@
+using System;
 using NetBricks;
 
 public class Config : IConfig
@@ -17,9 +18,11 @@ public class Config : IConfig
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
     }
 
-    public static int PORT { get => NetBricks.Config.GetOnce("PORT").AsInt(() => 5210); }
+    public static int GRPC_PORT { get => NetBricks.Config.GetOnce("GRPC_PORT").AsInt(() => 5210); }
 
-    public static string OpenTelemetryConnectionString { get => NetBricks.Config.GetOnce("OPEN_TELEMETRY_CONNECTION_STRING"); }
+    public static int WEB_PORT { get => NetBricks.Config.GetOnce("WEB_PORT").AsInt(() => 5211); }
+
+    public static string OPEN_TELEMETRY_CONNECTION_STRING { get => NetBricks.Config.GetOnce("OPEN_TELEMETRY_CONNECTION_STRING"); }
 
     public string LLM_DEPLOYMENT_NAME { get; }
 
@@ -37,9 +40,12 @@ public class Config : IConfig
 
     public string SEARCH_SEMANTIC_CONFIG { get; }
 
+    public static MemoryTerm MEMORY_TERM { get => NetBricks.Config.GetOnce("MEMORY_TERM").AsEnum(() => MemoryTerm.Long); }
+
     public void Validate()
     {
-        this.config.Optional("PORT", PORT);
+        this.config.Optional("GRPC_PORT", GRPC_PORT);
+        this.config.Optional("WEB_PORT", WEB_PORT);
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("LLM_ENDPOINT_URI", this.LLM_ENDPOINT_URI);
@@ -48,5 +54,7 @@ public class Config : IConfig
         this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
+        this.config.Require("MEMORY_TERM", MEMORY_TERM.ToString());
+        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING);
     }
 }

@@ -11,14 +11,24 @@ namespace Shared;
 
 public static class Extensions
 {
-    public static void AddOpenTelemetry(this WebApplicationBuilder builder, string sourceName, string openTelemetryConnectioString)
+    public static void AddOpenTelemetry(
+        this ILoggingBuilder builder,
+        string sourceName,
+        string openTelemetryConnectionString)
     {
-        builder.Logging.AddOpenTelemetry(logging =>
+        builder.AddOpenTelemetry(logging =>
         {
-            logging.AddAzureMonitorLogExporter(o => o.ConnectionString = openTelemetryConnectioString);
+            logging.AddAzureMonitorLogExporter(o => o.ConnectionString = openTelemetryConnectionString);
         });
-        builder.Services.AddOpenTelemetry()
-            .ConfigureResource(resource => resource.AddService(serviceName: builder.Environment.ApplicationName))
+    }
+
+    public static void AddOpenTelemetry(
+        this IServiceCollection serviceCollection,
+        string sourceName, string applicationName,
+        string openTelemetryConnectionString)
+    {
+        serviceCollection.AddOpenTelemetry()
+            .ConfigureResource(resource => resource.AddService(serviceName: applicationName))
             .WithMetrics(metrics =>
             {
                 metrics.AddAspNetCoreInstrumentation();
@@ -29,7 +39,7 @@ public static class Extensions
                 metrics.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
 
                 metrics.AddConsoleExporter();
-                metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = openTelemetryConnectioString);
+                metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = openTelemetryConnectionString);
             })
             .WithTracing(tracing =>
             {
@@ -40,11 +50,14 @@ public static class Extensions
 
                 // exports
                 tracing.AddConsoleExporter();
-                tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = openTelemetryConnectioString);
+                tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = openTelemetryConnectionString);
             });
     }
 
-    public static void AddOpenTelemetry(this IKernelBuilder kernelBuilder, string applicationName, string openTelemetryConnectioString)
+    public static void AddOpenTelemetry(
+        this IKernelBuilder kernelBuilder,
+        string applicationName,
+        string openTelemetryConnectionString)
     {
         var loggerFactory = LoggerFactory.Create(config =>
         {
@@ -53,7 +66,7 @@ public static class Extensions
             {
                 options.SetResourceBuilder(ResourceBuilder.CreateDefault().AddService(applicationName));
 
-                options.AddAzureMonitorLogExporter(o => o.ConnectionString = openTelemetryConnectioString);
+                options.AddAzureMonitorLogExporter(o => o.ConnectionString = openTelemetryConnectionString);
 
                 options.IncludeScopes = true;
                 // Format log messages. This defaults to false.

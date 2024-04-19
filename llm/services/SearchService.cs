@@ -24,7 +24,7 @@ public class SearchService
         this.kernel = kernel;
     }
 
-    public async IAsyncEnumerable<Context> SearchAsync(
+    public async IAsyncEnumerable<Doc> SearchAsync(
         string text,
         int limit = 5,
         double minRelevanceScore = 0.7,
@@ -59,10 +59,10 @@ public class SearchService
         options.Select.Add("edition");
 
         // submit the query
-        var searchResults = await searchClient.SearchAsync<Context>(options, cancellationToken: cancellationToken);
+        var searchResults = await searchClient.SearchAsync<Doc>(options, cancellationToken: cancellationToken);
 
         // get back results async
-        await foreach (SearchResult<Context>? response in searchResults.Value.GetResultsAsync())
+        await foreach (SearchResult<Doc>? response in searchResults.Value.GetResultsAsync())
         {
             if (response is null || response.Score < minRelevanceScore)
             {
