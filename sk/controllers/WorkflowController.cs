@@ -15,8 +15,8 @@ public class WorkflowController : ControllerBase
     {
         using var scope = serviceProvider.CreateScope();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
-        var answer = await workflow.Execute(scope, groundingData);
-        return Ok(new WorkflowResponse(answer));
+        var response = await workflow.Execute(scope, groundingData);
+        return Ok(response);
     }
 
     [HttpPost("determine-intent")]

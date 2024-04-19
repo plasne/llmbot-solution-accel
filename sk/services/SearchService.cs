@@ -59,7 +59,7 @@ public class SearchService
         options.Select.Add("edition");
 
         // submit the query
-        var searchResults = await searchClient.SearchAsync<Doc>(options, cancellationToken: cancellationToken);
+        var searchResults = await searchClient.SearchAsync<Doc>(options, cancellationToken);
 
         // get back results async
         await foreach (SearchResult<Doc>? response in searchResults.Value.GetResultsAsync())
