@@ -15,6 +15,7 @@ public class Workflow(
 
     public async Task<WorkflowResponse> Execute(GroundingData groundingData)
     {
+        using var activtity = DiagnosticService.Source.StartActivity("Workflow");
         var response = new WorkflowResponse();
         try
         {
