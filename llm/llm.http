@@ -1,6 +1,0 @@
-@llm_HostAddress = http://localhost:5210
-
-GET {{llm_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

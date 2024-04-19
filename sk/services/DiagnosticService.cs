@@ -2,8 +2,8 @@
 
 namespace llm;
 
-public static class DiagnosticService
+public class DiagnosticService
 {
-    const string SourceName = "Inference";
+    const string SourceName = "sk";
     public static readonly ActivitySource Source = new(SourceName);
 }

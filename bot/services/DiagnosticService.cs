@@ -4,6 +4,6 @@ namespace llm;
 
 public class DiagnosticService
 {
-    const string SourceName = "Bot";
+    const string SourceName = "bot";
     public static readonly ActivitySource Source = new(SourceName);
 }
