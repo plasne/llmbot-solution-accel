@@ -115,7 +115,6 @@ public class ChatBot(
             totalWordCount += wordCount;
             if (wordCount > 0 && firstSw.IsRunning)
             {
-                this.logger.LogWarning("payload: {payload}", JsonConvert.SerializeObject(response));
                 firstSw.Stop();
                 DiagnosticService.RecordTimeToFirstResponse(firstSw.ElapsedMilliseconds, wordCount);
             }
