@@ -99,22 +99,25 @@ public class ChatBot(
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
 
+        // start the counters
         Stopwatch firstSw = new();
         Stopwatch lastSw = new();
         lastSw.Start();
         firstSw.Start();
-        bool first = true;
         int totalWordCount = 0;
+
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
-            int wordCount = response.Msg?.Replace('\n', ' ').Split(' ').Length ?? 0;
+            int wordCount = !string.IsNullOrEmpty(response.Msg)
+                ? response.Msg.Replace('\n', ' ').Split(' ').Length
+                : 0;
             totalWordCount += wordCount;
-            if (first)
+            if (wordCount > 0 && firstSw.IsRunning)
             {
+                this.logger.LogWarning("payload: {payload}", JsonConvert.SerializeObject(response));
                 firstSw.Stop();
                 DiagnosticService.RecordTimeToFirstResponse(firstSw.ElapsedMilliseconds, wordCount);
-                first = false;
             }
             summaries.Append(response.Msg);
             if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
