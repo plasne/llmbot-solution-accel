@@ -69,7 +69,10 @@ builder.Services.AddTransient<GenerateAnswer>();
 
 // add other services
 builder.Services.AddGrpc();
-builder.Services.AddControllers().AddNewtonsoftJson();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+{
+    options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+});
 builder.Services.AddSingleton<SearchService>();
 
 // listen (disable TLS)
