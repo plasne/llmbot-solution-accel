@@ -9,20 +9,20 @@ using Microsoft.Extensions.Logging;
 using Shared;
 using llm;
 
-DotEnv.Load();
-
 var builder = WebApplication.CreateBuilder(args);
+
+// add config
+DotEnv.Load();
+var netConfig = new NetBricks.Config();
+var config = new Config(netConfig);
+config.Validate();
+builder.Services.AddSingleton<IConfig>(config);
 
 // add logging
 builder.Logging.ClearProviders();
-builder.Logging.AddOpenTelemetry(DiagnosticService.Source.Name, Config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddSingleLineConsoleLogger();
-builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, Config.OPEN_TELEMETRY_CONNECTION_STRING);
-
-// add config
-builder.Services.AddConfig();
-builder.Services.AddSingleton<IConfig, Config>();
-builder.Services.AddHostedService<LifecycleService>();
+builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
+builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -44,12 +44,12 @@ builder.Services.AddSingleton(provider =>
             config.LLM_ENDPOINT_URI,
             config.LLM_API_KEY);
 
-    kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, Config.OPEN_TELEMETRY_CONNECTION_STRING);
+    kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
     return kernalBuilder.Build();
 });
 
 // register memory provider
-switch (Config.MEMORY_TERM)
+switch (config.MEMORY_TERM)
 {
     case MemoryTerm.Long:
         builder.Services.AddSingleton<IMemory, UnsafeMemory>();
@@ -75,11 +75,11 @@ builder.Services.AddSingleton<SearchService>();
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>
 {
-    options.ListenAnyIP(Config.GRPC_PORT, listenOptions =>
+    options.ListenAnyIP(config.GRPC_PORT, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http2;
     });
-    options.ListenAnyIP(Config.WEB_PORT, listenOptions =>
+    options.ListenAnyIP(config.WEB_PORT, listenOptions =>
     {
         listenOptions.Protocols = HttpProtocols.Http1;
     });

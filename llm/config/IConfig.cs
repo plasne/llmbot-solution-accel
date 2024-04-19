@@ -1,5 +1,10 @@
 public interface IConfig
 {
+
+    int GRPC_PORT { get; }
+    int WEB_PORT { get; }
+    MemoryTerm MEMORY_TERM { get; }
+    string OPEN_TELEMETRY_CONNECTION_STRING { get; }
     string LLM_DEPLOYMENT_NAME { get; }
     string EMBEDDING_DEPLOYMENT_NAME { get; }
     string LLM_ENDPOINT_URI { get; }

@@ -13,7 +13,6 @@ public static class Extensions
 {
     public static void AddOpenTelemetry(
         this ILoggingBuilder builder,
-        string sourceName,
         string openTelemetryConnectionString)
     {
         builder.AddOpenTelemetry(logging =>
@@ -38,7 +37,6 @@ public static class Extensions
                 metrics.AddMeter("Microsoft.AspNetCore.Hosting");
                 metrics.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
 
-                metrics.AddConsoleExporter();
                 metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = openTelemetryConnectionString);
             })
             .WithTracing(tracing =>
@@ -49,7 +47,6 @@ public static class Extensions
                 tracing.AddSource(sourceName);
 
                 // exports
-                tracing.AddConsoleExporter();
                 tracing.AddAzureMonitorTraceExporter(o => o.ConnectionString = openTelemetryConnectionString);
             });
     }
