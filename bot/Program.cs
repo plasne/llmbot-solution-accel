@@ -10,7 +10,6 @@ using Channels;
 using NetBricks;
 using dotenv.net;
 using Shared;
-using llm;
 
 // create a new web app builder
 var builder = WebApplication.CreateBuilder(args);

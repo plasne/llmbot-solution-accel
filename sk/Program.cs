@@ -7,7 +7,6 @@ using NetBricks;
 using dotenv.net;
 using Microsoft.Extensions.Logging;
 using Shared;
-using llm;
 
 var builder = WebApplication.CreateBuilder(args);
 
