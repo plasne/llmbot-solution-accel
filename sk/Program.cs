@@ -8,10 +8,11 @@ using dotenv.net;
 using Microsoft.Extensions.Logging;
 using Shared;
 
+DotEnv.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 // add config
-DotEnv.Load();
 var netConfig = new NetBricks.Config();
 var config = new Config(netConfig);
 config.Validate();

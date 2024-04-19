@@ -11,11 +11,12 @@ using NetBricks;
 using dotenv.net;
 using Shared;
 
+DotEnv.Load();
+
 // create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
 
 // add config
-DotEnv.Load();
 var netConfig = new NetBricks.Config();
 var config = new Config(netConfig);
 config.Validate();
