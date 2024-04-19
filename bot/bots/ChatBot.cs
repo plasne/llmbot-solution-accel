@@ -1,6 +1,7 @@
 ﻿namespace Bots;
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -88,7 +89,7 @@ public class ChatBot(
         }
 
         // send the typing indicator
-        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
+        await turnContext.SendActivityAsync(new Microsoft.Bot.Schema.Activity { Type = ActivityTypes.Typing }, cancellationToken);
 
         // prepare to receive the async response
         string? activityId = null;
@@ -98,9 +99,20 @@ public class ChatBot(
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
 
+        Stopwatch firstSw = new();
+        Stopwatch lastSw = new();
+        lastSw.Start();
+        firstSw.Start();
+        bool first = true;
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
+            if (first)
+            {
+                firstSw.Stop();
+                DiagnosticService.TimeToFirstResponse.Record(firstSw.ElapsedMilliseconds);
+                first = false;
+            }
             summaries.Append(response.Msg);
             if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
             {
@@ -108,6 +120,8 @@ public class ChatBot(
                 activityId = await Dispatch(this.chatId, activityId, "generating...", summaries.ToString(), turnContext, cancellationToken);
             }
         }
+        lastSw.Stop();
+        DiagnosticService.TimeToLastResponse.Record(lastSw.ElapsedMilliseconds);
 
         // dispatch the final response
         await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);

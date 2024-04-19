@@ -31,6 +31,7 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
 
     public Task<TOutput> Execute(TInput input)
     {
+        using (var activtity = DiagnosticService.Source.StartActivity(this.Name))
         return this.ExecuteInternal(input);
     }
 
