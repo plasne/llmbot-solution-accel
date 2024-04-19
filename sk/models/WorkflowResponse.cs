@@ -16,7 +16,7 @@ public interface IWorkflowStepResponse
     string Name { get; set; }
 }
 
-public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, TOutput output, List<LogEntry> logs) : IWorkflowStepResponse
+public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, List<LogEntry> logs) : IWorkflowStepResponse
 {
     [JsonProperty("name")]
     public string Name { get; set; } = name;
@@ -25,7 +25,7 @@ public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, TO
     public TInput Input { get; set; } = input;
 
     [JsonProperty("output")]
-    public TOutput Output { get; set; } = output;
+    public TOutput? Output { get; set; }
 
     [JsonProperty("logs")]
     public List<LogEntry> Logs { get; set; } = logs;

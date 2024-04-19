@@ -50,6 +50,6 @@ public class ChatService(IServiceProvider serviceProvider)
         };
 
         // execute the workflow
-        await workflow.Execute(scope, groundingData); // serverCallContext.CancellationToken.IsCancellationRequested
+        await workflow.Execute(groundingData); // serverCallContext.CancellationToken.IsCancellationRequested
     }
 }

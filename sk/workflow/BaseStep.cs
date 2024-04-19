@@ -9,7 +9,7 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
 
     public abstract string Name { get; }
 
-    public List<LogEntry> Logs => [];
+    public List<LogEntry> Logs { get; } = [];
 
     protected void LogDebug(string message)
     {
@@ -26,12 +26,20 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
     protected void LogError(Exception ex, string message)
     {
         this.logger.LogError(ex, message);
-        this.Logs.Add(new LogEntry("ERROR", message));
+        this.Logs.Add(new LogEntry("ERROR", message + ": " + ex.Message));
     }
 
     public Task<TOutput> Execute(TInput input)
     {
-        return this.ExecuteInternal(input);
+        try
+        {
+            return this.ExecuteInternal(input);
+        }
+        catch (Exception ex)
+        {
+            this.Logs.Add(new LogEntry("ERROR", ex.Message));
+            throw;
+        }
     }
 
     public abstract Task<TOutput> ExecuteInternal(TInput input);
