@@ -15,7 +15,7 @@ public class Workflow(
 
     public async Task<WorkflowResponse> Execute(GroundingData groundingData)
     {
-        using var activtity = DiagnosticService.Source.StartActivity("Workflow");
+        using var activity = DiagnosticService.Source.StartActivity("Workflow");
         var response = new WorkflowResponse();
         try
         {
@@ -31,9 +31,6 @@ public class Workflow(
 
             // STEP 3: select grounding data
             var step3 = new WorkflowStepResponse<List<Doc>, GroundingData>("SelectGroundingData", step2.Output, this.selectGroundingData.Logs);
-
-            Console.WriteLine(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-            Console.WriteLine(this.selectGroundingData.Logs == step3.Logs);
 
             response.Steps.Add(step3);
             var step3Input = new GroundingData { Docs = step2.Output, History = groundingData.History };
