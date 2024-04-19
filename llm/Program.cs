@@ -22,7 +22,7 @@ builder.Services.AddHostedService<LifecycleService>();
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen().AddSwaggerGenNewtonsoftSupport();
 
 // add the kernel service
 builder.Services.AddSingleton(provider =>
@@ -42,9 +42,19 @@ builder.Services.AddSingleton(provider =>
     return builder.Build();
 });
 
+// register memory provider
+switch (Config.MEMORY_TERM)
+{
+    case MemoryTerm.Long:
+        builder.Services.AddSingleton<IMemory, UnsafeMemory>();
+        break;
+    case MemoryTerm.Short:
+        builder.Services.AddScoped<IMemory, UnsafeMemory>();
+        break;
+}
+
 // add the workflow services
 builder.Services.AddScoped<IContext, Context>();
-builder.Services.AddSingleton<IMemory, VolatileMemory>();
 builder.Services.AddTransient<Workflow>();
 builder.Services.AddTransient<DetermineIntent>();
 builder.Services.AddTransient<GetDocuments>();
@@ -53,7 +63,7 @@ builder.Services.AddTransient<GenerateAnswer>();
 
 // add other services
 builder.Services.AddGrpc();
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddSingleton<SearchService>();
 
 // listen (disable TLS)
@@ -77,6 +87,7 @@ app.UseSwaggerUI();
 
 // use routing, gRPC, and controllers
 app.UseRouting();
+app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapGrpcService<ChatService>();
 app.MapControllers();
 

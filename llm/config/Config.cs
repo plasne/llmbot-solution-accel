@@ -1,3 +1,4 @@
+using System;
 using NetBricks;
 
 public class Config : IConfig
@@ -37,6 +38,8 @@ public class Config : IConfig
 
     public string SEARCH_SEMANTIC_CONFIG { get; }
 
+    public static MemoryTerm MEMORY_TERM { get => NetBricks.Config.GetOnce("MEMORY_TERM").AsEnum(() => MemoryTerm.Long); }
+
     public void Validate()
     {
         this.config.Optional("GRPC_PORT", GRPC_PORT);
@@ -49,5 +52,6 @@ public class Config : IConfig
         this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
+        this.config.Require("MEMORY_TERM", MEMORY_TERM.ToString());
     }
 }
