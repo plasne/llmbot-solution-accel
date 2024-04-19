@@ -9,6 +9,7 @@ using Bots;
 using Channels;
 using NetBricks;
 using dotenv.net;
+using Shared;
 
 DotEnv.Load();
 
@@ -24,10 +25,8 @@ builder.Services.AddSingleton<IConfig>(config);
 // add logging
 builder.Logging.ClearProviders();
 builder.Services.AddSingleLineConsoleLogger();
-
-// add config
-builder.Services.AddConfig();
-builder.Services.AddSingleton<IConfig, Config>();
+builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
+builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
 // add basic services
 builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>

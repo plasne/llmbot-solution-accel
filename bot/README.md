@@ -14,6 +14,7 @@ Create a .env file in the root of the project (or create Environment Variables s
 MicrosoftAppType=MultiTenant
 MicrosoftAppId=???
 MicrosoftAppPassword=???
+OPEN_TELEMETRY_CONNECTION_STRING=???
 ```
 
 The settings available are:

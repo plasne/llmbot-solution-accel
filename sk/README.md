@@ -10,6 +10,7 @@ Create a .env file in the root of the project (or create Environment Variables s
 LLM_DEPLOYMENT_NAME=MultiTenant
 LLM_ENDPOINT_URI=???
 LLM_API_KEY=???
+OPEN_TELEMETRY_CONNECTION_STRING=???
 ```
 
 The settings available are:

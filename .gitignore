@@ -1,0 +1,14 @@
+.env
+.vscode
+.ai
+.vs
+
+__pycache__
+.promptflow
+*.temp
+*.log
+
+bin
+obj
+launchSettings.json
+*.csproj.user

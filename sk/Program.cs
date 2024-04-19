@@ -6,6 +6,7 @@ using Microsoft.SemanticKernel;
 using NetBricks;
 using dotenv.net;
 using Microsoft.Extensions.Logging;
+using Shared;
 
 DotEnv.Load();
 
@@ -20,6 +21,8 @@ builder.Services.AddSingleton<IConfig>(config);
 // add logging
 builder.Logging.ClearProviders();
 builder.Services.AddSingleLineConsoleLogger();
+builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
+builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -30,8 +33,8 @@ builder.Services.AddSingleton(provider =>
 {
     var config = provider.GetRequiredService<IConfig>()!;
 
-    var builder = Kernel.CreateBuilder();
-    builder.Services
+    var kernalBuilder = Kernel.CreateBuilder();
+    kernalBuilder.Services
         .AddAzureOpenAIChatCompletion(
             config.LLM_DEPLOYMENT_NAME,
             config.LLM_ENDPOINT_URI,
@@ -40,7 +43,9 @@ builder.Services.AddSingleton(provider =>
             config.EMBEDDING_DEPLOYMENT_NAME,
             config.LLM_ENDPOINT_URI,
             config.LLM_API_KEY);
-    return builder.Build();
+
+    kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
+    return kernalBuilder.Build();
 });
 
 // register memory provider
