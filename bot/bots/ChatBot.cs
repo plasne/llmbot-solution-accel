@@ -104,13 +104,16 @@ public class ChatBot(
         lastSw.Start();
         firstSw.Start();
         bool first = true;
+        int totalWordCount = 0;
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
+            int wordCount = response.Msg?.Replace('\n', ' ').Split(' ').Length ?? 0;
+            totalWordCount += wordCount;
             if (first)
             {
                 firstSw.Stop();
-                DiagnosticService.TimeToFirstResponse.Record(firstSw.ElapsedMilliseconds);
+                DiagnosticService.RecordTimeToFirstResponse(firstSw.ElapsedMilliseconds, wordCount);
                 first = false;
             }
             summaries.Append(response.Msg);
@@ -121,7 +124,7 @@ public class ChatBot(
             }
         }
         lastSw.Stop();
-        DiagnosticService.TimeToLastResponse.Record(lastSw.ElapsedMilliseconds);
+        DiagnosticService.RecordTimeToLastResponse(lastSw.ElapsedMilliseconds, totalWordCount);
 
         // dispatch the final response
         await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);
