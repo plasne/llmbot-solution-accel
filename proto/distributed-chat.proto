@@ -17,7 +17,14 @@ message ChatRequest {
   int32 minCharsToStream = 2;
 }
 
+message Citation {
+  string ref = 1;
+  string title = 2;
+  string uri = 3;
+}
+
 message ChatResponse {
   string status = 1;
   string msg = 2;
+  repeated Citation citations = 3;
 }

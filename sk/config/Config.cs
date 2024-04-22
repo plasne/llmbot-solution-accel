@@ -19,6 +19,9 @@ public class Config : IConfig
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.Get<string>("SEARCH_API_KEY");
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
+        this.AZURE_STORAGE_ACCOUNT_NAME = config.Get<string>("AZURE_STORAGE_ACCOUNT_NAME");
+        this.AZURE_STORAGE_INFERENCE_QUEUE = config.Get<string>("AZURE_STORAGE_INFERENCE_QUEUE");
+        this.AZURE_STORAGE_EVALUATION_QUEUE = config.Get<string>("AZURE_STORAGE_EVALUATION_QUEUE");
     }
 
     public int GRPC_PORT { get; }
@@ -45,6 +48,12 @@ public class Config : IConfig
 
     public string SEARCH_SEMANTIC_CONFIG { get; }
 
+    public string AZURE_STORAGE_ACCOUNT_NAME { get; }
+
+    public string AZURE_STORAGE_INFERENCE_QUEUE { get; }
+
+    public string AZURE_STORAGE_EVALUATION_QUEUE { get; }
+
     public void Validate()
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
@@ -59,5 +68,8 @@ public class Config : IConfig
         this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
+        this.config.Optional("AZURE_STORAGE_ACCOUNT_NAME", this.AZURE_STORAGE_ACCOUNT_NAME);
+        this.config.Optional("AZURE_STORAGE_INFERENCE_QUEUE", this.AZURE_STORAGE_INFERENCE_QUEUE);
+        this.config.Optional("AZURE_STORAGE_EVALUATION_QUEUE", this.AZURE_STORAGE_EVALUATION_QUEUE);
     }
 }

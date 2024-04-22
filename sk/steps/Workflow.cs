@@ -32,16 +32,15 @@ public class Workflow(
             step2.Output = await this.getDocuments.Execute(step1.Output, cancellationToken);
 
             // STEP 3: select grounding data
-            var step3 = new WorkflowStepResponse<List<Doc>, GroundingData>("SelectGroundingData", step2.Output, this.selectGroundingData.Logs);
-
-            response.Steps.Add(step3);
             var step3Input = new GroundingData { Docs = step2.Output, History = groundingData.History };
+            var step3 = new WorkflowStepResponse<GroundingData, GroundingData>("SelectGroundingData", step3Input, this.selectGroundingData.Logs);
+            response.Steps.Add(step3);
             step3.Output = await this.selectGroundingData.Execute(step3Input, cancellationToken);
 
             // STEP 4: generate answer
-            var step4 = new WorkflowStepResponse<GroundingData, string>("GenerateAnswer", step3.Output, this.generateAnswer.Logs);
-            response.Steps.Add(step4);
             var step4Input = new IntentAndData { Intent = step1.Output, Data = step3.Output };
+            var step4 = new WorkflowStepResponse<IntentAndData, Answer>("GenerateAnswer", step4Input, this.generateAnswer.Logs);
+            response.Steps.Add(step4);
             step4.Output = await this.generateAnswer.Execute(step4Input, cancellationToken);
 
             response.Answer = step4.Output;

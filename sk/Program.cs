@@ -7,6 +7,7 @@ using NetBricks;
 using dotenv.net;
 using Microsoft.Extensions.Logging;
 using Shared;
+using System;
 
 DotEnv.Load();
 
@@ -17,12 +18,24 @@ var netConfig = new NetBricks.Config();
 var config = new Config(netConfig);
 config.Validate();
 builder.Services.AddSingleton<IConfig>(config);
+builder.Services.AddSingleton<NetBricks.IConfig>(netConfig);
+builder.Services.AddDefaultAzureCredential();
 
 // add logging
 builder.Logging.ClearProviders();
 builder.Services.AddSingleLineConsoleLogger();
 builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
+
+// add the inference pipeline service
+if (!string.IsNullOrEmpty(config.AZURE_STORAGE_ACCOUNT_NAME)
+    && !string.IsNullOrEmpty(config.AZURE_STORAGE_INFERENCE_QUEUE)
+    && !string.IsNullOrEmpty(config.AZURE_STORAGE_EVALUATION_QUEUE))
+{
+    Console.WriteLine("ADDING SERVICE: InferencePipelineService");
+    builder.Services.AddHttpClient();
+    builder.Services.AddHostedService<InferencePipelineService>();
+}
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();

@@ -1,6 +1,5 @@
 public interface IConfig
 {
-
     int GRPC_PORT { get; }
     int WEB_PORT { get; }
     MemoryTerm MEMORY_TERM { get; }
@@ -13,6 +12,9 @@ public interface IConfig
     string SEARCH_ENDPOINT_URI { get; }
     string SEARCH_API_KEY { get; }
     string SEARCH_SEMANTIC_CONFIG { get; }
+    string AZURE_STORAGE_ACCOUNT_NAME { get; }
+    string AZURE_STORAGE_INFERENCE_QUEUE { get; }
+    string AZURE_STORAGE_EVALUATION_QUEUE { get; }
 
     void Validate();
 }

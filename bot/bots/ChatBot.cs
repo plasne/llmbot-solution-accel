@@ -1,7 +1,9 @@
 ﻿namespace Bots;
 
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -35,9 +37,31 @@ public class ChatBot(
         string? activityId,
         string status,
         string reply,
+        List<Citation>? citations,
         ITurnContext<IMessageActivity> turnContext,
         CancellationToken cancellationToken)
     {
+        // add citations
+        if (citations is not null)
+        {
+            foreach (var citation in citations)
+            {
+                if (!string.IsNullOrEmpty(citation.Title) && !string.IsNullOrEmpty(citation.Uri))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[[{citation.Title}]]({citation.Uri})");
+                }
+                else if (!string.IsNullOrEmpty(citation.Title))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Title}]");
+                }
+                else if (!string.IsNullOrEmpty(citation.Uri))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Ref}]({citation.Uri})");
+                }
+            }
+        }
+
+        // build the adaptive card
         var template = new AdaptiveCardTemplate(cardJson);
         var isGenerated = status == "Generated.";
         var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
@@ -48,12 +72,14 @@ public class ChatBot(
         };
         var activity = MessageFactory.Attachment(attachment);
 
+        // send the activity if new
         if (string.IsNullOrEmpty(activityId))
         {
             var response = await turnContext.SendActivityAsync(activity, cancellationToken);
             return response.Id;
         }
 
+        // update instead
         activity.Id = activityId;
         await turnContext.UpdateActivityAsync(activity, cancellationToken);
         return activityId;
@@ -92,6 +118,7 @@ public class ChatBot(
         // prepare to receive the async response
         string? activityId = null;
         StringBuilder summaries = new();
+        var citations = new Dictionary<string, Citation>();
 
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
@@ -103,7 +130,21 @@ public class ChatBot(
             {
                 summaries.Append(response.Msg);
             }
-            activityId = await Dispatch(this.chatId, activityId, response.Status, summaries.ToString(), turnContext, cancellationToken);
+            if (response.Citations is not null)
+            {
+                foreach (var citation in response.Citations)
+                {
+                    citations.TryAdd(citation.Ref, citation);
+                }
+            }
+            activityId = await Dispatch(
+                this.chatId,
+                activityId,
+                response.Status,
+                summaries.ToString(),
+                response.Citations?.ToList(),
+                turnContext,
+                cancellationToken);
         }
     }
 
