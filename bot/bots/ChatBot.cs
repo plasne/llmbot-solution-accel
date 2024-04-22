@@ -1,5 +1,6 @@
 ﻿namespace Bots;
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -11,6 +12,7 @@ using AdaptiveCards.Templating;
 using Channels;
 using DistributedChat;
 using Grpc.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
@@ -18,18 +20,22 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 public class ChatBot(
+    IHttpContextAccessor httpContextAccessor,
     IConfig config,
     HistoryService historyService,
     BotChannel channel,
     ILogger<ChatBot> logger)
     : ActivityHandler
 {
+    private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
     private readonly IConfig config = config;
     private readonly HistoryService historyService = historyService;
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
     private readonly string cardJson = File.ReadAllText("./card.json");
     private readonly string chatId = System.Guid.NewGuid().ToString();
+
+    public static string StartTimeKey = "http-request-start-time";
 
     private async Task<string> Dispatch(
         string chatId,
@@ -100,10 +106,12 @@ public class ChatBot(
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
 
         // start the counters
-        Stopwatch firstSw = new();
-        Stopwatch lastSw = new();
-        lastSw.Start();
-        firstSw.Start();
+        DateTime? started = null;
+        if (httpContextAccessor.HttpContext is not null &&
+            httpContextAccessor.HttpContext.Items.TryGetValue(StartTimeKey, out var requestStartTime) && requestStartTime is DateTime start)
+        {
+            started = start;
+        }
         int totalWordCount = 0;
 
         // start receiving the async responses
@@ -113,10 +121,9 @@ public class ChatBot(
                 ? response.Msg.Replace('\n', ' ').Split(' ').Length
                 : 0;
             totalWordCount += wordCount;
-            if (wordCount > 0 && firstSw.IsRunning)
+            if (started is not null)
             {
-                firstSw.Stop();
-                DiagnosticService.RecordTimeToFirstResponse(firstSw.ElapsedMilliseconds, wordCount);
+                DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, wordCount);
             }
             summaries.Append(response.Msg);
             if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
@@ -125,8 +132,10 @@ public class ChatBot(
                 activityId = await Dispatch(this.chatId, activityId, "generating...", summaries.ToString(), turnContext, cancellationToken);
             }
         }
-        lastSw.Stop();
-        DiagnosticService.RecordTimeToLastResponse(lastSw.ElapsedMilliseconds, totalWordCount);
+        if (started is not null)
+        {
+            DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, totalWordCount);
+        }
 
         // dispatch the final response
         await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);
