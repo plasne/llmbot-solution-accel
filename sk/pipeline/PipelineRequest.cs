@@ -11,6 +11,12 @@ public class PipelineRequest
     [JsonProperty("evaluation_uri")]
     public string? EvaluationUri { get; set; }
 
+    [JsonProperty("project")]
+    public string? Project { get; set; }
+
+    [JsonProperty("experiment")]
+    public string? Experiment { get; set; }
+
     [JsonProperty("ref")]
     public string? Ref { get; set; }
 

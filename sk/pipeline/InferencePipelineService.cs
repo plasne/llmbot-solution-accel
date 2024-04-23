@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 public class InferencePipelineService(
     IConfig config,
@@ -41,7 +42,7 @@ public class InferencePipelineService(
         }
 
         // serialize the payload
-        var inputFile = JsonConvert.DeserializeObject<InferenceRequestFile>(groundTruthBody)
+        var inputFile = JsonConvert.DeserializeObject<GroundTruthFile>(groundTruthBody)
             ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri}.");
         this.logger.LogInformation("successfully downloaded the ground truth file: {u}.", request.GroundTruthUri);
 
@@ -65,7 +66,7 @@ public class InferencePipelineService(
         var generateAnswerStep = workflowResponse.Steps.Find(x => x.Name == "GenerateAnswer") as WorkflowStepResponse<IntentAndData, Answer>;
         var content = generateAnswerStep?.Input?.Data?.Content?.Where(x =>
             generateAnswerStep.Output?.Citations?.ToList().Any(y => y.Ref == x.Citation?.Ref) ?? false);
-        var evaluationRequest = new EvaluationRequestFile
+        var evaluationRequest = new InferenceFile
         {
             Ref = request.Ref,
             History = inputFile.History,
@@ -76,7 +77,14 @@ public class InferencePipelineService(
 
         // attempt to upload the inference file
         this.logger.LogDebug("attempting to upload the inference file: {u}...", request.InferenceUri);
-        var jsonOptions = new JsonSerializerSettings { Formatting = Formatting.Indented };
+        var jsonOptions = new JsonSerializerSettings
+        {
+            Formatting = Formatting.Indented,
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new SnakeCaseNamingStrategy()
+            }
+        };
         var evaluationRequestFileJson = JsonConvert.SerializeObject(evaluationRequest, jsonOptions);
         using var inferenceRequest = new HttpRequestMessage(HttpMethod.Put, request.InferenceUri)
         {

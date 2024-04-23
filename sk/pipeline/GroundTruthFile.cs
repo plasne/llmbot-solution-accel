@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using DistributedChat;
 using Newtonsoft.Json;
 
-public class InferenceRequestFile
+public class GroundTruthFile
 {
     [JsonProperty("ref")]
     public string? Ref { get; set; }

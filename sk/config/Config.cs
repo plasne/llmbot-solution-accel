@@ -58,7 +58,7 @@ public class Config : IConfig
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
         this.config.Require("WEB_PORT", this.WEB_PORT);
-        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING);
+        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
