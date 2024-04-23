@@ -1,3 +1,4 @@
+using System.Linq;
 using NetBricks;
 
 public class Config : IConfig
@@ -19,6 +20,11 @@ public class Config : IConfig
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.Get<string>("SEARCH_API_KEY");
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
+        this.AZURE_STORAGE_ACCOUNT_NAME = config.Get<string>("AZURE_STORAGE_ACCOUNT_NAME");
+        this.AZURE_STORAGE_INFERENCE_QUEUE = config.Get<string>("AZURE_STORAGE_INFERENCE_QUEUE");
+        this.AZURE_STORAGE_EVALUATION_QUEUE = config.Get<string>("AZURE_STORAGE_EVALUATION_QUEUE");
+        this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => []);
+        this.SEARCH_SELECT_FIELDS = config.Get<string>("SEARCH_SELECT_FIELDS").AsArray(() => []);
     }
 
     public int GRPC_PORT { get; }
@@ -45,11 +51,21 @@ public class Config : IConfig
 
     public string SEARCH_SEMANTIC_CONFIG { get; }
 
+    public string[] SEARCH_VECTOR_FIELDS { get; }
+
+    public string[] SEARCH_SELECT_FIELDS { get; }
+
+    public string AZURE_STORAGE_ACCOUNT_NAME { get; }
+
+    public string AZURE_STORAGE_INFERENCE_QUEUE { get; }
+
+    public string AZURE_STORAGE_EVALUATION_QUEUE { get; }
+
     public void Validate()
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
         this.config.Require("WEB_PORT", this.WEB_PORT);
-        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING);
+        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
@@ -59,5 +75,10 @@ public class Config : IConfig
         this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
+        this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
+        this.config.Require("SEARCH_SELECT_FIELDS", this.SEARCH_SELECT_FIELDS);
+        this.config.Optional("AZURE_STORAGE_ACCOUNT_NAME", this.AZURE_STORAGE_ACCOUNT_NAME);
+        this.config.Optional("AZURE_STORAGE_INFERENCE_QUEUE", this.AZURE_STORAGE_INFERENCE_QUEUE);
+        this.config.Optional("AZURE_STORAGE_EVALUATION_QUEUE", this.AZURE_STORAGE_EVALUATION_QUEUE);
     }
 }

@@ -1,23 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using DistributedChat;
 
 public class Context : IContext
 {
-    public event Func<string, Task>? OnStatus;
+    public event Func<string?, string?, List<Citation>?, Task>? OnStream;
 
-    public event Func<string, Task>? OnStream;
-
-    public Task SetStatus(string status)
-    {
-        return this.OnStatus is not null
-            ? this.OnStatus(status)
-            : Task.CompletedTask;
-    }
-
-    public Task Stream(string message)
+    public Task Stream(string? status, string? message, List<Citation>? citations)
     {
         return this.OnStream is not null
-            ? this.OnStream(message)
+            ? this.OnStream(status, message, citations)
             : Task.CompletedTask;
     }
 }

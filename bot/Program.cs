@@ -62,8 +62,7 @@ app.Use(async (ctx, req) =>
     await req.Invoke();
 });
 // define the app's routes
-app.UseDefaultFiles()
-    .UseWebSockets()
+app.UseWebSockets()
     .UseRouting()
     .UseAuthorization()
     .UseEndpoints(endpoints =>

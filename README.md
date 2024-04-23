@@ -11,6 +11,7 @@ Please see the README.MD files in each of these services to get up and going:
 
 ## TODO
 
+- Add Stylecop
 - Hyperlinks for citations​
 - Stop and delete (Event Hub)​
 - Pluggable history backend​

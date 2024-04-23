@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 public class WorkflowResponse()
 {
     [JsonProperty("answer")]
-    public string? Answer { get; set; }
+    public Answer? Answer { get; set; }
 
     [JsonProperty("steps")]
     public List<IWorkflowStepResponse> Steps { get; set; } = [];

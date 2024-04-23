@@ -5,7 +5,7 @@ using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using Newtonsoft.Json;
 using System.IO;
 using Microsoft.SemanticKernel.ChatCompletion;
-using System;
+using System.Threading;
 
 public class DetermineIntent(
     IContext context,
@@ -17,11 +17,12 @@ public class DetermineIntent(
     private readonly IContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
-    private readonly ILogger<DetermineIntent> logger = logger;
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<Intent> ExecuteInternal(GroundingData input)
+    public override async Task<Intent> ExecuteInternal(
+        GroundingData input,
+        CancellationToken cancellationToken = default)
     {
         // validate input
         if (string.IsNullOrEmpty(input?.UserQuery))
@@ -30,7 +31,7 @@ public class DetermineIntent(
         }
 
         // set the status
-        await this.context.SetStatus("Determining intent...");
+        await this.context.Stream("Determining intent...");
 
         // get or set the prompt template
         string template = await this.memory.GetOrSet("prompt:intent", null, () =>
@@ -58,8 +59,8 @@ public class DetermineIntent(
             {
                 { "history", history },
                 { "query", input.UserQuery },
-            }
-        );
+            },
+            cancellationToken);
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)

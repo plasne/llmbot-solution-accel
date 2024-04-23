@@ -3,7 +3,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -42,11 +44,33 @@ public class ChatBot(
         string? activityId,
         string status,
         string reply,
+        List<Citation>? citations,
         ITurnContext<IMessageActivity> turnContext,
         CancellationToken cancellationToken)
     {
+        // add citations
+        if (citations is not null)
+        {
+            foreach (var citation in citations)
+            {
+                if (!string.IsNullOrEmpty(citation.Title) && !string.IsNullOrEmpty(citation.Uri))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[[{citation.Title}]]({citation.Uri})");
+                }
+                else if (!string.IsNullOrEmpty(citation.Title))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Title}]");
+                }
+                else if (!string.IsNullOrEmpty(citation.Uri))
+                {
+                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Ref}]({citation.Uri})");
+                }
+            }
+        }
+
+        // build the adaptive card
         var template = new AdaptiveCardTemplate(cardJson);
-        var isGenerated = status == "generated.";
+        var isGenerated = status == "Generated.";
         var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
         var attachment = new Attachment()
         {
@@ -55,12 +79,14 @@ public class ChatBot(
         };
         var activity = MessageFactory.Attachment(attachment);
 
+        // send the activity if new
         if (string.IsNullOrEmpty(activityId))
         {
             var response = await turnContext.SendActivityAsync(activity, cancellationToken);
             return response.Id;
         }
 
+        // update instead
         activity.Id = activityId;
         await turnContext.UpdateActivityAsync(activity, cancellationToken);
         return activityId;
@@ -84,11 +110,10 @@ public class ChatBot(
 
         // get the text
         var text = turnContext.Activity.Text;
-        this.logger.LogInformation("User {user} sent: {text}", userId, text);
 
         // get the history
         this.historyService.Add(userId, "user", text);
-        var request = new ChatRequest();
+        var request = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
         foreach (var turn in this.historyService.Get(userId))
         {
             request.Turns.Add(turn);
@@ -100,7 +125,7 @@ public class ChatBot(
         // prepare to receive the async response
         string? activityId = null;
         StringBuilder summaries = new();
-        int lastSentAtLength = 0;
+        var citations = new Dictionary<string, Citation>();
 
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
@@ -117,28 +142,30 @@ public class ChatBot(
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
-            int wordCount = !string.IsNullOrEmpty(response.Msg)
-                ? response.Msg.Replace('\n', ' ').Split(' ').Length
-                : 0;
-            totalWordCount += wordCount;
-            if (started is not null)
+            if (!string.IsNullOrEmpty(response.Msg))
             {
-                DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, wordCount);
+                summaries.Append(response.Msg);
             }
-            summaries.Append(response.Msg);
-            if (summaries.Length - lastSentAtLength > this.config.CHARACTERS_PER_UPDATE)
+            if (response.Citations is not null)
             {
-                lastSentAtLength = summaries.Length;
-                activityId = await Dispatch(this.chatId, activityId, "generating...", summaries.ToString(), turnContext, cancellationToken);
+                foreach (var citation in response.Citations)
+                {
+                    citations.TryAdd(citation.Ref, citation);
+                }
             }
+            activityId = await Dispatch(
+                this.chatId,
+                activityId,
+                response.Status,
+                summaries.ToString(),
+                response.Citations?.ToList(),
+                turnContext,
+                cancellationToken);
         }
         if (started is not null)
         {
             DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, totalWordCount);
         }
-
-        // dispatch the final response
-        await Dispatch(this.chatId, activityId, "generated.", summaries.ToString(), turnContext, cancellationToken);
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
