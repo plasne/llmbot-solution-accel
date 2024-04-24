@@ -34,8 +34,12 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
     {
         try
         {
-            using var activity = DiagnosticService.Source.StartActivity(this.Name);
-            return this.ExecuteInternal(input);
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return Task.FromCanceled<TOutput>(cancellationToken);
+            }
+
+            return this.ExecuteInternal(input, cancellationToken);
         }
         catch (Exception ex)
         {
