@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -6,9 +7,20 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-public class FeedbackCommand(ILogger<FeedbackCommand> logger) : ICommand
+// TODO: there is still plenty of code to write in here
+
+public class FeedbackCommands(ILogger<FeedbackCommands> logger) : ICommands
 {
-    private readonly ILogger<FeedbackCommand> logger = logger;
+    private readonly ILogger<FeedbackCommands> logger = logger;
+
+    public Dictionary<string, string> Commands => new()
+    {
+        { "/feedback", "shows your rating and comments for the last response from the bot." },
+        { "/rate up", "rates the last response from the bot as positive." },
+        { "/rate down", "rates the last response from the bot as negative." },
+        { "/comment ???", "allows you to give feedback comments on the last response from the bot."  },
+        { "/revoke", "to clear your rating and comments for the last response from the bot."  },
+    };
 
     public async Task<bool> Try(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken = default)
     {
@@ -37,9 +49,9 @@ public class FeedbackCommand(ILogger<FeedbackCommand> logger) : ICommand
         // look for commands
         switch (turnContext.Activity.Text?.ToLower())
         {
-            case "/rate":
+            case "/feedback":
                 {
-                    await ShowRatings(turnContext, cancellationToken);
+                    await ShowFeedback(turnContext, cancellationToken);
                     break;
                 }
             case "/rate up":
@@ -71,7 +83,7 @@ public class FeedbackCommand(ILogger<FeedbackCommand> logger) : ICommand
         await turnContext.SendActivityAsync(activity, cancellationToken);
     }
 
-    private async Task ShowRatings(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+    private async Task ShowFeedback(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
         var chatId = await this.GetLastChatId();
         throw new NotImplementedException();

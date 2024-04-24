@@ -78,6 +78,20 @@ public class ChatService(IServiceProvider serviceProvider)
             }
         };
 
+        // add stream intent event
+        context.OnTerminate += async (intent, message) =>
+        {
+            // build the response
+            var response = new ChatResponse
+            {
+                Intent = intent,
+                Msg = message ?? "",
+            };
+
+            // send the message
+            await responseStream.WriteAsync(response);
+        };
+
         // execute the workflow
         await workflow.Execute(groundingData, serverCallContext.CancellationToken);
     }

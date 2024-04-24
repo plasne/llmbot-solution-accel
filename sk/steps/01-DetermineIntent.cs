@@ -12,7 +12,7 @@ public class DetermineIntent(
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
-    : BaseStep<GroundingData, Intent>(logger)
+    : BaseStep<GroundingData, DeterminedIntent>(logger)
 {
     private readonly IContext context = context;
     private readonly Kernel kernel = kernel;
@@ -20,7 +20,7 @@ public class DetermineIntent(
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<Intent> ExecuteInternal(
+    public override async Task<DeterminedIntent> ExecuteInternal(
         GroundingData input,
         CancellationToken cancellationToken = default)
     {
@@ -64,7 +64,7 @@ public class DetermineIntent(
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)
-        var intent = JsonConvert.DeserializeObject<Intent>(response.ToString())
+        var intent = JsonConvert.DeserializeObject<DeterminedIntent>(response.ToString())
             ?? throw new HttpException(500, "Intent could not be deserialized.");
 
         // record to context
