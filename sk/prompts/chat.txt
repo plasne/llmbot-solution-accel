@@ -44,9 +44,9 @@ Examine the provided JSON documents diligently, extracting information relevant 
 ## Very Important Instruction
 - **You must generate the citation for all the document sources you have refered at the end of each corresponding sentence in your response. 
 - If no documents are provided, **you cannot generate the response with citation**, 
-- The citation must be in the format of [doc+index].
-- **The citation mark [doc+index] must put the end of the corresponding sentence which cited the document.**
-- **The citation mark [doc+index] must not be part of the response sentence.**
+- The citation must be in the format of [ref+index].
+- **The citation mark [ref+index] must put the end of the corresponding sentence which cited the document.**
+- **The citation mark [ref+index] must not be part of the response sentence.**
 - **You cannot list the citation at the end of response. 
 - Every claim statement you generated must have at least one citation.**
 </message>

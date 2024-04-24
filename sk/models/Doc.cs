@@ -11,10 +11,6 @@ public class Doc
     [JsonPropertyName("chunk_id")]
     public string? ChunkId { get; set; }
 
-    [JsonProperty("parent_id")]
-    [JsonPropertyName("parent_id")]
-    public string? ParentId { get; set; }
-
     [JsonProperty("chunk")]
     [JsonPropertyName("chunk")]
     public string? Chunk { get; set; }
@@ -22,12 +18,4 @@ public class Doc
     [JsonProperty("title")]
     [JsonPropertyName("title")]
     public string? Title { get; set; }
-
-    [JsonProperty("game_name")]
-    [JsonPropertyName("game_name")]
-    public string? GameName { get; set; }
-
-    [JsonProperty("edition")]
-    [JsonPropertyName("edition")]
-    public string? Edition { get; set; }
 }

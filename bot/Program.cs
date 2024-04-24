@@ -36,6 +36,7 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 });
 
 // add the services required for communicating with the bot
+builder.Services.AddSingleton<ICardProvider, InMemoryCardProvider>();
 builder.Services.AddSingleton<HistoryService>();
 builder.Services.AddSingleton<BotChannel>();
 
@@ -47,6 +48,10 @@ builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>
 
 // create the bot as transient
 builder.Services.AddTransient<IBot, ChatBot>();
+
+// add commands
+builder.Services.AddTransient<ICommand, HelpCommand>();
+builder.Services.AddTransient<ICommand, FeedbackCommand>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>
@@ -62,8 +67,7 @@ app.Use(async (ctx, req) =>
     await req.Invoke();
 });
 // define the app's routes
-app.UseDefaultFiles()
-    .UseWebSockets()
+app.UseWebSockets()
     .UseRouting()
     .UseAuthorization()
     .UseEndpoints(endpoints =>

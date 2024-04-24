@@ -8,7 +8,7 @@ public class GroundingData
     public List<Doc>? Docs { get; set; }
 
     [JsonProperty("content")]
-    public List<string>? Content { get; set; }
+    public List<Content>? Content { get; set; }
 
     [JsonProperty("user_query")]
     public string? UserQuery { get; set; }

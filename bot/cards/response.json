@@ -73,7 +73,7 @@
                     "type": "Action.Submit",
                     "data": {
                       "chatId": "${chatId}",
-                      "rate": "up"
+                      "command": "/rate up"
                     }
                   }
                 }
@@ -94,7 +94,7 @@
                     "type": "Action.Submit",
                     "data": {
                       "chatId": "${chatId}",
-                      "rate": "down"
+                      "command": "/rate down"
                     }
                   }
                 }

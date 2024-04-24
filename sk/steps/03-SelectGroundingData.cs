@@ -1,6 +1,9 @@
 using System;
+using System.Diagnostics.SymbolStore;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using DistributedChat;
 using Microsoft.Extensions.Logging;
 
 public class SelectGroundingData(ILogger<SelectGroundingData> logger)
@@ -8,7 +11,9 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
 {
     public override string Name => "SelectGroundingData";
 
-    public override Task<GroundingData> ExecuteInternal(GroundingData input)
+    public override Task<GroundingData> ExecuteInternal(
+        GroundingData input,
+        CancellationToken cancellationToken = default)
     {
         var output = new GroundingData();
 
@@ -24,13 +29,23 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
             foreach (var doc in input.Docs.Take(5))
             {
                 int index = output.Content.Count;
-                var chunk = "[doc" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/doc" + index + "]";
-                output.Content.Add(chunk);
+                var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
+                var content = new Content
+                {
+                    Text = chunk,
+                    Citation = new Citation
+                    {
+                        Ref = "ref" + index,
+                        Title = doc.Title,
+                        Uri = "https://" + doc.Title // update to some kind of URL
+                    }
+                };
+                output.Content.Add(content);
             }
         }
 
         // trim to 5 turns of the conversation
-        output.History = input.History?.Skip(Math.Max(0, input.History.Count() - 5)).ToList();
+        output.History = input.History?.Skip(Math.Max(0, input.History.Count - 5)).ToList();
 
         return Task.FromResult(output);
     }

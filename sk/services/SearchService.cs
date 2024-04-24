@@ -37,7 +37,10 @@ public class SearchService
         {
             KNearestNeighborsCount = limit,
         };
-        vectorQuery.Fields.Add("vector");
+        foreach (var field in this.config.SEARCH_VECTOR_FIELDS)
+        {
+            vectorQuery.Fields.Add(field);
+        }
         var vectorSearch = new VectorSearchOptions();
         vectorSearch.Queries.Add(vectorQuery);
 
@@ -52,11 +55,10 @@ public class SearchService
                 SemanticConfigurationName = this.config.SEARCH_SEMANTIC_CONFIG
             },
         };
-        options.Select.Add("title");
-        options.Select.Add("chunk_id");
-        options.Select.Add("chunk");
-        options.Select.Add("game_name");
-        options.Select.Add("edition");
+        foreach (var field in this.config.SEARCH_SELECT_FIELDS)
+        {
+            options.Select.Add(field);
+        }
 
         // submit the query
         var searchResults = await searchClient.SearchAsync<Doc>(options, cancellationToken);

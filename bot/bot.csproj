@@ -17,7 +17,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.1.1" />
     <PackageReference Include="Microsoft.Bot.Builder.Integration.AspNet.Core" Version="4.22.0" />
-    <PackageReference Include="NetBricks" Version="1.8.0" />
+    <PackageReference Include="NetBricks" Version="1.9.0" />
   </ItemGroup>
 
   <ItemGroup>
