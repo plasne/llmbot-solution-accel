@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
-using Xunit.Sdk;
+using SharpToken;
 
 public partial class GenerateAnswer(
     IContext context,
@@ -52,6 +53,15 @@ public partial class GenerateAnswer(
             new HandlebarsPromptTemplateFactory()
         );
 
+        // add prompt token count reporting
+        var modelId = "";
+        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
+        if (chatCompletionService is not null && chatCompletionService.Attributes.TryGetValue("DeploymentName", out var deployModel) && deployModel is string model)
+        {
+            modelId = model;
+            kernel.PromptFilters.Add(new PromptTokenCountFilter(modelId, this.GetType().Name));
+        }
+
         // build the history
         ChatHistory history = input.Data?.History?.ToChatHistory() ?? [];
 
@@ -59,6 +69,9 @@ public partial class GenerateAnswer(
         var contextString = (input.Data?.Content is not null)
             ? string.Join("\n", input.Data.Content.Select(x => x.Text))
             : string.Empty;
+
+        // execute
+        var startTime = DateTime.UtcNow;
         var response = this.kernel.InvokeStreamingAsync(
             func,
             new()
@@ -75,6 +88,23 @@ public partial class GenerateAnswer(
         {
             buffer.Append(fragment.ToString());
             await this.context.Stream("Generating answer...", fragment.ToString());
+        }        
+        var elapsedSeconds = (startTime - DateTime.UtcNow).TotalSeconds;
+
+        // record completion token count using sharpToken
+        var completionTokenCount = 0;
+        if (!string.IsNullOrEmpty(modelId))
+        {
+            var encoding = GptEncoding.GetEncodingForModel(modelId);
+            completionTokenCount = encoding.CountTokens(buffer.ToString());
+            DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.GetType().Name);
+        }
+
+        // record tokens per second
+        if (completionTokenCount > 0)
+        {
+            var tokensPerSecond = completionTokenCount / elapsedSeconds;
+            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.GetType().Name);
         }
 
         // find citations

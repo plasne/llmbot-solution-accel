@@ -144,6 +144,12 @@ public class ChatBot(
         {
             if (!string.IsNullOrEmpty(response.Msg))
             {
+                int wordCount = response.Msg.Replace('\n', ' ').Split(' ').Length;
+                totalWordCount += wordCount;
+                if (started is not null && totalWordCount == wordCount)
+                {
+                    DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
+                }
                 summaries.Append(response.Msg);
             }
             if (response.Citations is not null)

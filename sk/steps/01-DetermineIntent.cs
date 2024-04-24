@@ -6,6 +6,9 @@ using Newtonsoft.Json;
 using System.IO;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading;
+using Azure.AI.OpenAI;
+using SharpToken;
+using System;
 
 public class DetermineIntent(
     IContext context,
@@ -49,10 +52,20 @@ public class DetermineIntent(
             new HandlebarsPromptTemplateFactory()
         );
 
+        // add prompt token count reporting using sharpToken
+        var modelId = "";
+        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
+        if (chatCompletionService is not null && chatCompletionService.Attributes.TryGetValue("DeploymentName", out var deployModel) && deployModel is string model)
+        {
+            modelId = model;
+            kernel.PromptFilters.Add(new PromptTokenCountFilter(modelId, this.GetType().Name));
+        }
+
         // build the history
         ChatHistory history = input.History?.ToChatHistory() ?? [];
 
         // execute
+        var startTime = DateTime.UtcNow;
         var response = await this.kernel.InvokeAsync(
             func,
             new()
@@ -61,6 +74,30 @@ public class DetermineIntent(
                 { "query", input.UserQuery },
             },
             cancellationToken);
+        var elapsedSeconds = (startTime - DateTime.UtcNow).TotalSeconds;
+
+        // record completion token count using sharpToken
+        var completionTokenCount = 0;
+        if (!string.IsNullOrEmpty(modelId))
+        {
+            if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var usageOut) && usageOut is CompletionsUsage usage)
+            {
+                var encoding = GptEncoding.GetEncodingForModel(modelId);
+                completionTokenCount = encoding.CountTokens(response.ToString());
+                if (completionTokenCount != usage.CompletionTokens)
+                {
+                    logger.LogWarning($"Completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
+                }
+                DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.GetType().Name);
+            }
+        }
+
+        // record tokens per second
+        if (completionTokenCount > 0)
+        {
+            var tokensPerSecond = completionTokenCount / elapsedSeconds;
+            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.GetType().Name);
+        }
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)
