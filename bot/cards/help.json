@@ -1,0 +1,57 @@
+{
+    "type": "AdaptiveCard",
+    "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+    "version": "1.5",
+    "msteams": {
+        "width": "Full"
+    },
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Greetings, I am a helpful chat bot that can answer many types of questions. You can also use any of my helpful commands, such as...",
+            "wrap": true
+        },
+        {
+            "type": "Table",
+            "showGridLines": false,
+            "columns": [
+                {
+                    "width": 1
+                },
+                {
+                    "width": 4
+                }
+            ],
+            "$data": "${lines}",
+            "rows": [
+                {
+                    "type": "TableRow",
+                    "cells": [
+                        {
+                            "type": "TableCell",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${title}",
+                                    "wrap": true,
+                                    "weight": "Bolder"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "TableCell",
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "${desc}",
+                                    "wrap": true,
+                                    "weight": "Lighter"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

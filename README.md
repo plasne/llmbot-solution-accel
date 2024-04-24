@@ -12,7 +12,16 @@ Please see the README.MD files in each of these services to get up and going:
 ## TODO
 
 - Add Stylecop
-- Hyperlinks for citations​
+- Explicit topic change (/new)
+- Implicit topic change
+- `/rate up` and `/rate down` commands
+- `/comment ???` to give feedback on the last exchange
+- `/feedback` to show the feedback and rating
+- `/comment -` to delete the feedback
+- `/stop` to stop the current generation.
+- `/delete` to delete the most recent generation.
+- `/delete #` to delete # turns.
+- `/help`
 - Stop and delete (Event Hub)​
 - Pluggable history backend​
   - Role, message, feedback, status (edited/deleted/etc.), telemetry, audit, etc.

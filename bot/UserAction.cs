@@ -1,5 +1,5 @@
 public class UserAction
 {
     public string? ChatId;
-    public string? Rate;
+    public string? Command;
 }

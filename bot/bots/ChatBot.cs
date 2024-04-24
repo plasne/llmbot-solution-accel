@@ -1,7 +1,7 @@
 ﻿namespace Bots;
 
+using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,22 +14,25 @@ using DistributedChat;
 using Grpc.Core;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 public class ChatBot(
     IConfig config,
+    IServiceProvider serviceProvider,
+    ICardProvider cardProvider,
     HistoryService historyService,
     BotChannel channel,
     ILogger<ChatBot> logger)
     : ActivityHandler
 {
     private readonly IConfig config = config;
+    private readonly IServiceProvider serviceProvider = serviceProvider;
+    private readonly ICardProvider cardProvider = cardProvider;
     private readonly HistoryService historyService = historyService;
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
-    private readonly string cardJson = File.ReadAllText("./card.json");
     private readonly string chatId = System.Guid.NewGuid().ToString();
 
     private async Task<string> Dispatch(
@@ -62,7 +65,7 @@ public class ChatBot(
         }
 
         // build the adaptive card
-        var template = new AdaptiveCardTemplate(cardJson);
+        var template = await cardProvider.GetTemplate("response");
         var isGenerated = status == "Generated.";
         var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
         var attachment = new Attachment()
@@ -85,26 +88,60 @@ public class ChatBot(
         return activityId;
     }
 
+    private static bool IsCommand(ITurnContext<IMessageActivity> turnContext)
+    {
+        if (turnContext.Activity.Value is not null)
+        {
+            return true;
+        }
+        if (turnContext.Activity.Text is not null && turnContext.Activity.Text.StartsWith('/'))
+        {
+            return true;
+        }
+        return false;
+    }
+
+    private async Task<bool> TryAsCommand(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+    {
+        if (!IsCommand(turnContext))
+        {
+            return false;
+        }
+
+        // try each command until you find one that works
+        var commands = this.serviceProvider.GetServices<ICommand>();
+        foreach (var command in commands)
+        {
+            var handled = await command.Try(turnContext, cancellationToken);
+            if (handled)
+            {
+                return true;
+            }
+        }
+
+        // try the help command if nothing else found
+        var helpCommand = commands.OfType<HelpCommand>().FirstOrDefault();
+        helpCommand?.ShowHelp(turnContext, cancellationToken);
+        return true;
+    }
+
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
-        // identify the user
-        var userId = turnContext.Activity.From.AadObjectId;
-
-        // look for ratings
-        var jaction = turnContext.Activity.Value as JObject;
-        var action = jaction?.ToObject<UserAction>();
-        if (action is not null)
+        // see if this is a command
+        if (await TryAsCommand(turnContext, cancellationToken))
         {
-            this.logger.LogInformation("User {user} rated {id} as {value}", userId, action.ChatId, action.Rate);
-            var activity = MessageFactory.Text($"Thank you for rating '{action.Rate}' on chat '{action.ChatId}'.");
-            await turnContext.SendActivityAsync(activity, cancellationToken);
             return;
         }
 
         // get the text
         var text = turnContext.Activity.Text;
+        if (string.IsNullOrEmpty(text))
+        {
+            return;
+        }
 
         // get the history
+        var userId = turnContext.Activity.From.AadObjectId;
         this.historyService.Add(userId, "user", text);
         var request = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
         foreach (var turn in this.historyService.Get(userId))
