@@ -12,6 +12,9 @@ public class Config : IConfig
         this.LLM_URI = this.config.Get<string>("LLM_URI").AsString(() => "http://localhost:5210");
         this.CHARACTERS_PER_UPDATE = this.config.Get<string>("CHARACTERS_PER_UPDATE").AsInt(() => 200);
         this.FINAL_STATUS = this.config.Get<string>("FINAL_STATUS").AsString(() => "Generated.");
+        this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING = this.config.Get<string>("SQL_SERVER_HISTORY_SERVICE_CONNSTRING");
+        this.SQL_SERVER_MAX_RETRY_ATTEMPTS = this.config.Get<string>("SQL_SERVER_MAX_RETRY_ATTEMPTS").AsInt(() => 3);
+        this.SQL_SERVER_SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SQL_SERVER_SECONDS_BETWEEN_RETRIES").AsInt(() => 3);
     }
 
     public int PORT { get; }
@@ -24,6 +27,12 @@ public class Config : IConfig
 
     public string FINAL_STATUS { get; }
 
+    public string SQL_SERVER_HISTORY_SERVICE_CONNSTRING { get; }
+
+    public int SQL_SERVER_MAX_RETRY_ATTEMPTS { get; }
+
+    public int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
+
     public void Validate()
     {
         this.config.Require("PORT", PORT);
@@ -31,6 +40,9 @@ public class Config : IConfig
         this.config.Require("LLM_URI", this.LLM_URI);
         this.config.Require("CHARACTERS_PER_UPDATE", this.CHARACTERS_PER_UPDATE);
         this.config.Require("FINAL_STATUS", this.FINAL_STATUS);
+        this.config.Optional("SQL_SERVER_HISTORY_SERVICE_CONNSTRING", this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING, hideValue: true);
+        this.config.Optional("SQL_SERVER_MAX_RETRY_ATTEMPTS", this.SQL_SERVER_MAX_RETRY_ATTEMPTS);
+        this.config.Optional("SQL_SERVER_SECONDS_BETWEEN_RETRIES", this.SQL_SERVER_SECONDS_BETWEEN_RETRIES);
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);

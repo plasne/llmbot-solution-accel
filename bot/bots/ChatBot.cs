@@ -143,6 +143,9 @@ public class ChatBot(
             return;
         }
 
+        // send the typing indicator
+        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
+
         // get the history
         var userId = turnContext.Activity.From.AadObjectId;
         this.historyService.Add(userId, "user", text);
@@ -151,9 +154,6 @@ public class ChatBot(
         {
             request.Turns.Add(turn);
         }
-
-        // send the typing indicator
-        await turnContext.SendActivityAsync(new Microsoft.Bot.Schema.Activity { Type = ActivityTypes.Typing }, cancellationToken);
 
         // prepare to receive the async response
         string? activityId = null;

@@ -17,7 +17,7 @@ public class Config : IConfig
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
         this.LLM_API_KEY = config.Get<string>("LLM_API_KEY");
-        this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
+        this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME").AsString(() => this.LLM_DEPLOYMENT_NAME);
         this.LLM_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");

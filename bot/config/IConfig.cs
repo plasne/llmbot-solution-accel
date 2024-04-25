@@ -5,6 +5,9 @@ public interface IConfig
     string LLM_URI { get; }
     int CHARACTERS_PER_UPDATE { get; }
     string FINAL_STATUS { get; }
+    string SQL_SERVER_HISTORY_SERVICE_CONNSTRING { get; }
+    int SQL_SERVER_MAX_RETRY_ATTEMPTS { get; }
+    int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
 
     void Validate();
 }
