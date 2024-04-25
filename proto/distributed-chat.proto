@@ -7,6 +7,16 @@ service ChatService {
   rpc Chat (ChatRequest) returns (stream ChatResponse);
 }
 
+enum Intent {
+  UNSET = 0;
+  UNKNOWN = 1;
+  GREETING = 2;
+  GOODBYE = 3;
+  IN_DOMAIN = 4;
+  OUT_OF_DOMAIN = 5;
+  TOPIC_CHANGE = 6;
+}
+
 message Turn {
   string role = 1;
   string msg = 2;
@@ -24,7 +34,8 @@ message Citation {
 }
 
 message ChatResponse {
-  string status = 1;
-  string msg = 2;
-  repeated Citation citations = 3;
+  Intent intent = 1;
+  string status = 2;
+  string msg = 3;
+  repeated Citation citations = 4;
 }

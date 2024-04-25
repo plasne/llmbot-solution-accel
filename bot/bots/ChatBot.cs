@@ -69,7 +69,7 @@ public class ChatBot(
 
         // build the adaptive card
         var template = await cardProvider.GetTemplate("response");
-        var isGenerated = status == "Generated.";
+        var isGenerated = status == this.config.FINAL_STATUS;
         var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
         var attachment = new Attachment()
         {
@@ -112,7 +112,7 @@ public class ChatBot(
         }
 
         // try each command until you find one that works
-        var commands = this.serviceProvider.GetServices<ICommand>();
+        var commands = this.serviceProvider.GetServices<ICommands>();
         foreach (var command in commands)
         {
             var handled = await command.Try(turnContext, cancellationToken);
@@ -175,6 +175,9 @@ public class ChatBot(
         // start receiving the async responses
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
+            var status = response.Status;
+
+            // append the summary with any message
             if (!string.IsNullOrEmpty(response.Msg))
             {
                 int wordCount = response.Msg.Replace('\n', ' ').Split(' ').Length;
@@ -185,6 +188,8 @@ public class ChatBot(
                 }
                 summaries.Append(response.Msg);
             }
+
+            // add any citations that were found in the response
             if (response.Citations is not null)
             {
                 foreach (var citation in response.Citations)
@@ -192,10 +197,43 @@ public class ChatBot(
                     citations.TryAdd(citation.Ref, citation);
                 }
             }
+
+            // the LLM may have determined the user's intent is something other than what the LLM can provide
+            this.logger.LogWarning("intent is {intent}", response.Intent);
+            switch (response.Intent)
+            {
+                case Intent.Unset:
+                case Intent.InDomain:
+                    // no need to do anything, these are good intents
+                    break;
+                case Intent.Unknown:
+                case Intent.Greeting:
+                    status = this.config.FINAL_STATUS;
+                    summaries.Clear();
+                    summaries.Append("Hello and welcome! If you aren't sure what I can do type `/help`.");
+                    break;
+                case Intent.OutOfDomain:
+                    status = this.config.FINAL_STATUS;
+                    summaries.Clear();
+                    summaries.Append("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
+                    break;
+                case Intent.Goodbye:
+                    status = this.config.FINAL_STATUS;
+                    summaries.Clear();
+                    summaries.Append("Goodbye!");
+                    break;
+                case Intent.TopicChange:
+                    status = this.config.FINAL_STATUS;
+                    summaries.Clear();
+                    summaries.Append("Changing topic..."); // TODO: implement and consider message
+                    break;
+            }
+
+            // dispatch the response
             activityId = await Dispatch(
                 this.chatId,
                 activityId,
-                response.Status,
+                status,
                 summaries.ToString(),
                 response.Citations?.ToList(),
                 turnContext,
@@ -205,6 +243,20 @@ public class ChatBot(
         {
             DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, totalWordCount);
         }
+    }
+
+    protected override Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
+    {
+        // TODO: implement this functionality
+        this.logger.LogWarning("OnMessageUpdateActivityAsync, id: {i}, new msg: {t}", turnContext.Activity.Id, turnContext.Activity.Text);
+        return base.OnMessageUpdateActivityAsync(turnContext, cancellationToken);
+    }
+
+    protected override Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
+    {
+        // TODO: implement this functionality
+        this.logger.LogWarning("OnMessageDeleteActivityAsync, id: {i}", turnContext.Activity.Id);
+        return base.OnMessageDeleteActivityAsync(turnContext, cancellationToken);
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

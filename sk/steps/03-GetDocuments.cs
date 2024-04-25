@@ -4,14 +4,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 public class GetDocuments(IContext context, SearchService searchService, ILogger<GetDocuments> logger)
-    : BaseStep<Intent, List<Doc>>(logger)
+    : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {
     private readonly IContext context = context;
 
     public override string Name => "GetDocuments";
 
     public override async Task<List<Doc>> ExecuteInternal(
-        Intent intent,
+        DeterminedIntent intent,
         CancellationToken cancellationToken = default)
     {
         // set status

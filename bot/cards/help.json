@@ -22,7 +22,7 @@
                     "width": 4
                 }
             ],
-            "$data": "${lines}",
+            "$data": "${commands}",
             "rows": [
                 {
                     "type": "TableRow",

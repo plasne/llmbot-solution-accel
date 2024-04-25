@@ -14,15 +14,18 @@ using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using SharpToken;
 
 public partial class GenerateAnswer(
+    IConfig config,
     IContext context,
     Kernel kernel,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
     : BaseStep<IntentAndData, Answer>(logger)
 {
+    private readonly IConfig config = config;
     private readonly IContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
+    private readonly ILogger<GenerateAnswer> logger = logger;
 
     public override string Name => "GenerateAnswer";
 
@@ -54,13 +57,7 @@ public partial class GenerateAnswer(
         );
 
         // add prompt token count reporting
-        var modelId = "";
-        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        if (chatCompletionService is not null && chatCompletionService.Attributes.TryGetValue("DeploymentName", out var deployModel) && deployModel is string model)
-        {
-            modelId = model;
-            kernel.PromptFilters.Add(new PromptTokenCountFilter(modelId, this.GetType().Name));
-        }
+        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, this.GetType().Name, this.logger));
 
         // build the history
         ChatHistory history = input.Data?.History?.ToChatHistory() ?? [];
@@ -88,23 +85,20 @@ public partial class GenerateAnswer(
         {
             buffer.Append(fragment.ToString());
             await this.context.Stream("Generating answer...", fragment.ToString());
-        }        
+        }
         var elapsedSeconds = (startTime - DateTime.UtcNow).TotalSeconds;
 
         // record completion token count using sharpToken
         var completionTokenCount = 0;
-        if (!string.IsNullOrEmpty(modelId))
-        {
-            var encoding = GptEncoding.GetEncodingForModel(modelId);
-            completionTokenCount = encoding.CountTokens(buffer.ToString());
-            DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.GetType().Name);
-        }
+        var encoding = GptEncoding.GetEncoding(this.config.LLM_MODEL_ID);
+        completionTokenCount = encoding.CountTokens(buffer.ToString());
+        DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
 
         // record tokens per second
         if (completionTokenCount > 0)
         {
             var tokensPerSecond = completionTokenCount / elapsedSeconds;
-            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.GetType().Name);
+            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME, this.GetType().Name);
         }
 
         // find citations

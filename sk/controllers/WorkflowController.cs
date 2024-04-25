@@ -22,7 +22,7 @@ public class WorkflowController : ControllerBase
     }
 
     [HttpPost("determine-intent")]
-    public async Task<ActionResult<Intent>> DetermineIntent(
+    public async Task<ActionResult<DeterminedIntent>> DetermineIntent(
         [FromServices] IServiceProvider serviceProvider,
         [FromBody] GroundingData groundingData,
         CancellationToken cancellationToken)
@@ -36,7 +36,7 @@ public class WorkflowController : ControllerBase
     [HttpPost("get-documents")]
     public async Task<ActionResult<List<Doc>>> GetDocuments(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] Intent intent,
+        [FromBody] DeterminedIntent intent,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();

@@ -76,6 +76,7 @@ switch (config.MEMORY_TERM)
 builder.Services.AddScoped<IContext, Context>();
 builder.Services.AddTransient<Workflow>();
 builder.Services.AddTransient<DetermineIntent>();
+builder.Services.AddTransient<ApplyIntent>();
 builder.Services.AddTransient<GetDocuments>();
 builder.Services.AddTransient<SelectGroundingData>();
 builder.Services.AddTransient<GenerateAnswer>();

@@ -50,8 +50,9 @@ builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>
 builder.Services.AddTransient<IBot, ChatBot>();
 
 // add commands
-builder.Services.AddTransient<ICommand, HelpCommand>();
-builder.Services.AddTransient<ICommand, FeedbackCommand>();
+builder.Services.AddTransient<ICommands, HelpCommand>();
+builder.Services.AddTransient<ICommands, FeedbackCommands>();
+builder.Services.AddTransient<ICommands, HistoryCommands>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

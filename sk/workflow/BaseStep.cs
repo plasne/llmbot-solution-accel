@@ -24,6 +24,12 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
         this.Logs.Add(new LogEntry("INFO", message));
     }
 
+    protected void LogWarning(string message)
+    {
+        this.logger.LogWarning(message);
+        this.Logs.Add(new LogEntry("WARNING", message));
+    }
+
     protected void LogError(Exception ex, string message)
     {
         this.logger.LogError(ex, message);

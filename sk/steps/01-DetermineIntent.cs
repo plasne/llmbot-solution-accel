@@ -11,19 +11,22 @@ using SharpToken;
 using System;
 
 public class DetermineIntent(
+    IConfig config,
     IContext context,
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
-    : BaseStep<GroundingData, Intent>(logger)
+    : BaseStep<GroundingData, DeterminedIntent>(logger)
 {
+    private readonly IConfig config = config;
     private readonly IContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
+    private readonly ILogger<DetermineIntent> logger = logger;
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<Intent> ExecuteInternal(
+    public override async Task<DeterminedIntent> ExecuteInternal(
         GroundingData input,
         CancellationToken cancellationToken = default)
     {
@@ -53,13 +56,7 @@ public class DetermineIntent(
         );
 
         // add prompt token count reporting using sharpToken
-        var modelId = "";
-        var chatCompletionService = kernel.GetRequiredService<IChatCompletionService>();
-        if (chatCompletionService is not null && chatCompletionService.Attributes.TryGetValue("DeploymentName", out var deployModel) && deployModel is string model)
-        {
-            modelId = model;
-            kernel.PromptFilters.Add(new PromptTokenCountFilter(modelId, this.GetType().Name));
-        }
+        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, this.GetType().Name, this.logger));
 
         // build the history
         ChatHistory history = input.History?.ToChatHistory() ?? [];
@@ -78,30 +75,27 @@ public class DetermineIntent(
 
         // record completion token count using sharpToken
         var completionTokenCount = 0;
-        if (!string.IsNullOrEmpty(modelId))
+        if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var usageOut) && usageOut is CompletionsUsage usage)
         {
-            if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var usageOut) && usageOut is CompletionsUsage usage)
+            var encoding = GptEncoding.GetEncoding(this.config.LLM_MODEL_ID);
+            completionTokenCount = encoding.CountTokens(response.ToString());
+            if (completionTokenCount != usage.CompletionTokens)
             {
-                var encoding = GptEncoding.GetEncodingForModel(modelId);
-                completionTokenCount = encoding.CountTokens(response.ToString());
-                if (completionTokenCount != usage.CompletionTokens)
-                {
-                    logger.LogWarning($"Completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
-                }
-                DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.GetType().Name);
+                this.LogWarning("Completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
             }
+            DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
         }
 
         // record tokens per second
         if (completionTokenCount > 0)
         {
             var tokensPerSecond = completionTokenCount / elapsedSeconds;
-            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.GetType().Name);
+            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME, this.GetType().Name);
         }
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)
-        var intent = JsonConvert.DeserializeObject<Intent>(response.ToString())
+        var intent = JsonConvert.DeserializeObject<DeterminedIntent>(response.ToString())
             ?? throw new HttpException(500, "Intent could not be deserialized.");
 
         // record to context
