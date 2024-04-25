@@ -221,6 +221,20 @@ public class ChatBot(
         }
     }
 
+    protected override Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
+    {
+        // TODO: implement this functionality
+        this.logger.LogWarning("OnMessageUpdateActivityAsync, id: {i}, new msg: {t}", turnContext.Activity.Id, turnContext.Activity.Text);
+        return base.OnMessageUpdateActivityAsync(turnContext, cancellationToken);
+    }
+
+    protected override Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
+    {
+        // TODO: implement this functionality
+        this.logger.LogWarning("OnMessageDeleteActivityAsync, id: {i}", turnContext.Activity.Id);
+        return base.OnMessageDeleteActivityAsync(turnContext, cancellationToken);
+    }
+
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
         var welcomeText = "Hello and welcome!";

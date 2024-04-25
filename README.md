@@ -17,7 +17,7 @@ Please see the README.MD files in each of these services to get up and going:
 - `/rate up` and `/rate down` commands
 - `/comment ???` to give feedback on the last exchange
 - `/feedback` to show the feedback and rating
-- `/comment -` to delete the feedback
+- `/revoke` to delete the feedback
 - `/stop` to stop the current generation.
 - `/delete` to delete the most recent generation.
 - `/delete #` to delete # turns.
@@ -25,6 +25,7 @@ Please see the README.MD files in each of these services to get up and going:
 - Stop and delete (Event Hub)​
 - Pluggable history backend​
   - Role, message, feedback, status (edited/deleted/etc.), telemetry, audit, etc.
+- Implement editing messages
 - Change thumbs-up/down card to highlight option and open further feedback
 - Add status when looking up
 - Test in Azure + Teams
