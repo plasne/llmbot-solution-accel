@@ -36,7 +36,7 @@ public static class Extensions
                 // Metrics provides by ASP.NET Core in .NET 8
                 metrics.AddMeter("Microsoft.AspNetCore.Hosting");
                 metrics.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
-
+                metrics.AddMeter(sourceName);
                 metrics.AddAzureMonitorMetricExporter(o => o.ConnectionString = openTelemetryConnectionString);
             })
             .WithTracing(tracing =>

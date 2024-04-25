@@ -20,6 +20,7 @@ public class Workflow(
         GroundingData groundingData,
         CancellationToken cancellationToken = default)
     {
+        using var activity = DiagnosticService.Source.StartActivity("Workflow");
         var response = new WorkflowResponse();
         try
         {

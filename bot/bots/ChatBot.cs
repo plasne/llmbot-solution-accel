@@ -10,6 +10,7 @@ using AdaptiveCards;
 using Channels;
 using DistributedChat;
 using Grpc.Core;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class ChatBot(
+    IHttpContextAccessor httpContextAccessor,
     IConfig config,
     IServiceProvider serviceProvider,
     ICardProvider cardProvider,
@@ -25,6 +27,7 @@ public class ChatBot(
     ILogger<ChatBot> logger)
     : ActivityHandler
 {
+    private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
     private readonly IConfig config = config;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly ICardProvider cardProvider = cardProvider;
@@ -32,6 +35,8 @@ public class ChatBot(
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
     private readonly string chatId = System.Guid.NewGuid().ToString();
+
+    public static string StartTimeKey = "http-request-start-time";
 
     private async Task<string> Dispatch(
         string chatId,
@@ -148,7 +153,7 @@ public class ChatBot(
         }
 
         // send the typing indicator
-        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
+        await turnContext.SendActivityAsync(new Microsoft.Bot.Schema.Activity { Type = ActivityTypes.Typing }, cancellationToken);
 
         // prepare to receive the async response
         string? activityId = null;
@@ -158,7 +163,16 @@ public class ChatBot(
         // send the request
         using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
 
+        // start the counters
+        DateTime? started = null;
+        if (httpContextAccessor.HttpContext is not null &&
+            httpContextAccessor.HttpContext.Items.TryGetValue(StartTimeKey, out var requestStartTime) && requestStartTime is DateTime start)
+        {
+            started = start;
+        }
+
         // start receiving the async responses
+        var initMsgResponse = false;
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
             var status = response.Status;
@@ -166,6 +180,11 @@ public class ChatBot(
             // append the summary with any message
             if (!string.IsNullOrEmpty(response.Msg))
             {
+                if (started is not null && !initMsgResponse)
+                {
+                    initMsgResponse = true;
+                    DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
+                }
                 summaries.Append(response.Msg);
             }
 
@@ -218,6 +237,10 @@ public class ChatBot(
                 response.Citations?.ToList(),
                 turnContext,
                 cancellationToken);
+        }
+        if (started is not null)
+        {
+            DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
         }
     }
 

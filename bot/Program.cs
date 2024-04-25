@@ -59,10 +59,14 @@ builder.WebHost.UseKestrel(options =>
 {
     options.ListenAnyIP(config.PORT);
 });
-
+builder.Services.AddHttpContextAccessor();
 // build the app
 var app = builder.Build();
-
+app.Use(async (ctx, req) =>
+{
+    ctx.Items[ChatBot.StartTimeKey] = DateTime.UtcNow;
+    await req.Invoke();
+});
 // define the app's routes
 app.UseWebSockets()
     .UseRouting()
