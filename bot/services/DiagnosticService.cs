@@ -15,9 +15,8 @@ public class DiagnosticService
         TimeToFirstResponse.Record(time);
     }
 
-    public static void RecordTimeToLastResponse(double time, int wordCount)
+    public static void RecordTimeToLastResponse(double time)
     {
-        var dic = new KeyValuePair<string, object?>("word_count", wordCount);
-        TimeToLastResponse.Record(time, dic);
+        TimeToLastResponse.Record(time);
     }
 }

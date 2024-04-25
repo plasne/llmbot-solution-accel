@@ -9,7 +9,7 @@ public interface IConfig
     string LLM_ENDPOINT_URI { get; }
     string LLM_API_KEY { get; }
     string LLM_MODEL_NAME { get; }
-    string LLM_MODEL_ID { get; set; }
+    string LLM_ENCODING_MODEL { get; set; }
     string SEARCH_INDEX { get; }
     string SEARCH_ENDPOINT_URI { get; }
     string SEARCH_API_KEY { get; }

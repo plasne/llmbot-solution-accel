@@ -71,13 +71,13 @@ public class DetermineIntent(
                 { "query", input.UserQuery },
             },
             cancellationToken);
-        var elapsedSeconds = (startTime - DateTime.UtcNow).TotalSeconds;
+        var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
         // record completion token count using sharpToken
         var completionTokenCount = 0;
         if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var usageOut) && usageOut is CompletionsUsage usage)
         {
-            var encoding = GptEncoding.GetEncoding(this.config.LLM_MODEL_ID);
+            var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
             completionTokenCount = encoding.CountTokens(response.ToString());
             if (completionTokenCount != usage.CompletionTokens)
             {

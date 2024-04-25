@@ -86,11 +86,11 @@ public partial class GenerateAnswer(
             buffer.Append(fragment.ToString());
             await this.context.Stream("Generating answer...", fragment.ToString());
         }
-        var elapsedSeconds = (startTime - DateTime.UtcNow).TotalSeconds;
+        var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
         // record completion token count using sharpToken
         var completionTokenCount = 0;
-        var encoding = GptEncoding.GetEncoding(this.config.LLM_MODEL_ID);
+        var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
         completionTokenCount = encoding.CountTokens(buffer.ToString());
         DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
 

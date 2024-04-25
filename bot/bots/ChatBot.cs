@@ -170,9 +170,9 @@ public class ChatBot(
         {
             started = start;
         }
-        int totalWordCount = 0;
 
         // start receiving the async responses
+        var initMsgResponse = false;
         await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
             var status = response.Status;
@@ -180,10 +180,9 @@ public class ChatBot(
             // append the summary with any message
             if (!string.IsNullOrEmpty(response.Msg))
             {
-                int wordCount = response.Msg.Replace('\n', ' ').Split(' ').Length;
-                totalWordCount += wordCount;
-                if (started is not null && totalWordCount == wordCount)
+                if (started is not null && !initMsgResponse)
                 {
+                    initMsgResponse = true;
                     DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
                 }
                 summaries.Append(response.Msg);
@@ -241,7 +240,7 @@ public class ChatBot(
         }
         if (started is not null)
         {
-            DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds, totalWordCount);
+            DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
         }
     }
 

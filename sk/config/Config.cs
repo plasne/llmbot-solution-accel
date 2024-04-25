@@ -18,7 +18,7 @@ public class Config : IConfig
         this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
         this.LLM_API_KEY = config.Get<string>("LLM_API_KEY");
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
-        this.LLM_MODEL_ID = "TBD";
+        this.LLM_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.Get<string>("SEARCH_API_KEY");
@@ -48,7 +48,7 @@ public class Config : IConfig
 
     public string LLM_MODEL_NAME { get; }
 
-    public string LLM_MODEL_ID { get; set; }
+    public string LLM_ENCODING_MODEL { get; set; }
 
     public string SEARCH_INDEX { get; }
 
@@ -80,8 +80,8 @@ public class Config : IConfig
         this.config.Require("LLM_API_KEY", this.LLM_API_KEY, hideValue: true);
 
         this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
-        this.LLM_MODEL_ID = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
-        this.config.Require("LLM_MODEL_ID", this.LLM_MODEL_ID);
+        this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
+        this.config.Require("LLM_ENCODING_MODEL", this.LLM_ENCODING_MODEL);
 
         this.config.Require("SEARCH_INDEX", this.SEARCH_INDEX);
         this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
