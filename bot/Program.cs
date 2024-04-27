@@ -37,12 +37,12 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 
 // add the services required for communicating with the bot
 builder.Services.AddSingleton<ICardProvider, InMemoryCardProvider>();
-builder.Services.AddSingleton<HistoryService>();
 builder.Services.AddSingleton<BotChannel>();
 
 // add the appropriate history service
 if (!string.IsNullOrEmpty(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING))
 {
+    Console.WriteLine("ADDING SERVICE: SqlServerHistoryService");
     builder.Services.AddSingleton<IHistoryService, SqlServerHistoryService>();
 }
 
@@ -59,6 +59,9 @@ builder.Services.AddTransient<IBot, ChatBot>();
 builder.Services.AddTransient<ICommands, HelpCommand>();
 builder.Services.AddTransient<ICommands, FeedbackCommands>();
 builder.Services.AddTransient<ICommands, HistoryCommands>();
+
+// host the lifecycle service
+builder.Services.AddHostedService<LifecycleService>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

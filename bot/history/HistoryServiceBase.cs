@@ -2,7 +2,7 @@ using System;
 
 public abstract class HistoryServiceBase
 {
-    public void ValidateAddInteractionAsync(IInteraction interaction)
+    public void ValidateInteractionForStartGeneration(Interaction interaction)
     {
         if (interaction.ConversationId is not null)
         {

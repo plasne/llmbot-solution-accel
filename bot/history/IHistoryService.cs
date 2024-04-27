@@ -2,13 +2,13 @@ using System.Threading.Tasks;
 
 public interface IHistoryService
 {
-    Task<IConversation> GetCurrentConversationAsync(string userId);
+    Task<Conversation> GetCurrentConversationAsync(string userId);
 
-    Task AddInteractionAsync(IInteraction interaction);
+    Task StartGenerationAsync(Interaction request, Interaction response);
 
     Task DeleteLastInteractionsAsync(string userId, int count = 1);
 
-    Task<IConversation> ChangeConversationTopicAsync(string userId);
+    Task<Conversation> ChangeConversationTopicAsync(string userId);
 
     Task RateMessageAsync(string userId, string rating);
 
@@ -21,4 +21,6 @@ public interface IHistoryService
     Task ClearFeedbackAsync(string userId);
 
     Task ClearFeedbackAsync(string userId, string activityId);
+
+    Task StartupAsync();
 }

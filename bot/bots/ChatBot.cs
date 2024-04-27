@@ -22,7 +22,7 @@ public class ChatBot(
     IConfig config,
     IServiceProvider serviceProvider,
     ICardProvider cardProvider,
-    HistoryService historyService,
+    IHistoryService historyService,
     BotChannel channel,
     ILogger<ChatBot> logger)
     : ActivityHandler
@@ -31,10 +31,10 @@ public class ChatBot(
     private readonly IConfig config = config;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly ICardProvider cardProvider = cardProvider;
-    private readonly HistoryService historyService = historyService;
+    private readonly IHistoryService historyService = historyService;
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
-    private readonly string chatId = System.Guid.NewGuid().ToString();
+    private readonly string chatId = Guid.NewGuid().ToString();
 
     public static string StartTimeKey = "http-request-start-time";
 
@@ -143,25 +143,39 @@ public class ChatBot(
             return;
         }
 
-        // send the typing indicator
-        await turnContext.SendActivityAsync(new Activity { Type = ActivityTypes.Typing }, cancellationToken);
+        // send the "connection" message
+        var activityId = await Dispatch(
+            this.chatId,
+            null,
+            "Connecting to assistant...",
+            string.Empty,
+            null,
+            turnContext,
+            cancellationToken);
+
+        // start the conversation in history
+        var userId = turnContext.Activity.From.AadObjectId;
+        var userRequestInteraction = Interaction.CreateUserRequest(turnContext.Activity.Id, userId, text);
+        var botResponseInteraction = Interaction.CreateBotResponse(activityId, userId);
+        await this.historyService.StartGenerationAsync(userRequestInteraction, botResponseInteraction);
 
         // get the history
-        var userId = turnContext.Activity.From.AadObjectId;
-        this.historyService.Add(userId, "user", text);
-        var request = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
-        foreach (var turn in this.historyService.Get(userId))
+        var conversation = await this.historyService.GetCurrentConversationAsync(userId);
+        var chatRequest = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
+        if (conversation.Interactions is not null)
         {
-            request.Turns.Add(turn);
+            foreach (var interaction in conversation.Interactions)
+            {
+                chatRequest.Turns.Add(interaction.ToTurn());
+            }
         }
 
         // prepare to receive the async response
-        string? activityId = null;
         StringBuilder summaries = new();
         var citations = new Dictionary<string, Citation>();
 
         // send the request
-        using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
+        using var streamingCall = this.channel.Client.Chat(chatRequest, cancellationToken: cancellationToken);
 
         // start the counters
         DateTime? started = null;
@@ -173,33 +187,33 @@ public class ChatBot(
 
         // start receiving the async responses
         var initMsgResponse = false;
-        await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
+        await foreach (var chatResponse in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
         {
-            var status = response.Status;
+            var status = chatResponse.Status;
 
             // append the summary with any message
-            if (!string.IsNullOrEmpty(response.Msg))
+            if (!string.IsNullOrEmpty(chatResponse.Msg))
             {
                 if (started is not null && !initMsgResponse)
                 {
                     initMsgResponse = true;
                     DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
                 }
-                summaries.Append(response.Msg);
+                summaries.Append(chatResponse.Msg);
             }
 
             // add any citations that were found in the response
-            if (response.Citations is not null)
+            if (chatResponse.Citations is not null)
             {
-                foreach (var citation in response.Citations)
+                foreach (var citation in chatResponse.Citations)
                 {
                     citations.TryAdd(citation.Ref, citation);
                 }
             }
 
             // the LLM may have determined the user's intent is something other than what the LLM can provide
-            this.logger.LogWarning("intent is {intent}", response.Intent);
-            switch (response.Intent)
+            this.logger.LogWarning("intent is {intent}", chatResponse.Intent);
+            switch (chatResponse.Intent)
             {
                 case Intent.Unset:
                 case Intent.InDomain:
@@ -234,7 +248,7 @@ public class ChatBot(
                 activityId,
                 status,
                 summaries.ToString(),
-                response.Citations?.ToList(),
+                chatResponse.Citations?.ToList(),
                 turnContext,
                 cancellationToken);
         }
