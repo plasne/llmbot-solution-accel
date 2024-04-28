@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Text;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 public class ChatService(IServiceProvider serviceProvider)
     : ChatServiceBase
@@ -16,7 +17,8 @@ public class ChatService(IServiceProvider serviceProvider)
     private class Buffer
     {
         public string? Status { get; set; }
-        public StringBuilder Text { get; } = new();
+        public StringBuilder Message { get; } = new();
+        public Intent Intent { get; set; }
         public List<Citation> Citations { get; } = [];
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
@@ -42,6 +44,8 @@ public class ChatService(IServiceProvider serviceProvider)
         var context = scope.ServiceProvider.GetRequiredService<IContext>();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
 
+        var logger = this.serviceProvider.GetRequiredService<ILogger<ChatService>>();
+
         // setup buffering
         var buffer = new Buffer();
         var flush = new Func<Task>(async () =>
@@ -52,10 +56,15 @@ public class ChatService(IServiceProvider serviceProvider)
             {
                 response.Status = buffer.Status;
             }
-            if (buffer.Text.Length > 0)
+            if (buffer.Message.Length > 0)
             {
-                response.Msg = buffer.Text.ToString();
-                buffer.Text.Clear();
+                response.Msg = buffer.Message.ToString();
+                buffer.Message.Clear();
+            }
+            if (buffer.Intent != Intent.Unset)
+            {
+                response.Intent = buffer.Intent;
+                buffer.Intent = Intent.Unset;
             }
             if (buffer.Citations.Count > 0)
             {
@@ -79,10 +88,18 @@ public class ChatService(IServiceProvider serviceProvider)
 
         // add stream event
         // NOTE: we should always end on a status change or it isn't flushed
-        context.OnStream += async (status, message, citations, promptTokens, completionTokens) =>
+        context.OnStream += async (status, message, intent, citations, promptTokens, completionTokens) =>
         {
-            // buffer
-            buffer.Text.Append(message);
+            // add to the buffer
+            buffer.Message.Append(message);
+            if (intent != Intent.Unset)
+            {
+                buffer.Intent = intent;
+            }
+            if (citations is not null)
+            {
+                buffer.Citations.AddRange(citations);
+            }
             buffer.PromptTokens += promptTokens;
             buffer.CompletionTokens += completionTokens;
 
@@ -94,24 +111,10 @@ public class ChatService(IServiceProvider serviceProvider)
             }
 
             // send if the buffer is full
-            if (buffer.Text.Length >= request.MinCharsToStream)
+            if (buffer.Message.Length >= request.MinCharsToStream)
             {
                 await flush();
             }
-        };
-
-        // add stream intent event
-        context.OnTerminate += async (intent, message) =>
-        {
-            // build the response
-            var response = new ChatResponse
-            {
-                Intent = intent,
-                Msg = message ?? "",
-            };
-
-            // send the message
-            await responseStream.WriteAsync(response);
         };
 
         // execute the workflow

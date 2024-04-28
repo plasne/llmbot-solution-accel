@@ -182,6 +182,7 @@ public class ChatBot(
             // start receiving the async responses
             await foreach (var chatResponse in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
             {
+                this.logger.LogWarning(JsonConvert.SerializeObject(chatResponse));
                 var status = chatResponse.Status;
 
                 // append the summary with any message
@@ -212,26 +213,31 @@ public class ChatBot(
                 switch (chatResponse.Intent)
                 {
                     case Intent.Unset:
+                        break;
                     case Intent.InDomain:
-                        // no need to do anything, these are good intents
+                        botResponseInteraction.Intent = Intents.IN_DOMAIN;
                         break;
                     case Intent.Unknown:
                     case Intent.Greeting:
+                        botResponseInteraction.Intent = Intents.GREETING;
                         status = this.config.FINAL_STATUS;
                         summaries.Clear();
                         summaries.Append("Hello and welcome! If you aren't sure what I can do type `/help`.");
                         break;
                     case Intent.OutOfDomain:
+                        botResponseInteraction.Intent = Intents.OUT_OF_DOMAIN;
                         status = this.config.FINAL_STATUS;
                         summaries.Clear();
                         summaries.Append("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
                         break;
                     case Intent.Goodbye:
+                        botResponseInteraction.Intent = Intents.GOODBYE;
                         status = this.config.FINAL_STATUS;
                         summaries.Clear();
                         summaries.Append("Goodbye!");
                         break;
                     case Intent.TopicChange:
+                        botResponseInteraction.Intent = Intents.TOPIC_CHANGE;
                         status = this.config.FINAL_STATUS;
                         summaries.Clear();
                         summaries.Append("Changing topic..."); // TODO: implement and consider message
@@ -245,7 +251,7 @@ public class ChatBot(
             DiagnosticService.RecordTimeToLastResponse(botResponseInteraction.TimeToLastResponse);
 
             // write the generated message
-            botResponseInteraction.State = States.Unmodified;
+            botResponseInteraction.State = States.UNMODIFIED;
             botResponseInteraction.Message = summaries.ToString();
             await this.historyService.CompleteGenerationAsync(botResponseInteraction);
         }
@@ -257,7 +263,7 @@ public class ChatBot(
         }
         catch (Exception)
         {
-            botResponseInteraction.State = States.Failed;
+            botResponseInteraction.State = States.FAILED;
             botResponseInteraction.Message = summaries.ToString();
             await this.historyService.CompleteGenerationAsync(botResponseInteraction);
             throw;

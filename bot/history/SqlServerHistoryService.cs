@@ -97,7 +97,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
 
                         SET @conversationId = ISNULL(@conversationId, NEWID());
 
-                        IF @lastState = 'generating'
+                        IF @lastState = 'GENERATING'
                             THROW 50100, 'already generating a response', 1
 
                         INSERT INTO [dbo].[History]
@@ -110,11 +110,11 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                     command.Parameters.AddWithValue("@res_activityId", response.ActivityId);
                     command.Parameters.AddWithValue("@req_userId", request.UserId);
                     command.Parameters.AddWithValue("@res_userId", response.UserId);
-                    command.Parameters.AddWithValue("@req_role", request.Role.ToString().ToLower());
-                    command.Parameters.AddWithValue("@res_role", response.Role.ToString().ToLower());
+                    command.Parameters.AddWithValue("@req_role", request.Role.ToString().ToUpper());
+                    command.Parameters.AddWithValue("@res_role", response.Role.ToString().ToUpper());
                     command.Parameters.AddWithValue("@req_message", request.Message);
-                    command.Parameters.AddWithValue("@req_state", request.State.ToString().ToLower());
-                    command.Parameters.AddWithValue("@res_state", response.State.ToString().ToLower());
+                    command.Parameters.AddWithValue("@req_state", request.State.ToString().ToUpper());
+                    command.Parameters.AddWithValue("@res_state", response.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@expiry", DateTime.UtcNow.AddDays(90));
                     await command.ExecuteNonQueryAsync();
                     await transaction.CommitAsync();
@@ -149,7 +149,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                 command.Transaction = transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [Message] = @message, [State] = @state,
+                    SET [Message] = @message, [State] = @state, [Intent] = @intent,
                         [PromptTokenCount] = @promptTokenCount, [CompletionTokenCount] = @completionTokenCount,
                         [TimeToFirstResponse] = @timeToFirstResponse, [TimeToLastResponse] = @timeToLastResponse
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
@@ -157,7 +157,8 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                 command.Parameters.AddWithValue("@userId", response.UserId);
                 command.Parameters.AddWithValue("@activityId", response.ActivityId);
                 command.Parameters.AddWithValue("@message", response.Message);
-                command.Parameters.AddWithValue("@state", response.State.ToString().ToLower());
+                command.Parameters.AddWithValue("@state", response.State.ToString().ToUpper());
+                command.Parameters.AddWithValue("@intent", response.Intent.ToString().ToUpper());
                 command.Parameters.AddWithValue("@promptTokenCount", response.PromptTokenCount);
                 command.Parameters.AddWithValue("@completionTokenCount", response.CompletionTokenCount);
                 command.Parameters.AddWithValue("@timeToFirstResponse", response.TimeToFirstResponse);
@@ -220,7 +221,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         FROM [dbo].[History]
                         WHERE [UserId] = @userId
                         ORDER BY [Id] DESC)
-                    AND [State] IN ('edited', 'stopped', 'unmodified')
+                    AND [State] IN ('EDITED', 'STOPPED', 'UNMODIFIED')
                     ORDER BY [Id] ASC
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
@@ -238,9 +239,9 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         ConversationId = reader.GetGuid(conversationIdOrdinal),
                         ActivityId = reader.GetString(activityIdOrdinal),
                         UserId = reader.GetString(userIdOrdinal),
-                        Role = reader.GetString(roleOrdinal).AsEnum(() => Roles.Unknown),
+                        Role = reader.GetString(roleOrdinal).AsEnum(() => Roles.UNKNOWN),
                         Message = reader.GetString(messageOrdinal),
-                        State = reader.GetString(stateOrdinal).AsEnum(() => States.Unknown),
+                        State = reader.GetString(stateOrdinal).AsEnum(() => States.UNKNOWN),
                     };
                     conversation.Interactions.Add(interaction);
                 }
@@ -290,7 +291,8 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                             [UserId] VARCHAR(50) NOT NULL,
                             [Role] VARCHAR(20) NOT NULL,
                             [Message] NVARCHAR(MAX) NULL,
-                            [State] NVARCHAR(20) NOT NULL,
+                            [Intent] VARCHAR(20) NULL,
+                            [State] VARCHAR(20) NOT NULL,
                             [Rating] VARCHAR(10) NULL,
                             [Comment] NVARCHAR(MAX) NULL,
                             [Created] DATETIME DEFAULT GETDATE(),

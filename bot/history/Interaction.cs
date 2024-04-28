@@ -3,21 +3,31 @@ using DistributedChat;
 
 public enum Roles
 {
-    Unknown = 0,
-    System = 1,
-    User = 2,
-    Assistant = 3,
+    UNKNOWN = 0,
+    SYSTEM = 1,
+    USER = 2,
+    ASSISTANT = 3,
 }
 
 public enum States
 {
-    Unknown = 0,
-    Unmodified = 1,
-    Generating = 2,
-    Stopped = 3,
-    Edited = 4,
-    Deleted = 5,
-    Failed = 6,
+    UNKNOWN = 0,
+    UNMODIFIED = 1,
+    GENERATING = 2,
+    STOPPED = 3,
+    EDITED = 4,
+    DELETED = 5,
+    FAILED = 6,
+}
+
+public enum Intents
+{
+    UNKNOWN = 0,
+    GREETING = 1,
+    GOODBYE = 2,
+    IN_DOMAIN = 3,
+    OUT_OF_DOMAIN = 4,
+    TOPIC_CHANGE = 5,
 }
 
 public class Interaction
@@ -31,6 +41,8 @@ public class Interaction
     public Roles Role { get; set; }
 
     public string? Message { get; set; }
+
+    public Intents Intent { get; set; }
 
     public States State { get; set; }
 
@@ -57,11 +69,11 @@ public class Interaction
 
     public static Interaction CreateUserRequest(string activityId, string userId, string message)
     {
-        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.User, Message = message, State = States.Unmodified };
+        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.USER, Message = message, State = States.UNMODIFIED };
     }
 
     public static Interaction CreateBotResponse(string activityId, string userId)
     {
-        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.Assistant, State = States.Generating };
+        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.ASSISTANT, State = States.GENERATING };
     }
 }

@@ -19,12 +19,12 @@ public abstract class HistoryServiceBase
             throw new Exception("UserId must be provided.");
         }
 
-        if (interaction.Role == Roles.Unknown)
+        if (interaction.Role == Roles.UNKNOWN)
         {
             throw new Exception("Role must be specified.");
         }
 
-        if (interaction.State != States.Unmodified && interaction.State != States.Generating)
+        if (interaction.State != States.UNMODIFIED && interaction.State != States.GENERATING)
         {
             throw new Exception("State must be either Unmodified or Generating.");
         }
@@ -55,7 +55,7 @@ public abstract class HistoryServiceBase
             throw new Exception("UserId must be provided.");
         }
 
-        if (interaction.State != States.Unmodified && interaction.State != States.Stopped && interaction.State != States.Failed)
+        if (interaction.State != States.UNMODIFIED && interaction.State != States.STOPPED && interaction.State != States.FAILED)
         {
             throw new Exception("State must be either Unmodified, Stopped, or Failed.");
         }
