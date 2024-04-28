@@ -2,6 +2,7 @@ using System;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
 using Polly;
@@ -69,7 +70,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             .ExecuteAsync(onExecuteAsync);
     }
 
-    public async Task StartGenerationAsync(Interaction request, Interaction response)
+    public async Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry)
     {
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
@@ -115,7 +116,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                     command.Parameters.AddWithValue("@req_message", request.Message);
                     command.Parameters.AddWithValue("@req_state", request.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@res_state", response.State.ToString().ToUpper());
-                    command.Parameters.AddWithValue("@expiry", DateTime.UtcNow.AddDays(90));
+                    command.Parameters.AddWithValue("@expiry", DateTime.UtcNow + expiry);
                     await command.ExecuteNonQueryAsync();
                     await transaction.CommitAsync();
                     this.logger.LogInformation("successfully inserted interaction for user {u} into the history database.", request.UserId);

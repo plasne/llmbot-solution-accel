@@ -1,10 +1,11 @@
 using System.Threading.Tasks;
+using Iso8601DurationHelper;
 
 public interface IHistoryService
 {
     Task<Conversation> GetCurrentConversationAsync(string userId);
 
-    Task StartGenerationAsync(Interaction request, Interaction response);
+    Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry);
 
     Task CompleteGenerationAsync(Interaction response);
 

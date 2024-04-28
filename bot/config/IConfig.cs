@@ -1,3 +1,5 @@
+using Iso8601DurationHelper;
+
 public interface IConfig
 {
     int PORT { get; }
@@ -8,6 +10,7 @@ public interface IConfig
     string SQL_SERVER_HISTORY_SERVICE_CONNSTRING { get; }
     int SQL_SERVER_MAX_RETRY_ATTEMPTS { get; }
     int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
+    Duration DEFAULT_RETENTION { get; }
 
     void Validate();
 }

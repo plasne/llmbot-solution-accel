@@ -50,10 +50,6 @@ public class Interaction
 
     public string? Comment { get; set; }
 
-    public DateTime Created { get; set; }
-
-    public DateTime Expiry { get; set; }
-
     public int PromptTokenCount { get; set; }
 
     public int CompletionTokenCount { get; set; }

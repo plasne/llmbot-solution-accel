@@ -1,3 +1,4 @@
+using Iso8601DurationHelper;
 using NetBricks;
 
 public class Config : IConfig
@@ -15,6 +16,7 @@ public class Config : IConfig
         this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING = this.config.Get<string>("SQL_SERVER_HISTORY_SERVICE_CONNSTRING");
         this.SQL_SERVER_MAX_RETRY_ATTEMPTS = this.config.Get<string>("SQL_SERVER_MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SQL_SERVER_SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SQL_SERVER_SECONDS_BETWEEN_RETRIES").AsInt(() => 3);
+        this.DEFAULT_RETENTION = this.config.Get<string>("DEFAULT_RETENTION").AsDuration(() => Duration.FromMonths(3));
     }
 
     public int PORT { get; }
@@ -33,6 +35,8 @@ public class Config : IConfig
 
     public int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
 
+    public Duration DEFAULT_RETENTION { get; set; }
+
     public void Validate()
     {
         this.config.Require("PORT", PORT);
@@ -43,6 +47,7 @@ public class Config : IConfig
         this.config.Optional("SQL_SERVER_HISTORY_SERVICE_CONNSTRING", this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING, hideValue: true);
         this.config.Optional("SQL_SERVER_MAX_RETRY_ATTEMPTS", this.SQL_SERVER_MAX_RETRY_ATTEMPTS);
         this.config.Optional("SQL_SERVER_SECONDS_BETWEEN_RETRIES", this.SQL_SERVER_SECONDS_BETWEEN_RETRIES);
+        this.config.Optional("DEFAULT_RETENTION", this.DEFAULT_RETENTION.ToString());
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);

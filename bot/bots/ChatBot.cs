@@ -163,7 +163,7 @@ public class ChatBot(
         try
         {
             // start the conversation in history
-            await this.historyService.StartGenerationAsync(userRequestInteraction, botResponseInteraction);
+            await this.historyService.StartGenerationAsync(userRequestInteraction, botResponseInteraction, this.config.DEFAULT_RETENTION);
 
             // get the history
             var conversation = await this.historyService.GetCurrentConversationAsync(userId);
