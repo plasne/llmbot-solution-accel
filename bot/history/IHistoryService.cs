@@ -6,6 +6,8 @@ public interface IHistoryService
 
     Task StartGenerationAsync(Interaction request, Interaction response);
 
+    Task CompleteGenerationAsync(Interaction response);
+
     Task DeleteLastInteractionsAsync(string userId, int count = 1);
 
     Task<Conversation> ChangeConversationTopicAsync(string userId);

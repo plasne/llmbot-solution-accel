@@ -5,13 +5,18 @@ using DistributedChat;
 
 public class Context : IContext
 {
-    public event Func<string?, string?, List<Citation>?, Task>? OnStream;
+    public event Func<string?, string?, List<Citation>?, int, int, Task>? OnStream;
     public event Func<Intent, string?, Task>? OnTerminate;
 
-    public Task Stream(string? status, string? message, List<Citation>? citations)
+    public Task Stream(
+        string? status = null,
+        string? message = null,
+        List<Citation>? citations = null,
+        int promptTokens = 0,
+        int completionTokens = 0)
     {
         return this.OnStream is not null
-            ? this.OnStream(status, message, citations)
+            ? this.OnStream(status, message, citations, promptTokens, completionTokens)
             : Task.CompletedTask;
     }
 

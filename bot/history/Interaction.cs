@@ -17,6 +17,7 @@ public enum States
     Stopped = 3,
     Edited = 4,
     Deleted = 5,
+    Failed = 6,
 }
 
 public class Interaction

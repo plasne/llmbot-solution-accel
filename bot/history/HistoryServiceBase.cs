@@ -42,4 +42,27 @@ public abstract class HistoryServiceBase
             throw new Exception("PromptTokenCount, CompletionTokenCount, TimeToFirstResponse, TimeToLastResponse must not be set in a new interaction.");
         }
     }
+
+    public void ValidateInteractionForCompleteGeneration(Interaction interaction)
+    {
+        if (string.IsNullOrEmpty(interaction.ActivityId))
+        {
+            throw new Exception("ActivityId must be provided.");
+        }
+
+        if (string.IsNullOrEmpty(interaction.UserId))
+        {
+            throw new Exception("UserId must be provided.");
+        }
+
+        if (interaction.State != States.Unmodified && interaction.State != States.Stopped && interaction.State != States.Failed)
+        {
+            throw new Exception("State must be either Unmodified, Stopped, or Failed.");
+        }
+
+        if (interaction.Rating is not null || interaction.Comment is not null)
+        {
+            throw new Exception("Feedback (Rating/Comment) must not be assigned to a new interaction.");
+        }
+    }
 }

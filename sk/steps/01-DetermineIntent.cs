@@ -56,7 +56,12 @@ public class DetermineIntent(
         );
 
         // add prompt token count reporting using sharpToken
-        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, this.GetType().Name, this.logger));
+        var promptTokenCount = 0;
+        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
+        {
+            promptTokenCount = count;
+            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME, this.GetType().Name);
+        }));
 
         // build the history
         ChatHistory history = input.History?.ToChatHistory() ?? [];
@@ -81,7 +86,7 @@ public class DetermineIntent(
             completionTokenCount = encoding.CountTokens(response.ToString());
             if (completionTokenCount != usage.CompletionTokens)
             {
-                this.LogWarning("Completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
+                this.LogWarning("completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
             }
             DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
         }
@@ -97,6 +102,12 @@ public class DetermineIntent(
         // NOTE: this could maybe be a retry (transient fault)
         var intent = JsonConvert.DeserializeObject<DeterminedIntent>(response.ToString())
             ?? throw new HttpException(500, "Intent could not be deserialized.");
+
+        // if in debug mode, log the intent
+        this.logger.LogDebug(response.ToString());
+
+        // send token counts
+        await this.context.Stream(promptTokens: promptTokenCount, completionTokens: completionTokenCount);
 
         // record to context
         return intent;

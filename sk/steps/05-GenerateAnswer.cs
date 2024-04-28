@@ -57,7 +57,12 @@ public partial class GenerateAnswer(
         );
 
         // add prompt token count reporting
-        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, this.GetType().Name, this.logger));
+        var promptTokenCount = 0;
+        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
+        {
+            promptTokenCount = count;
+            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME, this.GetType().Name);
+        }));
 
         // build the history
         ChatHistory history = input.Data?.History?.ToChatHistory() ?? [];
@@ -118,7 +123,7 @@ public partial class GenerateAnswer(
 
         // send response
         List<Citation> citationList = [.. citations.Values];
-        await this.context.Stream("Generated.", citations: citationList);
+        await this.context.Stream("Generated.", citations: citationList, promptTokens: promptTokenCount, completionTokens: completionTokenCount);
         return new Answer { Text = buffer.ToString(), Citations = citationList };
     }
 

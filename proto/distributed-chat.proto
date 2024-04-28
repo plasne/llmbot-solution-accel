@@ -38,4 +38,6 @@ message ChatResponse {
   string status = 2;
   string msg = 3;
   repeated Citation citations = 4;
+  int32 promptTokens = 5;
+  int32 completionTokens = 6;
 }
