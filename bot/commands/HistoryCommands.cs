@@ -4,8 +4,11 @@ using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 
-public class HistoryCommands : ICommands
+public class HistoryCommands(IConfig config, IHistoryService historyService) : ICommands
 {
+    private readonly IConfig config = config;
+    private readonly IHistoryService historyService = historyService;
+
     public Dictionary<string, string> Commands => new()
     {
         { "/new", "starts a new conversation (your chat history will no longer be considered)." },
@@ -16,9 +19,23 @@ public class HistoryCommands : ICommands
     };
 
 
-    public Task<bool> Try(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken = default)
+    public async Task<bool> Try(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken = default)
     {
         // TODO: write these after the history service
-        return Task.FromResult(false);
+        if (turnContext.Activity.Text == "/new")
+        {
+            // write a topic change to the history service
+            var userId = turnContext.Activity.From.AadObjectId;
+            var changeTopic = Interaction.CreateTopicChange(turnContext.Activity.Id, userId);
+            await this.historyService.ChangeConversationTopicAsync(changeTopic, this.config.DEFAULT_RETENTION);
+
+            // confirm the topic change to the user
+            var activity = MessageFactory.Text("Let's start a new conversation.");
+            await turnContext.SendActivityAsync(activity, cancellationToken);
+
+            return true;
+        }
+
+        return false;
     }
 }

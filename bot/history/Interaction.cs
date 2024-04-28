@@ -18,6 +18,7 @@ public enum States
     EDITED = 4,
     DELETED = 5,
     FAILED = 6,
+    EMPTY = 7,
 }
 
 public enum Intents
@@ -71,5 +72,10 @@ public class Interaction
     public static Interaction CreateBotResponse(string activityId, string userId)
     {
         return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.ASSISTANT, State = States.GENERATING };
+    }
+
+    public static Interaction CreateTopicChange(string activityId, string userId)
+    {
+        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.USER, Intent = Intents.TOPIC_CHANGE, State = States.EMPTY };
     }
 }

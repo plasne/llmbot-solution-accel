@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Iso8601DurationHelper;
 
 public static class Ext
@@ -10,5 +11,11 @@ public static class Ext
             return duration;
         }
         return dflt();
+    }
+
+    public static void ResetTo(this StringBuilder sb, string value)
+    {
+        sb.Clear();
+        sb.Append(value);
     }
 }

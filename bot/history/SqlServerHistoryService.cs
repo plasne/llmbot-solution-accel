@@ -2,9 +2,11 @@ using System;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using Humanizer;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
+using Newtonsoft.Json;
 using Polly;
 
 public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistoryService> logger)
@@ -106,6 +108,8 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         VALUES
                             (@conversationId, @req_activityId, @req_userId, @req_role, @req_message, @req_state, @expiry),
                             (@conversationId, @res_activityId, @res_userId, @res_role, NULL, @res_state, @expiry);
+
+                        SELECT @conversationId;
                     ";
                     command.Parameters.AddWithValue("@req_activityId", request.ActivityId);
                     command.Parameters.AddWithValue("@res_activityId", response.ActivityId);
@@ -117,7 +121,13 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                     command.Parameters.AddWithValue("@req_state", request.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@res_state", response.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@expiry", DateTime.UtcNow + expiry);
-                    await command.ExecuteNonQueryAsync();
+                    using (var reader = await command.ExecuteReaderAsync())
+                    {
+                        await reader.ReadAsync();
+                        var conversationId = reader.GetGuid(0);
+                        request.ConversationId = conversationId;
+                        response.ConversationId = conversationId;
+                    }
                     await transaction.CommitAsync();
                     this.logger.LogInformation("successfully inserted interaction for user {u} into the history database.", request.UserId);
                 }, (ex, _) =>
@@ -150,14 +160,15 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                 command.Transaction = transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [Message] = @message, [State] = @state, [Intent] = @intent,
+                    SET [ConversationId] = @conversationId, [Message] = @message, [State] = @state, [Intent] = @intent,
                         [PromptTokenCount] = @promptTokenCount, [CompletionTokenCount] = @completionTokenCount,
                         [TimeToFirstResponse] = @timeToFirstResponse, [TimeToLastResponse] = @timeToLastResponse
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
+                command.Parameters.AddWithValue("@conversationId", response.ConversationId);
                 command.Parameters.AddWithValue("@userId", response.UserId);
                 command.Parameters.AddWithValue("@activityId", response.ActivityId);
-                command.Parameters.AddWithValue("@message", response.Message);
+                command.Parameters.AddWithValue("@message", response.Message ?? "");
                 command.Parameters.AddWithValue("@state", response.State.ToString().ToUpper());
                 command.Parameters.AddWithValue("@intent", response.Intent.ToString().ToUpper());
                 command.Parameters.AddWithValue("@promptTokenCount", response.PromptTokenCount);
@@ -174,9 +185,41 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    public Task<Conversation> ChangeConversationTopicAsync(string userId)
+    // person issues /new
+    // person says "new topic"
+    // person says "new topic. blah blah blah"
+
+    public async Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry)
     {
-        throw new System.NotImplementedException();
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to change conversation for user {u} in the history database...", changeTopic.UserId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
+                using var command = connection.CreateCommand();
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    INSERT INTO [dbo].[History]
+                        ([ConversationId], [ActivityId], [UserId], [Role], [State], [Intent], [Expiry])
+                    VALUES
+                        (NEWID(), @activityId, @userId, @role, @state, @intent, @expiry);
+                ";
+                command.Parameters.AddWithValue("@activityId", changeTopic.ActivityId);
+                command.Parameters.AddWithValue("@userId", changeTopic.UserId);
+                command.Parameters.AddWithValue("@role", changeTopic.Role.ToString().ToUpper());
+                command.Parameters.AddWithValue("@state", changeTopic.State.ToString().ToUpper());
+                command.Parameters.AddWithValue("@intent", changeTopic.Intent.ToString().ToUpper());
+                command.Parameters.AddWithValue("@expiry", DateTime.UtcNow + expiry);
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully changed conversation for user {u} in the history database.", changeTopic.UserId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "verifying or creating the History table raised the following SQL transient exception...");
+                return Task.CompletedTask;
+            });
     }
 
     public Task ClearFeedbackAsync(string userId)
@@ -241,9 +284,12 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         ActivityId = reader.GetString(activityIdOrdinal),
                         UserId = reader.GetString(userIdOrdinal),
                         Role = reader.GetString(roleOrdinal).AsEnum(() => Roles.UNKNOWN),
-                        Message = reader.GetString(messageOrdinal),
                         State = reader.GetString(stateOrdinal).AsEnum(() => States.UNKNOWN),
                     };
+                    if (!await reader.IsDBNullAsync(messageOrdinal))
+                    {
+                        interaction.Message = reader.GetString(messageOrdinal);
+                    }
                     conversation.Interactions.Add(interaction);
                 }
                 conversation.Id = conversation.Interactions.FirstOrDefault()?.ConversationId;

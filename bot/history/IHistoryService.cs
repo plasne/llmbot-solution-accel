@@ -11,7 +11,7 @@ public interface IHistoryService
 
     Task DeleteLastInteractionsAsync(string userId, int count = 1);
 
-    Task<Conversation> ChangeConversationTopicAsync(string userId);
+    Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry);
 
     Task RateMessageAsync(string userId, string rating);
 
