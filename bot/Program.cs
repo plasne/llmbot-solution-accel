@@ -45,6 +45,11 @@ if (!string.IsNullOrEmpty(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING))
     Console.WriteLine("ADDING SERVICE: SqlServerHistoryService");
     builder.Services.AddSingleton<IHistoryService, SqlServerHistoryService>();
 }
+else
+{
+    Console.WriteLine("ADDING SERVICE: LocalMemoryHistoryService");
+    builder.Services.AddSingleton<IHistoryService, LocalMemoryHistoryService>();
+}
 
 // add bot framework authentication
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();

@@ -262,7 +262,7 @@ public class ChatBot(
                             botResponseInteraction.ConversationId = Guid.NewGuid();
                             botResponseInteraction.Intent = Intents.TOPIC_CHANGE;
                             botResponseInteraction.State = States.EMPTY;
-                            if (chatResponse.Msg is not null)
+                            if (!string.IsNullOrEmpty(chatResponse.Msg))
                             {
                                 userRequests.Enqueue(chatResponse.Msg);
                             }

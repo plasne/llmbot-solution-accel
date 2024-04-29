@@ -76,6 +76,6 @@ public class Interaction
 
     public static Interaction CreateTopicChange(string activityId, string userId)
     {
-        return new Interaction { ActivityId = activityId, UserId = userId, Role = Roles.USER, Intent = Intents.TOPIC_CHANGE, State = States.EMPTY };
+        return new Interaction { ConversationId = Guid.NewGuid(), ActivityId = activityId, UserId = userId, Role = Roles.USER, Intent = Intents.TOPIC_CHANGE, State = States.EMPTY };
     }
 }
