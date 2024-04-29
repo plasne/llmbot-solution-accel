@@ -2,11 +2,9 @@ using System;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
-using Humanizer;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
-using Newtonsoft.Json;
 using Polly;
 
 public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistoryService> logger)
@@ -185,12 +183,9 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    // person issues /new
-    // person says "new topic"
-    // person says "new topic. blah blah blah"
-
     public async Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry)
     {
+        base.ValidateInteractionForTopicChange(changeTopic);
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -204,8 +199,9 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                     INSERT INTO [dbo].[History]
                         ([ConversationId], [ActivityId], [UserId], [Role], [State], [Intent], [Expiry])
                     VALUES
-                        (NEWID(), @activityId, @userId, @role, @state, @intent, @expiry);
+                        (@conversationId, @activityId, @userId, @role, @state, @intent, @expiry);
                 ";
+                command.Parameters.AddWithValue("@conversationId", changeTopic.ConversationId);
                 command.Parameters.AddWithValue("@activityId", changeTopic.ActivityId);
                 command.Parameters.AddWithValue("@userId", changeTopic.UserId);
                 command.Parameters.AddWithValue("@role", changeTopic.Role.ToString().ToUpper());
@@ -266,6 +262,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         WHERE [UserId] = @userId
                         ORDER BY [Id] DESC)
                     AND [State] IN ('EDITED', 'STOPPED', 'UNMODIFIED')
+                    AND [Expiry] > GETDATE()
                     ORDER BY [Id] ASC
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
