@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -15,6 +16,7 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using Newtonsoft.Json;
 
 public class ChatBot(
@@ -22,7 +24,7 @@ public class ChatBot(
     IConfig config,
     IServiceProvider serviceProvider,
     ICardProvider cardProvider,
-    HistoryService historyService,
+    IHistoryService historyService,
     BotChannel channel,
     ILogger<ChatBot> logger)
     : ActivityHandler
@@ -31,17 +33,17 @@ public class ChatBot(
     private readonly IConfig config = config;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly ICardProvider cardProvider = cardProvider;
-    private readonly HistoryService historyService = historyService;
+    private readonly IHistoryService historyService = historyService;
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
-    private readonly string chatId = System.Guid.NewGuid().ToString();
+    private readonly string chatId = Guid.NewGuid().ToString();
 
     public static string StartTimeKey = "http-request-start-time";
 
     private async Task<string> Dispatch(
-        string chatId,
         string? activityId,
-        string status,
+        bool useAdaptiveCard,
+        string? status,
         string reply,
         List<Citation>? citations,
         ITurnContext<IMessageActivity> turnContext,
@@ -67,16 +69,26 @@ public class ChatBot(
             }
         }
 
-        // build the adaptive card
-        var template = await cardProvider.GetTemplate("response");
-        var isGenerated = status == this.config.FINAL_STATUS;
-        var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
-        var attachment = new Attachment()
+        // build the activity
+        IMessageActivity activity;
+        if (useAdaptiveCard)
         {
-            ContentType = AdaptiveCard.ContentType,
-            Content = JsonConvert.DeserializeObject(template.Expand(data)),
-        };
-        var activity = MessageFactory.Attachment(attachment);
+            // build the adaptive card
+            var template = await cardProvider.GetTemplate("response");
+            var isGenerated = status == this.config.FINAL_STATUS;
+            var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
+            var attachment = new Attachment()
+            {
+                ContentType = AdaptiveCard.ContentType,
+                Content = JsonConvert.DeserializeObject(template.Expand(data)),
+            };
+            activity = MessageFactory.Attachment(attachment);
+        }
+        else
+        {
+            // reply as plain text
+            activity = MessageFactory.Text(reply);
+        }
 
         // send the activity if new
         if (string.IsNullOrEmpty(activityId))
@@ -130,6 +142,13 @@ public class ChatBot(
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
+        // start the counters
+        var started = httpContextAccessor.HttpContext is not null
+            && httpContextAccessor.HttpContext.Items.TryGetValue(StartTimeKey, out var requestStartTime)
+            && requestStartTime is DateTime requestStart
+            ? requestStart
+            : DateTime.UtcNow;
+
         // see if this is a command
         if (await TryAsCommand(turnContext, cancellationToken))
         {
@@ -140,107 +159,157 @@ public class ChatBot(
         var text = turnContext.Activity.Text;
         if (string.IsNullOrEmpty(text))
         {
-            return;
+            throw new Exception("no text was found in the activity from the user.");
         }
 
-        // get the history
+        // get the user
         var userId = turnContext.Activity.From.AadObjectId;
-        this.historyService.Add(userId, "user", text);
-        var request = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
-        foreach (var turn in this.historyService.Get(userId))
+        if (string.IsNullOrEmpty(userId))
         {
-            request.Turns.Add(turn);
+            throw new Exception("no user identity was found in the activity from the user.");
         }
 
-        // send the typing indicator
-        await turnContext.SendActivityAsync(new Microsoft.Bot.Schema.Activity { Type = ActivityTypes.Typing }, cancellationToken);
-
-        // prepare to receive the async response
-        string? activityId = null;
-        StringBuilder summaries = new();
-        var citations = new Dictionary<string, Citation>();
-
-        // send the request
-        using var streamingCall = this.channel.Client.Chat(request, cancellationToken: cancellationToken);
-
-        // start the counters
-        DateTime? started = null;
-        if (httpContextAccessor.HttpContext is not null &&
-            httpContextAccessor.HttpContext.Items.TryGetValue(StartTimeKey, out var requestStartTime) && requestStartTime is DateTime start)
+        // try all user requests; this is always a single item, except when there is a topic change with a follow-up question
+        var userRequests = new Queue<string>();
+        userRequests.Enqueue(text);
+        while (userRequests.Count > 0)
         {
-            started = start;
-        }
+            var request = userRequests.Dequeue();
 
-        // start receiving the async responses
-        var initMsgResponse = false;
-        await foreach (var response in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
-        {
-            var status = response.Status;
+            // send the "connection" message
+            var activityId = await Dispatch(null, true, "Connecting to assistant...", string.Empty, null, turnContext, cancellationToken);
 
-            // append the summary with any message
-            if (!string.IsNullOrEmpty(response.Msg))
+            // once history is started, it needs to catch errors so it isn't stuck generating
+            var userRequestInteraction = Interaction.CreateUserRequest(turnContext.Activity.Id, userId, request);
+            var botResponseInteraction = Interaction.CreateBotResponse(activityId, userId);
+            StringBuilder summaries = new();
+            var citations = new Dictionary<string, Citation>();
+            try
             {
-                if (started is not null && !initMsgResponse)
+                // start the conversation in history
+                await this.historyService.StartGenerationAsync(userRequestInteraction, botResponseInteraction, this.config.DEFAULT_RETENTION);
+                botResponseInteraction.State = States.UNMODIFIED;
+
+                // get the history
+                var conversation = await this.historyService.GetCurrentConversationAsync(userId);
+                var chatRequest = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
+                if (conversation.Interactions is not null)
                 {
-                    initMsgResponse = true;
-                    DiagnosticService.RecordTimeToFirstResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
+                    foreach (var interaction in conversation.Interactions.Where(x => !string.IsNullOrEmpty(x.Message)))
+                    {
+                        chatRequest.Turns.Add(interaction.ToTurn());
+                    }
                 }
-                summaries.Append(response.Msg);
-            }
 
-            // add any citations that were found in the response
-            if (response.Citations is not null)
-            {
-                foreach (var citation in response.Citations)
+                // send the request
+                using var streamingCall = this.channel.Client.Chat(chatRequest, cancellationToken: cancellationToken);
+
+                // start receiving the async responses
+                await foreach (var chatResponse in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
                 {
-                    citations.TryAdd(citation.Ref, citation);
+                    var status = chatResponse.Status;
+
+                    // append the summary with any message
+                    if (!string.IsNullOrEmpty(chatResponse.Msg))
+                    {
+                        if (botResponseInteraction.TimeToFirstResponse == 0)
+                        {
+                            botResponseInteraction.TimeToFirstResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
+                            DiagnosticService.RecordTimeToFirstResponse(botResponseInteraction.TimeToFirstResponse);
+                        }
+                        summaries.Append(chatResponse.Msg);
+                    }
+
+                    // add any citations that were found in the response
+                    if (chatResponse.Citations is not null)
+                    {
+                        foreach (var citation in chatResponse.Citations)
+                        {
+                            citations.TryAdd(citation.Ref, citation);
+                        }
+                    }
+
+                    // add any token counts
+                    botResponseInteraction.PromptTokenCount += chatResponse.PromptTokens;
+                    botResponseInteraction.CompletionTokenCount += chatResponse.CompletionTokens;
+
+                    // the LLM may have determined the user's intent is something other than what the LLM can provide
+                    var useAdaptiveCard = true;
+                    switch (chatResponse.Intent)
+                    {
+                        case Intent.Unset:
+                            break;
+                        case Intent.InDomain:
+                            botResponseInteraction.Intent = Intents.IN_DOMAIN;
+                            break;
+                        case Intent.Unknown:
+                        case Intent.Greeting:
+                            botResponseInteraction.Intent = Intents.GREETING;
+                            status = this.config.FINAL_STATUS;
+                            summaries.ResetTo("Hello and welcome! If you aren't sure what I can do type `/help`.");
+                            break;
+                        case Intent.OutOfDomain:
+                            botResponseInteraction.Intent = Intents.OUT_OF_DOMAIN;
+                            status = this.config.FINAL_STATUS;
+                            summaries.ResetTo("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
+                            break;
+                        case Intent.Goodbye:
+                            botResponseInteraction.Intent = Intents.GOODBYE;
+                            status = this.config.FINAL_STATUS;
+                            summaries.ResetTo("Goodbye!");
+                            break;
+                        case Intent.TopicChange:
+                            botResponseInteraction.ConversationId = Guid.NewGuid();
+                            botResponseInteraction.Intent = Intents.TOPIC_CHANGE;
+                            botResponseInteraction.State = States.EMPTY;
+                            if (chatResponse.Msg is not null)
+                            {
+                                userRequests.Enqueue(chatResponse.Msg);
+                            }
+                            status = this.config.FINAL_STATUS;
+                            useAdaptiveCard = false;
+                            summaries.ResetTo("Let's start a new conversation.");
+                            break;
+                    }
+
+                    // dispatch the response
+                    activityId = await Dispatch(
+                        activityId,
+                        useAdaptiveCard,
+                        status,
+                        summaries.ToString(),
+                        chatResponse.Citations?.ToList(),
+                        turnContext,
+                        cancellationToken);
                 }
-            }
+                botResponseInteraction.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
+                DiagnosticService.RecordTimeToLastResponse(botResponseInteraction.TimeToLastResponse);
 
-            // the LLM may have determined the user's intent is something other than what the LLM can provide
-            this.logger.LogWarning("intent is {intent}", response.Intent);
-            switch (response.Intent)
+                // write the generated message
+                botResponseInteraction.Message = botResponseInteraction.State != States.EMPTY
+                    ? summaries.ToString()
+                    : null;
+                await this.historyService.CompleteGenerationAsync(botResponseInteraction);
+            }
+            catch (AlreadyGeneratingException)
             {
-                case Intent.Unset:
-                case Intent.InDomain:
-                    // no need to do anything, these are good intents
-                    break;
-                case Intent.Unknown:
-                case Intent.Greeting:
-                    status = this.config.FINAL_STATUS;
-                    summaries.Clear();
-                    summaries.Append("Hello and welcome! If you aren't sure what I can do type `/help`.");
-                    break;
-                case Intent.OutOfDomain:
-                    status = this.config.FINAL_STATUS;
-                    summaries.Clear();
-                    summaries.Append("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
-                    break;
-                case Intent.Goodbye:
-                    status = this.config.FINAL_STATUS;
-                    summaries.Clear();
-                    summaries.Append("Goodbye!");
-                    break;
-                case Intent.TopicChange:
-                    status = this.config.FINAL_STATUS;
-                    summaries.Clear();
-                    summaries.Append("Changing topic..."); // TODO: implement and consider message
-                    break;
+                await Dispatch(
+                    activityId,
+                    false,
+                    null,
+                    "The assistant is already generating a response for you, please wait for that to complete or stop the generation.",
+                    null,
+                    turnContext,
+                    cancellationToken);
+                return;
             }
-
-            // dispatch the response
-            activityId = await Dispatch(
-                this.chatId,
-                activityId,
-                status,
-                summaries.ToString(),
-                response.Citations?.ToList(),
-                turnContext,
-                cancellationToken);
-        }
-        if (started is not null)
-        {
-            DiagnosticService.RecordTimeToLastResponse((DateTime.UtcNow - started.Value).TotalMilliseconds);
+            catch (Exception)
+            {
+                botResponseInteraction.State = States.FAILED;
+                botResponseInteraction.Message = summaries.ToString();
+                await this.historyService.CompleteGenerationAsync(botResponseInteraction);
+                throw;
+            }
         }
     }
 

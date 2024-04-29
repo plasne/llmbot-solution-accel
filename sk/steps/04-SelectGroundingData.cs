@@ -24,8 +24,9 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         // trim to top 5 documents and make them content
         if (input.Docs is not null)
         {
+            var ordered = input.Docs.OrderByDescending(x => x.SearchScore);
             output.Content = [];
-            foreach (var doc in input.Docs.Take(5))
+            foreach (var doc in input.Docs.Take(10))
             {
                 int index = output.Content.Count;
                 var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";

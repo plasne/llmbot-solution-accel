@@ -1,24 +1,24 @@
-using Microsoft.Extensions.Logging;
+using System;
+using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using SharpToken;
 
-public class PromptTokenCountFilter(string modelName, string step, ILogger logger) : IPromptFilter
+public class PromptTokenCountFilter(string modelName, Action<int> onRendered) : IPromptFilter
 {
     private readonly string modelName = modelName;
-    private readonly string step = step;
-    private readonly ILogger logger = logger;
+    private readonly Action<int> onRendered = onRendered;
 
     public void OnPromptRendering(PromptRenderingContext context)
     {
-        this.logger.LogInformation("prompt token count filter attached to step {step}.", this.step);
+        // nothing to do
     }
 
     public void OnPromptRendered(PromptRenderedContext context)
     {
         var encoding = GptEncoding.GetEncodingForModel(modelName);
         var prompt = context.RenderedPrompt;
-
-        DiagnosticService.RecordPromptTokenCount(encoding.CountTokens(prompt), modelName, this.step);
+        var count = encoding.CountTokens(prompt);
+        this.onRendered(count);
     }
 }
 

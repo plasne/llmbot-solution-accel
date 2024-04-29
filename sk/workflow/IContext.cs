@@ -5,11 +5,13 @@ using DistributedChat;
 
 public interface IContext
 {
-    event Func<string?, string?, List<Citation>?, Task> OnStream;
+    event Func<string?, string?, Intent, List<Citation>?, int, int, Task> OnStream;
 
-    event Func<Intent, string?, Task> OnTerminate;
-
-    public Task Stream(string? status, string? message = null, List<Citation>? citations = null);
-
-    public Task Terminate(Intent intent, string? message = null);
+    public Task Stream(
+        string? status = null,
+        string? message = null,
+        Intent intent = Intent.Unset,
+        List<Citation>? citations = null,
+        int promptTokens = 0,
+        int completionTokens = 0);
 }

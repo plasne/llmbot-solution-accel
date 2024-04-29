@@ -26,6 +26,7 @@ Please see the README.MD files in each of these services to get up and going:
 - Pluggable history backend​
   - Role, message, feedback, status (edited/deleted/etc.), telemetry, audit, etc.
 - Implement editing messages
+- Prevent multiple responses at the same time.
 - Change thumbs-up/down card to highlight option and open further feedback
 - Add status when looking up
 - Test in Azure + Teams
