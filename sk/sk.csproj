@@ -19,7 +19,7 @@
     <PackageReference Include="Microsoft.SemanticKernel" Version="1.7.1" />
     <PackageReference Include="Microsoft.SemanticKernel.Planners.Handlebars" Version="1.7.1-preview" />
     <PackageReference Include="Microsoft.SemanticKernel.PromptTemplates.Handlebars" Version="1.7.1" />
-    <PackageReference Include="NetBricks" Version="1.9.1" />
+    <PackageReference Include="NetBricks" Version="1.9.2" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SharpToken" Version="2.0.2" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />

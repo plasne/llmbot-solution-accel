@@ -116,12 +116,17 @@ public class LocalMemoryHistoryService(ILogger<LocalMemoryHistoryService> logger
         return Task.CompletedTask;
     }
 
-    public Task SetCustomInstructionsAsync(string userId, string instructions)
+    public Task SetCustomInstructionsAsync(string userId, string prompt)
     {
         throw new NotImplementedException();
     }
 
     public Task DeleteCustomInstructionsAsync(string userId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<string?> GetCustomInstructionsAsync(string userId)
     {
         throw new NotImplementedException();
     }

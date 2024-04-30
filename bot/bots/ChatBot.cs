@@ -191,13 +191,23 @@ public class ChatBot(
 
                 // get the history
                 var conversation = await this.historyService.GetCurrentConversationAsync(userId);
-                var chatRequest = new ChatRequest { ActivityId = activityId, MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
+
+                // create the request
+                var chatRequest = new ChatRequest
+                {
+                    ActivityId = activityId,
+                    MinCharsToStream = this.config.CHARACTERS_PER_UPDATE,
+                };
                 if (conversation.Interactions is not null)
                 {
                     foreach (var interaction in conversation.Interactions.Where(x => !string.IsNullOrEmpty(x.Message)))
                     {
                         chatRequest.Turns.Add(interaction.ToTurn());
                     }
+                }
+                if (!string.IsNullOrEmpty(conversation.CustomInstructions))
+                {
+                    chatRequest.CustomInstructions = conversation.CustomInstructions;
                 }
 
                 // send the request

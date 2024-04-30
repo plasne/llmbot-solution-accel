@@ -263,7 +263,10 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         ORDER BY [Id] DESC)
                     AND [State] IN ('EDITED', 'STOPPED', 'UNMODIFIED')
                     AND [Expiry] > GETDATE()
-                    ORDER BY [Id] ASC
+                    ORDER BY [Id] ASC;
+
+                    SELECT [Prompt] FROM [dbo].[CustomInstructions]
+                    WHERE [UserId] = @userId;
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
                 using var reader = await command.ExecuteReaderAsync();
@@ -288,6 +291,11 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                         interaction.Message = reader.GetString(messageOrdinal);
                     }
                     conversation.Interactions.Add(interaction);
+                }
+                await reader.NextResultAsync();
+                if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                {
+                    conversation.CustomInstructions = reader.GetString(0);
                 }
                 conversation.Id = conversation.Interactions.FirstOrDefault()?.ConversationId;
                 this.logger.LogInformation(
@@ -318,14 +326,16 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
-                this.logger.LogDebug("attempting to verify or create the History table...");
+                this.logger.LogDebug("attempting to verify or create the SQL resources...");
                 using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
                 await connection.OpenAsync();
                 using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
                 using var command = connection.CreateCommand();
                 command.Transaction = transaction;
                 command.CommandText = @"
-                    IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'History')
+                    IF NOT EXISTS (SELECT * FROM sys.tables t
+                                    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                                    WHERE t.name = 'History' AND s.name = 'dbo')
                     BEGIN
                         CREATE TABLE [dbo].[History]
                         (
@@ -346,35 +356,141 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                             [TimeToFirstResponse] INT,
                             [TimeToLastResponse] INT
                         );
+                    END
 
-                        CREATE INDEX [dbo].[idx_History_Start]
-                        ON [dbo].[History]([UserId], [Id] DESC);
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_History_Start' AND object_id = OBJECT_ID('dbo.History'))
+                    BEGIN
+                        CREATE INDEX [idx_History_Start]
+                        ON [dbo].[History] ([UserId], [Id] DESC);
+                    END
 
-                        CREATE INDEX [dbo].[idx_History_Complete]
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_History_Complete' AND object_id = OBJECT_ID('dbo.History'))
+                    BEGIN
+                        CREATE INDEX [idx_History_Complete]
                         ON [dbo].[History] ([UserId], [ActivityId]);
+                    END
 
-                        CREATE INDEX [dbo].[idx_History_Current]
-                        ON [dbo].[History]([ConversationId], [State], [Expiry], [Id]);
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_History_Current' AND object_id = OBJECT_ID('dbo.History'))
+                    BEGIN
+                        CREATE INDEX [idx_History_Current]
+                        ON [dbo].[History] ([ConversationId], [State], [Expiry], [Id]);
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.tables t
+                                    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                                    WHERE t.name = 'CustomInstructions' AND s.name = 'dbo')
+                    BEGIN
+                        CREATE TABLE [dbo].[CustomInstructions]
+                        (
+                            [Id] INT IDENTITY(1,1) PRIMARY KEY,
+                            [UserId] VARCHAR(50) NOT NULL,
+                            [Prompt] NVARCHAR(MAX) NULL
+                        );
+                    END
+
+                    IF NOT EXISTS (SELECT * FROM sys.indexes WHERE name = 'idx_CustomInstructions_UserId' AND object_id = OBJECT_ID('dbo.CustomInstructions'))
+                    BEGIN
+                        CREATE INDEX [idx_CustomInstructions_UserId]
+                        ON [dbo].[CustomInstructions] ([UserId]);
                     END
                 ";
                 await command.ExecuteNonQueryAsync();
                 await transaction.CommitAsync();
-                this.logger.LogInformation("successfully verified or created the History table.");
+                this.logger.LogInformation("successfully verified or created the SQL resources.");
             }, (ex, _) =>
             {
-                this.logger.LogError(ex, "verifying or creating the History table raised the following SQL transient exception...");
+                this.logger.LogError(ex, "verifying or creating the CustomInstructions table raised the following SQL transient exception...");
                 return Task.CompletedTask;
             });
         this.logger.LogInformation("successfully started up SqlServerHistoryService.");
     }
 
-    public Task SetCustomInstructionsAsync(string userId, string instructions)
+    public async Task SetCustomInstructionsAsync(string userId, string prompt)
     {
-        throw new NotImplementedException();
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to upsert custom instructions for user {u} into the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    MERGE [dbo].[CustomInstructions] AS target
+                    USING (SELECT @userId, @prompt) AS source ([UserId], [Prompt])
+                    ON (target.[UserId] = source.[UserId])
+                    WHEN MATCHED THEN
+                        UPDATE SET [Prompt] = source.[Prompt]
+                    WHEN NOT MATCHED THEN
+                        INSERT ([UserId], [Prompt])
+                        VALUES (source.[UserId], source.[Prompt]);
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@prompt", prompt);
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully upserted custom instructions for user {u} into the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "upserting custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
-    public Task DeleteCustomInstructionsAsync(string userId)
+    public async Task DeleteCustomInstructionsAsync(string userId)
     {
-        throw new NotImplementedException();
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to delete custom instructions for user {u} in the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    DELETE FROM [dbo].[CustomInstructions]
+                    WHERE [UserId] = @userId;
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully deleted custom instructions for user {u} in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "deleting custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+    }
+
+    public async Task<string?> GetCustomInstructionsAsync(string userId)
+    {
+        string? prompt = null;
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to get custom instructions for user {u} from the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT [Prompt] FROM [dbo].[CustomInstructions]
+                    WHERE [UserId] = @userId;
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                using var reader = await command.ExecuteReaderAsync();
+                await reader.NextResultAsync();
+                if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                {
+                    prompt = reader.GetString(0);
+                }
+                this.logger.LogInformation("successfully obtained custom instructions for user {u} from the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "getting the custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+        return prompt;
     }
 }
