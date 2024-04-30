@@ -345,7 +345,16 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                             [CompletionTokenCount] INT,
                             [TimeToFirstResponse] INT,
                             [TimeToLastResponse] INT
-                        )
+                        );
+
+                        CREATE INDEX idx_History_Start
+                        ON dbo.History(UserId, Id DESC);
+
+                        CREATE INDEX idx_History_Complete
+                        ON dbo.History (UserId, ActivityId);
+
+                        CREATE INDEX idx_History_Current
+                        ON dbo.History(ConversationId, State, Expiry, Id);
                     END
                 ";
                 await command.ExecuteNonQueryAsync();
