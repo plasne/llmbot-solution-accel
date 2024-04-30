@@ -15,7 +15,10 @@ public class HistoryCommands(IConfig config, IHistoryService historyService) : I
         { "/stop", "instructs the bot to stop responding." },
         { "/delete", "instructs the bot to stop (if necessary) and delete it's last response." },
         { "/delete #", "instructs the bot to delete from it's history the specified number of exchanges (your messages and the bots responses)." },
-        { "/delete all", "instructs the bot to delete all exchanges from history." }
+        { "/delete all", "instructs the bot to delete all exchanges from history." },
+        { "/instructions-set ???", "to set your custom instructions to the text specified after the command." },
+        { "/instructions-show", "to see your current custom instructions." },
+        { "/instructions-delete", "to delete your custom instructions." },
     };
 
 

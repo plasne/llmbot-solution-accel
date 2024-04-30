@@ -19,6 +19,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // add config
 var netConfig = new NetBricks.Config();
+await netConfig.Apply();
 var config = new Config(netConfig);
 config.Validate();
 builder.Services.AddSingleton<IConfig>(config);
