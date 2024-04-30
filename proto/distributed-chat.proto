@@ -25,6 +25,7 @@ message Turn {
 message ChatRequest {
   repeated Turn turns = 1;
   int32 minCharsToStream = 2;
+  string activityId = 3;
 }
 
 message Citation {

@@ -15,7 +15,6 @@ public interface IConfig
     string SEARCH_API_KEY { get; }
     string SEARCH_SEMANTIC_CONFIG { get; }
     string[] SEARCH_VECTOR_FIELDS { get; }
-    string[] SEARCH_SELECT_FIELDS { get; }
     string AZURE_STORAGE_ACCOUNT_NAME { get; }
     string AZURE_STORAGE_INFERENCE_QUEUE { get; }
     string AZURE_STORAGE_EVALUATION_QUEUE { get; }

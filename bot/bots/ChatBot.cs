@@ -192,7 +192,7 @@ public class ChatBot(
 
                 // get the history
                 var conversation = await this.historyService.GetCurrentConversationAsync(userId);
-                var chatRequest = new ChatRequest { MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
+                var chatRequest = new ChatRequest { ActivityId = activityId, MinCharsToStream = this.config.CHARACTERS_PER_UPDATE };
                 if (conversation.Interactions is not null)
                 {
                     foreach (var interaction in conversation.Interactions.Where(x => !string.IsNullOrEmpty(x.Message)))

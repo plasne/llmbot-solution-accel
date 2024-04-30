@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Logging;
 using NetBricks;
 using SharpToken;
 
@@ -11,20 +10,19 @@ public class Config : IConfig
         this.config = config;
         this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 5210);
         this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 5211);
-        this.OPEN_TELEMETRY_CONNECTION_STRING = config.Get<string>("OPEN_TELEMETRY_CONNECTION_STRING");
+        this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum<MemoryTerm>(() => MemoryTerm.Long);
         this.LLM_DEPLOYMENT_NAME = config.Get<string>("LLM_DEPLOYMENT_NAME");
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
-        this.LLM_API_KEY = config.Get<string>("LLM_API_KEY");
+        this.LLM_API_KEY = config.GetSecret<string>("LLM_API_KEY").Result;
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME").AsString(() => this.LLM_DEPLOYMENT_NAME);
         this.LLM_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
-        this.SEARCH_API_KEY = config.Get<string>("SEARCH_API_KEY");
+        this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
         this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => []);
-        this.SEARCH_SELECT_FIELDS = config.Get<string>("SEARCH_SELECT_FIELDS").AsArray(() => []);
         this.AZURE_STORAGE_ACCOUNT_NAME = config.Get<string>("AZURE_STORAGE_ACCOUNT_NAME");
         this.AZURE_STORAGE_INFERENCE_QUEUE = config.Get<string>("AZURE_STORAGE_INFERENCE_QUEUE");
         this.AZURE_STORAGE_EVALUATION_QUEUE = config.Get<string>("AZURE_STORAGE_EVALUATION_QUEUE");
@@ -60,8 +58,6 @@ public class Config : IConfig
 
     public string[] SEARCH_VECTOR_FIELDS { get; }
 
-    public string[] SEARCH_SELECT_FIELDS { get; }
-
     public string AZURE_STORAGE_ACCOUNT_NAME { get; }
 
     public string AZURE_STORAGE_INFERENCE_QUEUE { get; }
@@ -88,7 +84,6 @@ public class Config : IConfig
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
         this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
-        this.config.Require("SEARCH_SELECT_FIELDS", this.SEARCH_SELECT_FIELDS);
         this.config.Optional("AZURE_STORAGE_ACCOUNT_NAME", this.AZURE_STORAGE_ACCOUNT_NAME);
         this.config.Optional("AZURE_STORAGE_INFERENCE_QUEUE", this.AZURE_STORAGE_INFERENCE_QUEUE);
         this.config.Optional("AZURE_STORAGE_EVALUATION_QUEUE", this.AZURE_STORAGE_EVALUATION_QUEUE);
