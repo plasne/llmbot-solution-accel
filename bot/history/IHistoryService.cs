@@ -25,5 +25,9 @@ public interface IHistoryService
 
     Task ClearFeedbackAsync(string userId, string activityId);
 
+    Task SetCustomInstructionsAsync(string userId, string instructions);
+
+    Task DeleteCustomInstructionsAsync(string userId);
+
     Task StartupAsync();
 }

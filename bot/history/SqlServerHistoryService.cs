@@ -358,4 +358,14 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
         this.logger.LogInformation("successfully started up SqlServerHistoryService.");
     }
+
+    public Task SetCustomInstructionsAsync(string userId, string instructions)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task DeleteCustomInstructionsAsync(string userId)
+    {
+        throw new NotImplementedException();
+    }
 }
