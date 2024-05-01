@@ -35,11 +35,11 @@ public class Config : IConfig
 
     public int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
 
-    public Duration DEFAULT_RETENTION { get; set; }
+    public Duration DEFAULT_RETENTION { get; }
 
     public void Validate()
     {
-        this.config.Require("PORT", PORT);
+        this.config.Require("PORT", this.PORT);
         this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("LLM_URI", this.LLM_URI);
         this.config.Require("CHARACTERS_PER_UPDATE", this.CHARACTERS_PER_UPDATE);

@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"name": "bot",
+			"path": "bot"
+		},
+		{
+			"name": "sk",
+			"path": "sk"
+		},
+		{
+			"path": "proto"
+		}
+	],
+	"settings": {}
+}

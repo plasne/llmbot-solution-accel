@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using YamlDotNet.Serialization;
 
 public class InferencePipelineService(
     IConfig config,
@@ -25,12 +26,19 @@ public class InferencePipelineService(
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly ILogger<InferencePipelineService> logger = logger;
+    private readonly IDeserializer yamlDeserializer = new DeserializerBuilder().IgnoreUnmatchedProperties().Build();
 
     private async Task ProcessMessageAsync(
         PipelineRequest request,
         QueueClient evaluationQueueClient,
         CancellationToken cancellationToken = default)
     {
+        // validate
+        if (request.GroundTruthUri is null)
+        {
+            throw new Exception("ground_truth_uri is required.");
+        }
+
         // attempt to download the ground truth file
         this.logger.LogDebug("attempting to download the ground truth file: {u}...", request.GroundTruthUri);
         var httpClient = this.httpClientFactory.CreateClient();
@@ -42,8 +50,22 @@ public class InferencePipelineService(
         }
 
         // serialize the payload
-        var inputFile = JsonConvert.DeserializeObject<GroundTruthFile>(groundTruthBody)
-            ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri}.");
+        GroundTruthFile? inputFile;
+        var inputFilepath = request.GroundTruthUri.Split("?").First();
+        if (inputFilepath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
+        {
+            inputFile = JsonConvert.DeserializeObject<GroundTruthFile>(groundTruthBody)
+                ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri} as JSON.");
+        }
+        else if (inputFilepath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
+        {
+            inputFile = yamlDeserializer.Deserialize<GroundTruthFile>(groundTruthBody)
+                ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri} as YAML.");
+        }
+        else
+        {
+            throw new Exception($"cannot determine ground truth file type for {request.GroundTruthUri}.");
+        }
         this.logger.LogInformation("successfully downloaded the ground truth file: {u}.", request.GroundTruthUri);
 
         // build grounding data
@@ -54,7 +76,7 @@ public class InferencePipelineService(
         var groundingData = new GroundingData
         {
             UserQuery = userQuery?.Msg,
-            History = turns,
+            History = turns?.Select(x => new DistributedChat.Turn { Role = x.Role, Msg = x.Msg }).ToList(),
         };
 
         // process through the workflow

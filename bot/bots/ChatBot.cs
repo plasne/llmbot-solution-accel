@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -163,6 +162,8 @@ public class ChatBot(
 
         // get the user
         var userId = turnContext.Activity.From.AadObjectId;
+        this.logger.LogWarning(JsonConvert.SerializeObject(turnContext.Activity.From));
+
         if (string.IsNullOrEmpty(userId))
         {
             throw new Exception("no user identity was found in the activity from the user.");
