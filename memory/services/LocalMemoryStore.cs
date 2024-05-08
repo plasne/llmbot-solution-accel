@@ -1,17 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
+using Shared;
+using Shared.Models.Memory;
 
-public class LocalMemoryHistoryService(ILogger<LocalMemoryHistoryService> logger)
-: HistoryServiceBase, IHistoryService
+public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
+: MemoryStoreBase, IMemoryStore
 {
-    private readonly ILogger<LocalMemoryHistoryService> logger = logger;
-    private readonly Dictionary<string, List<Interaction>> interactions = new();
+    private readonly ILogger<LocalMemoryStore> logger = logger;
+    private readonly Dictionary<string, List<Interaction>> interactions = [];
 
-    public Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry)
+    public Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
@@ -28,7 +31,7 @@ public class LocalMemoryHistoryService(ILogger<LocalMemoryHistoryService> logger
         var last = interactions!.Last();
         if (last.State == States.GENERATING)
         {
-            throw new AlreadyGeneratingException(request.UserId!);
+            throw new HttpException(423, "a response is already being generated.");
         }
 
         request.ConversationId = last.ConversationId;
@@ -39,14 +42,14 @@ public class LocalMemoryHistoryService(ILogger<LocalMemoryHistoryService> logger
         return Task.CompletedTask;
     }
 
-    public Task CompleteGenerationAsync(Interaction response)
+    public Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForCompleteGeneration(response);
         // already mutated
         return Task.CompletedTask;
     }
 
-    public Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry)
+    public Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForTopicChange(changeTopic);
 
@@ -60,73 +63,81 @@ public class LocalMemoryHistoryService(ILogger<LocalMemoryHistoryService> logger
         return Task.CompletedTask;
     }
 
-    public Task ClearFeedbackAsync(string userId)
+    public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task ClearFeedbackAsync(string userId, string activityId)
+    public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task CommentOnMessageAsync(string userId, string comment)
+    public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task CommentOnMessageAsync(string userId, string activityId, string comment)
+    public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteLastInteractionsAsync(string userId, int count = 1)
+    public Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<Conversation> GetCurrentConversationAsync(string userId)
+    public Task<IConversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
     {
+        var turns = new List<ITurn>();
+        IConversation conversation = new Conversation { Turns = turns };
+
         if (!this.interactions.TryGetValue(userId, out List<Interaction>? interactions))
         {
-            return Task.FromResult(new Conversation { Interactions = [] });
+            return Task.FromResult(conversation);
         }
 
         var last = interactions.Last();
         var filtered = interactions
             .Where(x => x.ConversationId == last.ConversationId)
             .Where(x => x.State == States.EDITED || x.State == States.STOPPED || x.State == States.UNMODIFIED);
-        return Task.FromResult(new Conversation { Interactions = [.. interactions] });
+        foreach (var interaction in filtered)
+        {
+            turns.Add(new Turn { Role = interaction.Role, Msg = interaction.Message! });
+        }
+
+        return Task.FromResult(conversation);
     }
 
-    public Task RateMessageAsync(string userId, string rating)
+    public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task RateMessageAsync(string userId, string activityId, string rating)
+    public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task StartupAsync()
+    public Task StartupAsync(CancellationToken cancellationToken = default)
     {
         this.logger.LogInformation("starting up LocalMemoryHistoryService...");
         this.logger.LogInformation("successfully started up LocalMemoryHistoryService.");
         return Task.CompletedTask;
     }
 
-    public Task SetCustomInstructionsAsync(string userId, string prompt)
+    public Task SetCustomInstructionsAsync(string userId, string prompt, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task DeleteCustomInstructionsAsync(string userId)
+    public Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
 
-    public Task<string?> GetCustomInstructionsAsync(string userId)
+    public Task<string?> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }

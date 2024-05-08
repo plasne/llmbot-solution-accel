@@ -8,8 +8,8 @@ public class Config : IConfig
     public Config(NetBricks.IConfig config)
     {
         this.config = config;
-        this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 5210);
-        this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 5211);
+        this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 7020);
+        this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 7030);
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum<MemoryTerm>(() => MemoryTerm.Long);
         this.LLM_DEPLOYMENT_NAME = config.Get<string>("LLM_DEPLOYMENT_NAME");

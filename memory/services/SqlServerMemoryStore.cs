@@ -1,17 +1,25 @@
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
 using Polly;
+using Shared;
+using Shared.Models.Memory;
 
-public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistoryService> logger)
-: HistoryServiceBase, IHistoryService
+public class SqlServerMemoryStore(
+    IConfig config,
+    DefaultAzureCredential defaultAzureCredential,
+    ILogger<SqlServerMemoryStore> logger)
+: MemoryStoreBase, IMemoryStore
 {
     private readonly IConfig config = config;
-    private readonly ILogger<SqlServerHistoryService> logger = logger;
+    private readonly DefaultAzureCredential defaultAzureCredential = defaultAzureCredential;
+    private readonly ILogger<SqlServerMemoryStore> logger = logger;
 
     private bool IsTransientFault(Exception ex)
     {
@@ -70,7 +78,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             .ExecuteAsync(onExecuteAsync);
     }
 
-    public async Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry)
+    public async Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
@@ -138,13 +146,13 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
         {
             if (ex.Number == 50100)
             {
-                throw new AlreadyGeneratingException(request.UserId!);
+                throw new HttpException(423, "a response is already being generated.");
             }
             throw;
         }
     }
 
-    public async Task CompleteGenerationAsync(Interaction response)
+    public async Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForCompleteGeneration(response);
         await this.ExecuteWithRetryOnTransient(
@@ -183,7 +191,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    public async Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry)
+    public async Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForTopicChange(changeTopic);
         await this.ExecuteWithRetryOnTransient(
@@ -218,34 +226,35 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    public Task ClearFeedbackAsync(string userId)
+    public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task ClearFeedbackAsync(string userId, string activityId)
+    public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task CommentOnMessageAsync(string userId, string comment)
+    public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task CommentOnMessageAsync(string userId, string activityId, string comment)
+    public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task DeleteLastInteractionsAsync(string userId, int count = 1)
+    public Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public async Task<Conversation> GetCurrentConversationAsync(string userId)
+    public async Task<IConversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var conversation = new Conversation { Interactions = [] };
+        var conversation = new Conversation();
+        var turns = new List<ITurn>();
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -254,7 +263,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
-                    SELECT [ConversationId], [ActivityId], [UserId], [Role], [Message], [State]
+                    SELECT [ConversationId], [Role], [Message]
                     FROM [dbo].[History]
                     WHERE [ConversationId] IN (
                         SELECT TOP 1 [ConversationId]
@@ -271,56 +280,50 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
                 command.Parameters.AddWithValue("@userId", userId);
                 using var reader = await command.ExecuteReaderAsync();
                 var conversationIdOrdinal = reader.GetOrdinal("ConversationId");
-                var activityIdOrdinal = reader.GetOrdinal("ActivityId");
-                var userIdOrdinal = reader.GetOrdinal("UserId");
                 var roleOrdinal = reader.GetOrdinal("Role");
                 var messageOrdinal = reader.GetOrdinal("Message");
-                var stateOrdinal = reader.GetOrdinal("State");
                 while (await reader.ReadAsync())
                 {
-                    var interaction = new Interaction
+                    conversation.Id = reader.GetGuid(conversationIdOrdinal);
+                    var turn = new Turn
                     {
-                        ConversationId = reader.GetGuid(conversationIdOrdinal),
-                        ActivityId = reader.GetString(activityIdOrdinal),
-                        UserId = reader.GetString(userIdOrdinal),
                         Role = reader.GetString(roleOrdinal).AsEnum(() => Roles.UNKNOWN),
-                        State = reader.GetString(stateOrdinal).AsEnum(() => States.UNKNOWN),
                     };
                     if (!await reader.IsDBNullAsync(messageOrdinal))
                     {
-                        interaction.Message = reader.GetString(messageOrdinal);
+                        turn.Msg = reader.GetString(messageOrdinal);
                     }
-                    conversation.Interactions.Add(interaction);
+                    turns.Add(turn);
                 }
                 await reader.NextResultAsync();
                 if (await reader.ReadAsync() && !reader.IsDBNull(0))
                 {
                     conversation.CustomInstructions = reader.GetString(0);
                 }
-                conversation.Id = conversation.Interactions.FirstOrDefault()?.ConversationId;
                 this.logger.LogInformation(
                     "successfully obtained current conversation for user {u} from the history database containing {n} turns.",
                     userId,
-                    conversation.Interactions.Count);
+                    turns.Count);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "getting the current conversation for user {u} raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+        conversation.Turns = turns;
         return conversation;
     }
 
-    public Task RateMessageAsync(string userId, string rating)
+    public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public Task RateMessageAsync(string userId, string activityId, string rating)
+    public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
         throw new System.NotImplementedException();
     }
 
-    public async Task StartupAsync()
+    public async Task StartupAsync(CancellationToken cancellationToken = default)
     {
         this.logger.LogInformation("starting up SqlServerHistoryService...");
         await this.ExecuteWithRetryOnTransient(
@@ -405,7 +408,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
         this.logger.LogInformation("successfully started up SqlServerHistoryService.");
     }
 
-    public async Task SetCustomInstructionsAsync(string userId, string prompt)
+    public async Task SetCustomInstructionsAsync(string userId, string prompt, CancellationToken cancellationToken = default)
     {
         await this.ExecuteWithRetryOnTransient(
             async () =>
@@ -438,7 +441,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    public async Task DeleteCustomInstructionsAsync(string userId)
+    public async Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         await this.ExecuteWithRetryOnTransient(
             async () =>
@@ -464,7 +467,7 @@ public class SqlServerHistoryService(IConfig config, ILogger<SqlServerHistorySer
             });
     }
 
-    public async Task<string?> GetCustomInstructionsAsync(string userId)
+    public async Task<string?> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         string? prompt = null;
         await this.ExecuteWithRetryOnTransient(

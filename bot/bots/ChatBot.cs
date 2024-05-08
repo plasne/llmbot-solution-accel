@@ -3,6 +3,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,23 +20,22 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 public class ChatBot(
-    IHttpContextAccessor httpContextAccessor,
     IConfig config,
+    IHttpContextAccessor httpContextAccessor,
     IServiceProvider serviceProvider,
     ICardProvider cardProvider,
-    IHistoryService historyService,
+    IHttpClientFactory httpClientFactory,
     BotChannel channel,
     ILogger<ChatBot> logger)
     : ActivityHandler
 {
-    private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
     private readonly IConfig config = config;
+    private readonly IHttpContextAccessor httpContextAccessor = httpContextAccessor;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly ICardProvider cardProvider = cardProvider;
-    private readonly IHistoryService historyService = historyService;
+    private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
-    private readonly string chatId = Guid.NewGuid().ToString();
 
     public static string StartTimeKey = "http-request-start-time";
 
@@ -74,7 +75,7 @@ public class ChatBot(
             // build the adaptive card
             var template = await cardProvider.GetTemplate("response");
             var isGenerated = status == this.config.FINAL_STATUS;
-            var data = new { chatId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
+            var data = new { activityId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
             var attachment = new Attachment()
             {
                 ContentType = AdaptiveCard.ContentType,
@@ -162,8 +163,6 @@ public class ChatBot(
 
         // get the user
         var userId = turnContext.Activity.From.AadObjectId;
-        this.logger.LogWarning(JsonConvert.SerializeObject(turnContext.Activity.From));
-
         if (string.IsNullOrEmpty(userId))
         {
             throw new Exception("no user identity was found in the activity from the user.");
@@ -180,36 +179,27 @@ public class ChatBot(
             var activityId = await Dispatch(null, true, "Connecting to assistant...", string.Empty, null, turnContext, cancellationToken);
 
             // once history is started, it needs to catch errors so it isn't stuck generating
-            var userRequestInteraction = Interaction.CreateUserRequest(turnContext.Activity.Id, userId, request);
-            var botResponseInteraction = Interaction.CreateBotResponse(activityId, userId);
             StringBuilder summaries = new();
             var citations = new Dictionary<string, Citation>();
             try
             {
                 // start the conversation in history
-                await this.historyService.StartGenerationAsync(userRequestInteraction, botResponseInteraction, this.config.DEFAULT_RETENTION);
-                botResponseInteraction.State = States.UNMODIFIED;
+                using var httpClient = this.httpClientFactory.CreateClient();
+                var startGenerationRequest = new StartGenerationRequest(turnContext.Activity.Id, request, activityId);
+                var startGenerationResponse = await httpClient.PutAsJsonAsync(
+                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+                    startGenerationRequest,
+                    cancellationToken);
+                startGenerationResponse.EnsureSuccessStatusCode();
 
-                // get the history
-                var conversation = await this.historyService.GetCurrentConversationAsync(userId);
+                // botResponseInteraction.State = States.UNMODIFIED;
 
                 // create the request
                 var chatRequest = new ChatRequest
                 {
-                    ActivityId = activityId,
+                    UserId = userId,
                     MinCharsToStream = this.config.CHARACTERS_PER_UPDATE,
                 };
-                if (conversation.Interactions is not null)
-                {
-                    foreach (var interaction in conversation.Interactions.Where(x => !string.IsNullOrEmpty(x.Message)))
-                    {
-                        chatRequest.Turns.Add(interaction.ToTurn());
-                    }
-                }
-                if (!string.IsNullOrEmpty(conversation.CustomInstructions))
-                {
-                    chatRequest.CustomInstructions = conversation.CustomInstructions;
-                }
 
                 // send the request
                 using var streamingCall = this.channel.Client.Chat(chatRequest, cancellationToken: cancellationToken);
@@ -299,9 +289,16 @@ public class ChatBot(
                 botResponseInteraction.Message = botResponseInteraction.State != States.EMPTY
                     ? summaries.ToString()
                     : null;
-                await this.historyService.CompleteGenerationAsync(botResponseInteraction);
+
+                // complete the generation
+                var completeGenerationRequest = new CompleteGenerationRequest(activityId);
+                var completeGenerationResponse = await httpClient.PutAsJsonAsync(
+                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+                    completeGenerationRequest,
+                    cancellationToken);
+                startGenerationResponse.EnsureSuccessStatusCode();
             }
-            catch (AlreadyGeneratingException)
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Locked)
             {
                 await Dispatch(
                     activityId,
@@ -315,9 +312,17 @@ public class ChatBot(
             }
             catch (Exception)
             {
-                botResponseInteraction.State = States.FAILED;
-                botResponseInteraction.Message = summaries.ToString();
-                await this.historyService.CompleteGenerationAsync(botResponseInteraction);
+                // botResponseInteraction.State = States.FAILED;
+                // botResponseInteraction.Message = summaries.ToString();
+
+                // TODO: add polly
+                var completeGenerationRequest = new CompleteGenerationRequest(activityId);
+                var completeGenerationResponse = await httpClient.PutAsJsonAsync(
+                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+                    completeGenerationRequest,
+                    cancellationToken);
+                startGenerationResponse.EnsureSuccessStatusCode();
+
                 throw;
             }
         }

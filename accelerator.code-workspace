@@ -1,16 +1,21 @@
 {
-	"folders": [
-		{
-			"name": "bot",
-			"path": "bot"
-		},
-		{
-			"name": "sk",
-			"path": "sk"
-		},
-		{
-			"path": "proto"
-		}
-	],
-	"settings": {}
+  "folders": [
+    {
+      "name": "bot",
+      "path": "bot"
+    },
+    {
+      "name": "sk",
+      "path": "sk"
+    },
+    {
+      "name": "memory",
+      "path": "memory"
+    },
+    {
+      "name": "proto",
+      "path": "proto"
+    }
+  ],
+  "settings": {}
 }
