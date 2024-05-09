@@ -228,33 +228,32 @@ public class SqlServerMemoryStore(
 
     public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
-    public async Task<IConversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var conversation = new Conversation();
-        var turns = new List<ITurn>();
+        var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -270,7 +269,6 @@ public class SqlServerMemoryStore(
                         FROM [dbo].[History]
                         WHERE [UserId] = @userId
                         ORDER BY [Id] DESC)
-                    AND [State] IN ('EDITED', 'STOPPED', 'UNMODIFIED')
                     AND [Expiry] > GETDATE()
                     ORDER BY [Id] ASC;
 
@@ -293,7 +291,10 @@ public class SqlServerMemoryStore(
                     {
                         turn.Msg = reader.GetString(messageOrdinal);
                     }
-                    turns.Add(turn);
+                    if (!string.IsNullOrWhiteSpace(turn.Msg))
+                    {
+                        conversation.Turns.Add(turn);
+                    }
                 }
                 await reader.NextResultAsync();
                 if (await reader.ReadAsync() && !reader.IsDBNull(0))
@@ -303,29 +304,115 @@ public class SqlServerMemoryStore(
                 this.logger.LogInformation(
                     "successfully obtained current conversation for user {u} from the history database containing {n} turns.",
                     userId,
-                    turns.Count);
+                    conversation.Turns.Count);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "getting the current conversation for user {u} raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
-        conversation.Turns = turns;
         return conversation;
     }
 
     public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new System.NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
-    public async Task StartupAsync(CancellationToken cancellationToken = default)
+    public async Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
     {
-        this.logger.LogInformation("starting up SqlServerHistoryService...");
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to upsert custom instructions for user {u} into the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    MERGE [dbo].[CustomInstructions] AS target
+                    USING (SELECT @userId, @prompt) AS source ([UserId], [Prompt])
+                    ON (target.[UserId] = source.[UserId])
+                    WHEN MATCHED THEN
+                        UPDATE SET [Prompt] = source.[Prompt]
+                    WHEN NOT MATCHED THEN
+                        INSERT ([UserId], [Prompt])
+                        VALUES (source.[UserId], source.[Prompt]);
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@prompt", instructions.Prompt);
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully upserted custom instructions for user {u} into the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "upserting custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+    }
+
+    public async Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to delete custom instructions for user {u} in the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
+                command.Transaction = transaction;
+                command.CommandText = @"
+                    DELETE FROM [dbo].[CustomInstructions]
+                    WHERE [UserId] = @userId;
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully deleted custom instructions for user {u} in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "deleting custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+    }
+
+    public async Task<CustomInstructions> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
+    {
+        CustomInstructions instructions = new() { Prompt = string.Empty };
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to get custom instructions for user {u} from the history database...", userId);
+                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                command.CommandText = @"
+                    SELECT [Prompt] FROM [dbo].[CustomInstructions]
+                    WHERE [UserId] = @userId;
+                ";
+                command.Parameters.AddWithValue("@userId", userId);
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                {
+                    instructions.Prompt = reader.GetString(0);
+                }
+                this.logger.LogInformation("successfully obtained custom instructions for user {u} from the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "getting the custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+        return instructions;
+    }
+
+    public async Task ProvisionAsync()
+    {
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -405,95 +492,5 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "verifying or creating the CustomInstructions table raised the following SQL transient exception...");
                 return Task.CompletedTask;
             });
-        this.logger.LogInformation("successfully started up SqlServerHistoryService.");
-    }
-
-    public async Task SetCustomInstructionsAsync(string userId, string prompt, CancellationToken cancellationToken = default)
-    {
-        await this.ExecuteWithRetryOnTransient(
-            async () =>
-            {
-                this.logger.LogDebug("attempting to upsert custom instructions for user {u} into the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
-                await connection.OpenAsync();
-                using var command = connection.CreateCommand();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
-                command.Transaction = transaction;
-                command.CommandText = @"
-                    MERGE [dbo].[CustomInstructions] AS target
-                    USING (SELECT @userId, @prompt) AS source ([UserId], [Prompt])
-                    ON (target.[UserId] = source.[UserId])
-                    WHEN MATCHED THEN
-                        UPDATE SET [Prompt] = source.[Prompt]
-                    WHEN NOT MATCHED THEN
-                        INSERT ([UserId], [Prompt])
-                        VALUES (source.[UserId], source.[Prompt]);
-                ";
-                command.Parameters.AddWithValue("@userId", userId);
-                command.Parameters.AddWithValue("@prompt", prompt);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
-                this.logger.LogInformation("successfully upserted custom instructions for user {u} into the history database.", userId);
-            }, (ex, _) =>
-            {
-                this.logger.LogError(ex, "upserting custom instructions for user {u} raised the following SQL transient exception...", userId);
-                return Task.CompletedTask;
-            });
-    }
-
-    public async Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
-    {
-        await this.ExecuteWithRetryOnTransient(
-            async () =>
-            {
-                this.logger.LogDebug("attempting to delete custom instructions for user {u} in the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
-                await connection.OpenAsync();
-                using var command = connection.CreateCommand();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
-                command.Transaction = transaction;
-                command.CommandText = @"
-                    DELETE FROM [dbo].[CustomInstructions]
-                    WHERE [UserId] = @userId;
-                ";
-                command.Parameters.AddWithValue("@userId", userId);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
-                this.logger.LogInformation("successfully deleted custom instructions for user {u} in the history database.", userId);
-            }, (ex, _) =>
-            {
-                this.logger.LogError(ex, "deleting custom instructions for user {u} raised the following SQL transient exception...", userId);
-                return Task.CompletedTask;
-            });
-    }
-
-    public async Task<string?> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
-    {
-        string? prompt = null;
-        await this.ExecuteWithRetryOnTransient(
-            async () =>
-            {
-                this.logger.LogDebug("attempting to get custom instructions for user {u} from the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
-                await connection.OpenAsync();
-                using var command = connection.CreateCommand();
-                command.CommandText = @"
-                    SELECT [Prompt] FROM [dbo].[CustomInstructions]
-                    WHERE [UserId] = @userId;
-                ";
-                command.Parameters.AddWithValue("@userId", userId);
-                using var reader = await command.ExecuteReaderAsync();
-                await reader.NextResultAsync();
-                if (await reader.ReadAsync() && !reader.IsDBNull(0))
-                {
-                    prompt = reader.GetString(0);
-                }
-                this.logger.LogInformation("successfully obtained custom instructions for user {u} from the history database.", userId);
-            }, (ex, _) =>
-            {
-                this.logger.LogError(ex, "getting the custom instructions for user {u} raised the following SQL transient exception...", userId);
-                return Task.CompletedTask;
-            });
-        return prompt;
     }
 }

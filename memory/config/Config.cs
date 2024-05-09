@@ -11,7 +11,7 @@ public class Config : IConfig
         this.PORT = this.config.Get<string>("PORT").AsInt(() => 7010);
         this.OPEN_TELEMETRY_CONNECTION_STRING = this.config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
         this.SQL_SERVER_MAX_RETRY_ATTEMPTS = this.config.Get<string>("SQL_SERVER_MAX_RETRY_ATTEMPTS").AsInt(() => 3);
-        this.SQL_SERVER_SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SQL_SERVER_SECONDS_BETWEEN_RETRIES").AsInt(() => 3);
+        this.SQL_SERVER_SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SQL_SERVER_SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING = this.config.GetSecret<string>("SQL_SERVER_HISTORY_SERVICE_CONNSTRING").Result;
         this.DEFAULT_RETENTION = this.config.Get<string>("DEFAULT_RETENTION").AsDuration(() => Duration.FromMonths(3));
     }

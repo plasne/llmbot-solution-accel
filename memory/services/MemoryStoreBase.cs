@@ -1,3 +1,4 @@
+using System;
 using Shared;
 using Shared.Models.Memory;
 
@@ -5,7 +6,7 @@ public abstract class MemoryStoreBase
 {
     public void ValidateInteractionForStartGeneration(Interaction interaction)
     {
-        if (interaction.ConversationId is not null)
+        if (interaction.ConversationId != Guid.Empty)
         {
             throw new HttpException(400, "ConversationId will be assigned by the service.");
         }
@@ -51,7 +52,7 @@ public abstract class MemoryStoreBase
 
     public void ValidateInteractionForCompleteGeneration(Interaction interaction)
     {
-        if (interaction.ConversationId is null)
+        if (interaction.ConversationId == Guid.Empty)
         {
             throw new HttpException(400, "ConversationId must be provided.");
         }
@@ -104,7 +105,7 @@ public abstract class MemoryStoreBase
 
     public void ValidateInteractionForTopicChange(Interaction interaction)
     {
-        if (interaction.ConversationId is null)
+        if (interaction.ConversationId == Guid.Empty)
         {
             throw new HttpException(400, "ConversationId must be provided.");
         }

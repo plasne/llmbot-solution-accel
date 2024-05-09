@@ -8,7 +8,7 @@ using Shared.Models.Memory;
 public class UsersController : ControllerBase
 {
     [HttpGet("conversations/current")]
-    public async Task<ActionResult<IConversation>> GetCurrentConversationAsync(
+    public async Task<ActionResult<Conversation>> GetCurrentConversationAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
@@ -23,7 +23,7 @@ public class UsersController : ControllerBase
         [FromRoute] string userId,
         [FromServices] IConfig config,
         [FromServices] IMemoryStore store,
-        [FromBody] IStartGenerationRequest body,
+        [FromBody] StartGenerationRequest body,
         CancellationToken cancellationToken)
     {
         var (req, res) = body.ToInteractions(userId);
@@ -35,7 +35,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> CompleteGenerationAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
-        [FromBody] ICompleteGenerationRequest body,
+        [FromBody] CompleteGenerationRequest body,
         CancellationToken cancellationToken)
     {
         await store.CompleteGenerationAsync(body.ToInteraction(userId), cancellationToken);
@@ -43,24 +43,29 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("turns")]
-    public async Task<IActionResult> DeleteLastInteractionsAsync(
-    [FromRoute] string userId,
-    [FromServices] IMemoryStore store,
-    CancellationToken cancellationToken,
-    [FromQuery] int count = 1)
+    public async Task<IActionResult> DeleteLastTurnsAsync(
+        [FromRoute] string userId,
+        [FromServices] IMemoryStore store,
+        CancellationToken cancellationToken,
+        [FromQuery] int count = 1)
     {
         await store.DeleteLastInteractionsAsync(userId, count, cancellationToken);
         return Ok();
     }
 
-    [HttpPost("conversations")]
+    [HttpPut("conversations")]
     public async Task<IActionResult> ChangeConversationTopicAsync(
         [FromRoute] string userId,
         [FromServices] IConfig config,
         [FromServices] IMemoryStore store,
-        [FromBody] IChangeTopicRequest body,
+        [FromBody] ChangeTopicRequest body,
         CancellationToken cancellationToken)
     {
+        if (body.Intent != Intents.TOPIC_CHANGE)
+        {
+            return BadRequest("intent must be 'TOPIC_CHANGE'.");
+        }
+
         await store.ChangeConversationTopicAsync(
             body.ToInteraction(userId),
             config.DEFAULT_RETENTION,
@@ -72,7 +77,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> RateMessageAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
-        [FromBody] IFeedbackRequest body,
+        [FromBody] FeedbackRequest body,
         CancellationToken cancellationToken)
     {
         var hasActivity = string.IsNullOrEmpty(body.ActivityId);
@@ -86,15 +91,15 @@ public class UsersController : ControllerBase
         if (hasRating)
         {
             await (hasActivity
-                ? store.RateMessageAsync(userId, body.ActivityId, body.Rating, cancellationToken)
-                : store.RateMessageAsync(userId, body.Rating, cancellationToken));
+                ? store.RateMessageAsync(userId, body.ActivityId!, body.Rating!, cancellationToken)
+                : store.RateMessageAsync(userId, body.Rating!, cancellationToken));
         }
 
         if (hasComment)
         {
             await (hasActivity
-                ? store.CommentOnMessageAsync(userId, body.ActivityId, body.Rating, cancellationToken)
-                : store.CommentOnMessageAsync(userId, body.Rating, cancellationToken));
+                ? store.CommentOnMessageAsync(userId, body.ActivityId!, body.Rating!, cancellationToken)
+                : store.CommentOnMessageAsync(userId, body.Rating!, cancellationToken));
         }
 
         return Ok();
@@ -104,7 +109,7 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> ClearFeedbackAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
-        [FromBody] IClearFeedbackRequest body,
+        [FromBody] ClearFeedbackRequest body,
         CancellationToken cancellationToken)
     {
         var hasActivity = string.IsNullOrEmpty(body.ActivityId);
@@ -118,10 +123,10 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> SetCustomInstructionsAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
-        [FromBody] ICustomInstructions body,
+        [FromBody] CustomInstructions body,
         CancellationToken cancellationToken)
     {
-        await store.SetCustomInstructionsAsync(userId, body.Prompt, cancellationToken);
+        await store.SetCustomInstructionsAsync(userId, body, cancellationToken);
         return Ok();
     }
 
@@ -136,7 +141,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("instructions")]
-    public async Task<ActionResult<ICustomInstructions>> GetCustomInstructionsAsync(
+    public async Task<ActionResult<CustomInstructions>> GetCustomInstructionsAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)

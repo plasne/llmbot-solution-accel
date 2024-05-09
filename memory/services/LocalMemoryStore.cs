@@ -65,33 +65,32 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
 
     public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
-    public Task<IConversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
     {
-        var turns = new List<ITurn>();
-        IConversation conversation = new Conversation { Turns = turns };
+        var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
 
         if (!this.interactions.TryGetValue(userId, out List<Interaction>? interactions))
         {
@@ -104,7 +103,8 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
             .Where(x => x.State == States.EDITED || x.State == States.STOPPED || x.State == States.UNMODIFIED);
         foreach (var interaction in filtered)
         {
-            turns.Add(new Turn { Role = interaction.Role, Msg = interaction.Message! });
+            conversation.Id = interaction.ConversationId;
+            conversation.Turns.Add(new Turn { Role = interaction.Role, Msg = interaction.Message! });
         }
 
         return Task.FromResult(conversation);
@@ -112,33 +112,26 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
 
     public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
-    public Task StartupAsync(CancellationToken cancellationToken = default)
+    public Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
     {
-        this.logger.LogInformation("starting up LocalMemoryHistoryService...");
-        this.logger.LogInformation("successfully started up LocalMemoryHistoryService.");
-        return Task.CompletedTask;
-    }
-
-    public Task SetCustomInstructionsAsync(string userId, string prompt, CancellationToken cancellationToken = default)
-    {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
     public Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 
-    public Task<string?> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<CustomInstructions> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        throw new HttpException(501, "not currently implemented");
     }
 }

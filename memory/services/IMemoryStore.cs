@@ -5,7 +5,7 @@ using Shared.Models.Memory;
 
 public interface IMemoryStore
 {
-    Task<IConversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default);
+    Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default);
 
     Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
 
@@ -27,11 +27,9 @@ public interface IMemoryStore
 
     Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default);
 
-    Task SetCustomInstructionsAsync(string userId, string prompt, CancellationToken cancellationToken = default);
+    Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default);
 
     Task DeleteCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default);
 
-    Task<string?> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default);
-
-    Task StartupAsync(CancellationToken cancellationToken = default);
+    Task<CustomInstructions> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default);
 }

@@ -34,13 +34,20 @@ builder.Services.AddSwaggerGen().AddSwaggerGenNewtonsoftSupport();
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+    options.SerializerSettings.Converters.Add(new Newtonsoft.Json.Converters.StringEnumConverter());
+    options.SerializerSettings.ContractResolver = new Newtonsoft.Json.Serialization.DefaultContractResolver
+    {
+        NamingStrategy = new Newtonsoft.Json.Serialization.SnakeCaseNamingStrategy()
+    };
 });
 
 // add the appropriate history service
 if (!string.IsNullOrEmpty(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING))
 {
-    Console.WriteLine("ADDING SERVICE: SqlServerHistoryService");
+    Console.WriteLine("ADDING SERVICE: SqlServerMemoryStore");
     builder.Services.AddSingleton<IMemoryStore, SqlServerMemoryStore>();
+    Console.WriteLine("ADDING SERVICE: SqlServerMaintenanceService");
+    builder.Services.AddHostedService<SqlServerMaintenanceService>();
 }
 else
 {

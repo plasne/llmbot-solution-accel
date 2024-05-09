@@ -13,7 +13,7 @@ public static class Ext
         return dflt();
     }
 
-    public static (Interaction req, Interaction res) ToInteractions(this IStartGenerationRequest req, string userId)
+    public static (Interaction req, Interaction res) ToInteractions(this StartGenerationRequest req, string userId)
     {
         return (
             new Interaction
@@ -34,7 +34,7 @@ public static class Ext
         );
     }
 
-    public static Interaction ToInteraction(this IChangeTopicRequest req, string userId)
+    public static Interaction ToInteraction(this ChangeTopicRequest req, string userId)
     {
         return new Interaction
         {
@@ -47,7 +47,7 @@ public static class Ext
         };
     }
 
-    public static Interaction ToInteraction(this ICompleteGenerationRequest res, string userId)
+    public static Interaction ToInteraction(this CompleteGenerationRequest res, string userId)
     {
         return new Interaction
         {

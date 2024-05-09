@@ -3,7 +3,7 @@ using Shared.Models.Memory;
 
 public class Interaction
 {
-    public Guid? ConversationId { get; set; }
+    public Guid ConversationId { get; set; }
 
     public string? ActivityId { get; set; }
 
