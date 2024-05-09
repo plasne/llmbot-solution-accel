@@ -8,11 +8,16 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
+using Shared.Models.Memory;
+using System.Net.Http.Json;
 
-public class ChatService(IServiceProvider serviceProvider)
+public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
     : ChatServiceBase
 {
+    private readonly IConfig config = config;
     private readonly IServiceProvider serviceProvider = serviceProvider;
+    private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
 
     private class Buffer
     {
@@ -29,13 +34,24 @@ public class ChatService(IServiceProvider serviceProvider)
         IServerStreamWriter<ChatResponse> responseStream,
         ServerCallContext serverCallContext)
     {
-        // build grounding data
-        var turns = request.Turns?.ToList();
-        var userQuery = turns?.LastOrDefault();
-        turns?.Remove(userQuery);
-        var groundingData = new GroundingData
+        // get current conversation
+        using var httpClient = this.httpClientFactory.CreateClient("retry");
+        var res = await httpClient.GetAsync(
+            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/current",
+            serverCallContext.CancellationToken);
+        res.EnsureSuccessStatusCode();
+        var conversation = await res.Content.ReadFromJsonAsync<IConversation>();
+        if (conversation?.Turns is null || !conversation.Turns.Any())
         {
-            UserQuery = userQuery?.Msg,
+            throw new Exception($"no conversation was found for user {request.UserId}");
+        }
+
+        // build grounding data
+        var turns = conversation.Turns.ToList();
+        var userQuery = turns.Last();
+        turns.Remove(userQuery);
+        var groundingData = new GroundingData(userQuery.Msg)
+        {
             History = turns,
         };
 

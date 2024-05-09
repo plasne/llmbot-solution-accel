@@ -11,6 +11,8 @@ using NetBricks;
 using dotenv.net;
 using Shared;
 using System;
+using Polly;
+using Polly.Extensions.Http;
 
 DotEnv.Load();
 
@@ -30,8 +32,14 @@ builder.Services.AddSingleLineConsoleLogger();
 builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
-// add basic services
-builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
+// add http client with retry
+builder.Services.AddHttpClient("retry")
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(config.MAX_RETRY_ATTEMPTS, retryAttempt => TimeSpan.FromSeconds(config.SECONDS_BETWEEN_RETRIES)));
+
+// add controllers
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
 });

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -6,15 +7,15 @@ using DistributedChat;
 using Microsoft.Extensions.Logging;
 
 public class SelectGroundingData(ILogger<SelectGroundingData> logger)
-    : BaseStep<GroundingData, GroundingData>(logger)
+    : BaseStep<IGroundingData, IGroundingData>(logger)
 {
     public override string Name => "SelectGroundingData";
 
-    public override Task<GroundingData> ExecuteInternal(
-        GroundingData input,
+    public override Task<IGroundingData> ExecuteInternal(
+        IGroundingData input,
         CancellationToken cancellationToken = default)
     {
-        var output = new GroundingData();
+        IGroundingData output = new GroundingData(input.UserQuery);
 
         // Some ideas on what to do here:
         // - trim
@@ -45,7 +46,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         }
 
         // trim to 5 turns of the conversation
-        output.History = input.History?.Skip(Math.Max(0, input.History.Count - 5)).ToList();
+        output.History = input.History?.Skip(Math.Max(0, input.History.Count() - 5)).ToList();
 
         return Task.FromResult(output);
     }

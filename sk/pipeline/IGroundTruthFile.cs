@@ -1,18 +1,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Shared.Models.Memory;
 
-public class PipelineTurn
-{
-    [JsonProperty("role")]
-    [YamlDotNet.Serialization.YamlMember(Alias = "role")]
-    public string? Role { get; set; }
-
-    [JsonProperty("msg")]
-    [YamlDotNet.Serialization.YamlMember(Alias = "msg")]
-    public string? Msg { get; set; }
-}
-
-public class GroundTruthFile
+public interface IGroundTruthFile
 {
     [JsonProperty("ref")]
     [YamlDotNet.Serialization.YamlMember(Alias = "ref")]
@@ -20,7 +10,7 @@ public class GroundTruthFile
 
     [JsonProperty("history")]
     [YamlDotNet.Serialization.YamlMember(Alias = "history")]
-    public List<PipelineTurn>? History { get; set; }
+    public IList<ITurn>? History { get; set; }
 
     [JsonProperty("ground_truth")]
     [YamlDotNet.Serialization.YamlMember(Alias = "ground_truth")]

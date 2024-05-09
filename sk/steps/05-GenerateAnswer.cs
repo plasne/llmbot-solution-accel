@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
+using Shared;
 using SharpToken;
 
 public partial class GenerateAnswer(
@@ -19,7 +20,7 @@ public partial class GenerateAnswer(
     Kernel kernel,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
-    : BaseStep<IntentAndData, Answer>(logger)
+    : BaseStep<IIntentAndData, IAnswer>(logger)
 {
     private readonly IConfig config = config;
     private readonly IContext context = context;
@@ -29,8 +30,8 @@ public partial class GenerateAnswer(
 
     public override string Name => "GenerateAnswer";
 
-    public override async Task<Answer> ExecuteInternal(
-        IntentAndData input,
+    public override async Task<IAnswer> ExecuteInternal(
+        IIntentAndData input,
         CancellationToken cancellationToken = default)
     {
         // validate input
@@ -113,7 +114,7 @@ public partial class GenerateAnswer(
         {
             if (!citations.ContainsKey(match.Value))
             {
-                var content = input.Data?.Content?.Find(x => $"[{x.Citation?.Ref}]" == match.Value);
+                var content = input.Data?.Content?.FirstOrDefault(x => $"[{x.Citation?.Ref}]" == match.Value);
                 if (content is not null && content.Citation is not null)
                 {
                     citations.Add(match.Value, content.Citation);

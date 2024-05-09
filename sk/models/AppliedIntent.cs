@@ -1,7 +1,4 @@
-using Newtonsoft.Json;
-
-public class AppliedIntent
+public class AppliedIntent : IAppliedIntent
 {
-    [JsonProperty("continue")]
     public bool Continue { get; set; }
 }

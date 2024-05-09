@@ -2,9 +2,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +21,9 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
+using Shared.Models.Memory;
 
 public class ChatBot(
     IConfig config,
@@ -37,7 +43,7 @@ public class ChatBot(
     private readonly BotChannel channel = channel;
     private readonly ILogger<ChatBot> logger = logger;
 
-    public static string StartTimeKey = "http-request-start-time";
+    public const string StartTimeKey = "http-request-start-time";
 
     private async Task<string> Dispatch(
         string? activityId,
@@ -139,6 +145,24 @@ public class ChatBot(
         return true;
     }
 
+    private async Task StartGenerationAsync(HttpClient httpClient, string userId, StartGenerationRequest req, CancellationToken cancellationToken)
+    {
+        var res = await httpClient.PostAsJsonAsync(
+            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+            req,
+            cancellationToken);
+        res.EnsureSuccessStatusCode();
+    }
+
+    private async Task CompleteGenerationAsync(HttpClient httpClient, string userId, CompleteGenerationRequest req, CancellationToken cancellationToken)
+    {
+        var res = await httpClient.PutAsJsonAsync(
+            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+            req,
+            cancellationToken);
+        res.EnsureSuccessStatusCode();
+    }
+
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
         // start the counters
@@ -168,6 +192,9 @@ public class ChatBot(
             throw new Exception("no user identity was found in the activity from the user.");
         }
 
+        // use an http client with retry
+        using var httpClient = this.httpClientFactory.CreateClient("retry");
+
         // try all user requests; this is always a single item, except when there is a topic change with a follow-up question
         var userRequests = new Queue<string>();
         userRequests.Enqueue(text);
@@ -181,18 +208,18 @@ public class ChatBot(
             // once history is started, it needs to catch errors so it isn't stuck generating
             StringBuilder summaries = new();
             var citations = new Dictionary<string, Citation>();
+            var completeRequest = new CompleteGenerationRequest(activityId)
+            {
+                State = States.UNMODIFIED
+            };
             try
             {
-                // start the conversation in history
-                using var httpClient = this.httpClientFactory.CreateClient();
-                var startGenerationRequest = new StartGenerationRequest(turnContext.Activity.Id, request, activityId);
-                var startGenerationResponse = await httpClient.PutAsJsonAsync(
-                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
-                    startGenerationRequest,
+                // start the generation
+                await this.StartGenerationAsync(
+                    httpClient,
+                    userId,
+                    new StartGenerationRequest(turnContext.Activity.Id, request, activityId),
                     cancellationToken);
-                startGenerationResponse.EnsureSuccessStatusCode();
-
-                // botResponseInteraction.State = States.UNMODIFIED;
 
                 // create the request
                 var chatRequest = new ChatRequest
@@ -212,10 +239,10 @@ public class ChatBot(
                     // append the summary with any message
                     if (!string.IsNullOrEmpty(chatResponse.Msg))
                     {
-                        if (botResponseInteraction.TimeToFirstResponse == 0)
+                        if (completeRequest.TimeToFirstResponse == 0)
                         {
-                            botResponseInteraction.TimeToFirstResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
-                            DiagnosticService.RecordTimeToFirstResponse(botResponseInteraction.TimeToFirstResponse);
+                            completeRequest.TimeToFirstResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
+                            DiagnosticService.RecordTimeToFirstResponse(completeRequest.TimeToFirstResponse);
                         }
                         summaries.Append(chatResponse.Msg);
                     }
@@ -230,8 +257,8 @@ public class ChatBot(
                     }
 
                     // add any token counts
-                    botResponseInteraction.PromptTokenCount += chatResponse.PromptTokens;
-                    botResponseInteraction.CompletionTokenCount += chatResponse.CompletionTokens;
+                    completeRequest.PromptTokenCount += chatResponse.PromptTokens;
+                    completeRequest.CompletionTokenCount += chatResponse.CompletionTokens;
 
                     // the LLM may have determined the user's intent is something other than what the LLM can provide
                     var useAdaptiveCard = true;
@@ -240,28 +267,28 @@ public class ChatBot(
                         case Intent.Unset:
                             break;
                         case Intent.InDomain:
-                            botResponseInteraction.Intent = Intents.IN_DOMAIN;
+                            completeRequest.Intent = Intents.IN_DOMAIN;
                             break;
                         case Intent.Unknown:
                         case Intent.Greeting:
-                            botResponseInteraction.Intent = Intents.GREETING;
+                            completeRequest.Intent = Intents.GREETING;
                             status = this.config.FINAL_STATUS;
                             summaries.ResetTo("Hello and welcome! If you aren't sure what I can do type `/help`.");
                             break;
                         case Intent.OutOfDomain:
-                            botResponseInteraction.Intent = Intents.OUT_OF_DOMAIN;
+                            completeRequest.Intent = Intents.OUT_OF_DOMAIN;
                             status = this.config.FINAL_STATUS;
                             summaries.ResetTo("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
                             break;
                         case Intent.Goodbye:
-                            botResponseInteraction.Intent = Intents.GOODBYE;
+                            completeRequest.Intent = Intents.GOODBYE;
                             status = this.config.FINAL_STATUS;
                             summaries.ResetTo("Goodbye!");
                             break;
                         case Intent.TopicChange:
-                            botResponseInteraction.ConversationId = Guid.NewGuid();
-                            botResponseInteraction.Intent = Intents.TOPIC_CHANGE;
-                            botResponseInteraction.State = States.EMPTY;
+                            completeRequest.ConversationId = Guid.NewGuid();
+                            completeRequest.Intent = Intents.TOPIC_CHANGE;
+                            completeRequest.State = States.EMPTY;
                             if (!string.IsNullOrEmpty(chatResponse.Msg))
                             {
                                 userRequests.Enqueue(chatResponse.Msg);
@@ -282,23 +309,16 @@ public class ChatBot(
                         turnContext,
                         cancellationToken);
                 }
-                botResponseInteraction.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
-                DiagnosticService.RecordTimeToLastResponse(botResponseInteraction.TimeToLastResponse);
+                completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
+                DiagnosticService.RecordTimeToLastResponse(completeRequest.TimeToLastResponse);
 
                 // write the generated message
-                botResponseInteraction.Message = botResponseInteraction.State != States.EMPTY
+                completeRequest.Message = completeRequest.State != States.EMPTY
                     ? summaries.ToString()
                     : null;
-
-                // complete the generation
-                var completeGenerationRequest = new CompleteGenerationRequest(activityId);
-                var completeGenerationResponse = await httpClient.PutAsJsonAsync(
-                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
-                    completeGenerationRequest,
-                    cancellationToken);
-                startGenerationResponse.EnsureSuccessStatusCode();
+                await this.CompleteGenerationAsync(httpClient, userId, completeRequest, cancellationToken);
             }
-            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Locked)
+            catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
             {
                 await Dispatch(
                     activityId,
@@ -312,17 +332,9 @@ public class ChatBot(
             }
             catch (Exception)
             {
-                // botResponseInteraction.State = States.FAILED;
-                // botResponseInteraction.Message = summaries.ToString();
-
-                // TODO: add polly
-                var completeGenerationRequest = new CompleteGenerationRequest(activityId);
-                var completeGenerationResponse = await httpClient.PutAsJsonAsync(
-                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
-                    completeGenerationRequest,
-                    cancellationToken);
-                startGenerationResponse.EnsureSuccessStatusCode();
-
+                completeRequest.State = States.FAILED;
+                completeRequest.Message = summaries.ToString();
+                await this.CompleteGenerationAsync(httpClient, userId, completeRequest, cancellationToken);
                 throw;
             }
         }

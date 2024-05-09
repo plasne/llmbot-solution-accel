@@ -1,10 +1,5 @@
-using Newtonsoft.Json;
-
-public class IntentAndData
+public class IntentAndData : IIntentAndData
 {
-    [JsonProperty("intent")]
-    public DeterminedIntent? Intent { get; set; }
-
-    [JsonProperty("data")]
-    public GroundingData? Data { get; set; }
+    public IDeterminedIntent? Intent { get; set; }
+    public IGroundingData? Data { get; set; }
 }

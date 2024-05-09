@@ -8,6 +8,8 @@ using dotenv.net;
 using Microsoft.Extensions.Logging;
 using Shared;
 using System;
+using Polly.Extensions.Http;
+using Polly;
 
 DotEnv.Load();
 
@@ -37,6 +39,12 @@ if (!string.IsNullOrEmpty(config.AZURE_STORAGE_ACCOUNT_NAME)
     builder.Services.AddHttpClient();
     builder.Services.AddHostedService<InferencePipelineService>();
 }
+
+// add http client with retry
+builder.Services.AddHttpClient("retry")
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(config.MAX_RETRY_ATTEMPTS, retryAttempt => TimeSpan.FromSeconds(config.SECONDS_BETWEEN_RETRIES)));
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();

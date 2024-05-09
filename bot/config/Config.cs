@@ -13,6 +13,8 @@ public class Config : IConfig
         this.CHARACTERS_PER_UPDATE = this.config.Get<string>("CHARACTERS_PER_UPDATE").AsInt(() => 200);
         this.FINAL_STATUS = this.config.Get<string>("FINAL_STATUS").AsString(() => "Generated.");
         this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
+        this.MAX_RETRY_ATTEMPTS = this.config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
+        this.SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
     }
 
     public int PORT { get; }
@@ -27,6 +29,10 @@ public class Config : IConfig
 
     public string MEMORY_URL { get; }
 
+    public int MAX_RETRY_ATTEMPTS { get; }
+
+    public int SECONDS_BETWEEN_RETRIES { get; }
+
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
@@ -35,6 +41,8 @@ public class Config : IConfig
         this.config.Require("CHARACTERS_PER_UPDATE", this.CHARACTERS_PER_UPDATE);
         this.config.Require("FINAL_STATUS", this.FINAL_STATUS);
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
+        this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
+        this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);

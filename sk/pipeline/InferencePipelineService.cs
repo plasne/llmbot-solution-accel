@@ -50,16 +50,16 @@ public class InferencePipelineService(
         }
 
         // serialize the payload
-        GroundTruthFile? inputFile;
+        IGroundTruthFile? inputFile;
         var inputFilepath = request.GroundTruthUri.Split("?").First();
         if (inputFilepath.EndsWith(".json", StringComparison.InvariantCultureIgnoreCase))
         {
-            inputFile = JsonConvert.DeserializeObject<GroundTruthFile>(groundTruthBody)
+            inputFile = JsonConvert.DeserializeObject<IGroundTruthFile>(groundTruthBody)
                 ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri} as JSON.");
         }
         else if (inputFilepath.EndsWith(".yaml", StringComparison.InvariantCultureIgnoreCase))
         {
-            inputFile = yamlDeserializer.Deserialize<GroundTruthFile>(groundTruthBody)
+            inputFile = yamlDeserializer.Deserialize<IGroundTruthFile>(groundTruthBody)
                 ?? throw new Exception($"could not deserialize ground truth file {request.GroundTruthUri} as YAML.");
         }
         else
@@ -73,10 +73,9 @@ public class InferencePipelineService(
         var userQuery = (turns?.LastOrDefault())
             ?? throw new Exception($"could not find user query in ground truth file {request.GroundTruthUri}.");
         turns?.Remove(userQuery);
-        var groundingData = new GroundingData
+        var groundingData = new GroundingData(userQuery.Msg!)
         {
-            UserQuery = userQuery?.Msg,
-            History = turns?.Select(x => new DistributedChat.Turn { Role = x.Role, Msg = x.Msg }).ToList(),
+            History = turns,
         };
 
         // process through the workflow
@@ -85,7 +84,7 @@ public class InferencePipelineService(
         var workflowResponse = await workflow.Execute(groundingData, cancellationToken);
 
         // build the evaluation request
-        var generateAnswerStep = workflowResponse.Steps.Find(x => x.Name == "GenerateAnswer") as WorkflowStepResponse<IntentAndData, Answer>;
+        var generateAnswerStep = workflowResponse.Steps.FirstOrDefault(x => x.Name == "GenerateAnswer") as WorkflowStepResponse<IIntentAndData, Answer>;
         var content = generateAnswerStep?.Input?.Data?.Content?.Where(x =>
             generateAnswerStep.Output?.Citations?.ToList().Any(y => y.Ref == x.Citation?.Ref) ?? false);
         var evaluationRequest = new InferenceFile

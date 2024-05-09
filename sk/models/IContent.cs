@@ -1,7 +1,11 @@
 using DistributedChat;
+using Newtonsoft.Json;
 
-public class Content : IContent
+public interface IContent
 {
+    [JsonProperty("text")]
     public string? Text { get; set; }
+
+    [JsonProperty("citation")]
     public Citation? Citation { get; set; }
 }

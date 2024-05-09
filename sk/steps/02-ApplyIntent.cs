@@ -1,14 +1,16 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Shared.Models.Memory;
 
-public class ApplyIntent(IContext context, ILogger<ApplyIntent> logger) : BaseStep<DeterminedIntent, AppliedIntent>(logger)
+public class ApplyIntent(IContext context, ILogger<ApplyIntent> logger)
+    : BaseStep<IDeterminedIntent, IAppliedIntent>(logger)
 {
     private readonly IContext context = context;
 
     public override string Name => "ApplyIntent";
 
-    public override async Task<AppliedIntent> ExecuteInternal(DeterminedIntent input, CancellationToken cancellationToken = default)
+    public override async Task<IAppliedIntent> ExecuteInternal(IDeterminedIntent input, CancellationToken cancellationToken = default)
     {
         switch (input.Intent)
         {

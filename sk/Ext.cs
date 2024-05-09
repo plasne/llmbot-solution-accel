@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using DistributedChat;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Shared.Models.Memory;
 
 public static class Ext
 {
-    public static ChatHistory ToChatHistory(this List<Turn> turns)
+    public static ChatHistory ToChatHistory(this IEnumerable<ITurn> turns)
     {
         var history = new ChatHistory();
 
@@ -12,10 +12,10 @@ public static class Ext
         {
             switch (turn.Role)
             {
-                case "assistant":
+                case Roles.ASSISTANT:
                     history.AddAssistantMessage(turn.Msg);
                     break;
-                case "user":
+                case Roles.USER:
                     history.AddUserMessage(turn.Msg);
                     break;
             }

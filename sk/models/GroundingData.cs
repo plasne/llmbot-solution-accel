@@ -1,18 +1,10 @@
 using System.Collections.Generic;
-using DistributedChat;
-using Newtonsoft.Json;
+using Shared.Models.Memory;
 
-public class GroundingData
+public class GroundingData(string userQuery) : IGroundingData
 {
-    [JsonProperty("docs")]
-    public List<Doc>? Docs { get; set; }
-
-    [JsonProperty("content")]
-    public List<Content>? Content { get; set; }
-
-    [JsonProperty("user_query")]
-    public string? UserQuery { get; set; }
-
-    [JsonProperty("history")]
-    public List<Turn>? History { get; set; }
+    public IList<IDoc>? Docs { get; set; }
+    public IList<IContent>? Content { get; set; }
+    public string UserQuery { get; set; } = userQuery;
+    public IList<ITurn>? History { get; set; }
 }

@@ -9,6 +9,7 @@ using System.Threading;
 using Azure.AI.OpenAI;
 using SharpToken;
 using System;
+using Shared;
 
 public class DetermineIntent(
     IConfig config,
@@ -16,7 +17,7 @@ public class DetermineIntent(
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
-    : BaseStep<GroundingData, DeterminedIntent>(logger)
+    : BaseStep<IGroundingData, IDeterminedIntent>(logger)
 {
     private readonly IConfig config = config;
     private readonly IContext context = context;
@@ -26,8 +27,8 @@ public class DetermineIntent(
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<DeterminedIntent> ExecuteInternal(
-        GroundingData input,
+    public override async Task<IDeterminedIntent> ExecuteInternal(
+        IGroundingData input,
         CancellationToken cancellationToken = default)
     {
         // validate input

@@ -6,7 +6,7 @@ public interface ICompleteGenerationRequest
 
     public string ActivityId { get; set; }
 
-    public string Message { get; set; }
+    public string? Message { get; set; }
 
     public Intents Intent { get; set; }
 
