@@ -10,12 +10,12 @@ public class DeterminedIntent
     [JsonProperty("query", Required = Required.Always)]
     public required string Query { get; set; }
 
-    [JsonProperty("search_queries", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("search_queries", NullValueHandling = NullValueHandling.Ignore)]
     public IList<string>? SearchQueries { get; set; }
 
-    [JsonProperty("game_name", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("game_name", NullValueHandling = NullValueHandling.Ignore)]
     public string? GameName { get; set; }
 
-    [JsonProperty("edition", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("edition", NullValueHandling = NullValueHandling.Ignore)]
     public string? Edition { get; set; }
 }

@@ -1,13 +1,13 @@
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
 using Shared.Models.Memory;
 
-public class HistoryCommands(IConfig config, IHttpClientFactory httpClientFactory) : ICommands
+public class MemoryCommands(IConfig config, IHttpClientFactory httpClientFactory) : ICommands
 {
     private readonly IConfig config = config;
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
@@ -33,11 +33,15 @@ public class HistoryCommands(IConfig config, IHttpClientFactory httpClientFactor
             // write a topic change to the history service
             using var httpClient = this.httpClientFactory.CreateClient("retry");
             var userId = turnContext.Activity.From.AadObjectId;
-            var res = await httpClient.PostAsJsonAsync(
+            var res = await httpClient.PutAsync(
                 $"{this.config.MEMORY_URL}/api/users/{userId}/conversations",
-                new ChangeTopicRequest { Intent = Intents.TOPIC_CHANGE, ActivityId = turnContext.Activity.Id },
+                new ChangeTopicRequest { Intent = Intents.TOPIC_CHANGE, ActivityId = turnContext.Activity.Id }.ToJsonContent(),
                 cancellationToken);
-            res.EnsureSuccessStatusCode();
+            if (!res.IsSuccessStatusCode)
+            {
+                var content = await res.Content.ReadAsStringAsync(cancellationToken);
+                throw new Exception($"the attempt to PUT /conversations with TOPIC_CHANGE resulted in HTTP {res.StatusCode} - {content}.");
+            }
 
             // confirm the topic change to the user
             var activity = MessageFactory.Text("Let's start a new conversation.");

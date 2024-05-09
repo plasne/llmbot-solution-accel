@@ -60,7 +60,7 @@ builder.Services.AddTransient<IBot, ChatBot>();
 // add commands
 builder.Services.AddTransient<ICommands, HelpCommand>();
 builder.Services.AddTransient<ICommands, FeedbackCommands>();
-builder.Services.AddTransient<ICommands, HistoryCommands>();
+builder.Services.AddTransient<ICommands, MemoryCommands>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

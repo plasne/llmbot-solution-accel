@@ -145,13 +145,33 @@ public class ChatBot(
         return true;
     }
 
+    private async Task<Guid> StartGenerationAsync(HttpClient httpClient, string userId, StartGenerationRequest req, CancellationToken cancellationToken)
+    {
+        var res = await httpClient.PostAsync(
+            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+            req.ToJsonContent(),
+            cancellationToken);
+        var content = await res.Content.ReadAsStringAsync(cancellationToken);
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception($"the attempt to start generation resulted in HTTP {res.StatusCode} - {content}.");
+        }
+        var payload = JsonConvert.DeserializeObject<StartGenerationResponse>(content)
+            ?? throw new Exception("no conversation ID was received from the memory service.");
+        return payload.ConversationId;
+    }
+
     private async Task CompleteGenerationAsync(HttpClient httpClient, string userId, CompleteGenerationRequest req, CancellationToken cancellationToken)
     {
-        var res = await httpClient.PutAsJsonAsync(
+        var res = await httpClient.PutAsync(
             $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
-            req,
+            req.ToJsonContent(),
             cancellationToken);
-        res.EnsureSuccessStatusCode();
+        if (!res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadAsStringAsync(cancellationToken);
+            throw new Exception($"the attempt to complete generation resulted in HTTP {res.StatusCode} - {content}.");
+        }
     }
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
@@ -211,14 +231,11 @@ public class ChatBot(
             try
             {
                 // start the generation
-                var startGenerationResponse = await httpClient.PostAsJsonAsync(
-                    $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+                completeRequest.ConversationId = await StartGenerationAsync(
+                    httpClient,
+                    userId,
                     new StartGenerationRequest { RequestActivityId = turnContext.Activity.Id, Query = request, ResponseActivityId = activityId },
                     cancellationToken);
-                startGenerationResponse.EnsureSuccessStatusCode();
-                var startGenerationResponsePayload = await startGenerationResponse.Content.ReadFromJsonAsync<StartGenerationResponse>(cancellationToken)
-                    ?? throw new Exception("no conversation ID was received from the memory service.");
-                completeRequest.ConversationId = startGenerationResponsePayload.ConversationId;
 
                 // create the request
                 var chatRequest = new ChatRequest

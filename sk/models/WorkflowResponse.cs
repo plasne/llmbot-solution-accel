@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 public class WorkflowResponse
 {
-    [JsonProperty("answer", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("answer", NullValueHandling = NullValueHandling.Ignore)]
     public Answer? Answer { get; set; }
 
     [JsonProperty("steps", Required = Required.Always)]

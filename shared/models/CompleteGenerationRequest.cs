@@ -11,7 +11,7 @@ public class CompleteGenerationRequest
     [JsonProperty("activity_id", Required = Required.Always)]
     public required string ActivityId { get; set; }
 
-    [JsonProperty("message", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("message", NullValueHandling = NullValueHandling.Ignore)]
     public string? Message { get; set; }
 
     [JsonProperty("intent", Required = Required.Always)]
@@ -22,15 +22,15 @@ public class CompleteGenerationRequest
     [JsonConverter(typeof(StringEnumConverter))]
     public required States State { get; set; }
 
-    [JsonProperty("prompt_token_count", Required = Required.Default)]
+    [JsonProperty("prompt_token_count")]
     public int PromptTokenCount { get; set; }
 
-    [JsonProperty("completion_token_count", Required = Required.Default)]
+    [JsonProperty("completion_token_count")]
     public int CompletionTokenCount { get; set; }
 
-    [JsonProperty("time_to_first_response", Required = Required.Default)]
+    [JsonProperty("time_to_first_response")]
     public int TimeToFirstResponse { get; set; }
 
-    [JsonProperty("time_to_last_response", Required = Required.Default)]
+    [JsonProperty("time_to_last_response")]
     public int TimeToLastResponse { get; set; }
 }

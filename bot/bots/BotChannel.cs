@@ -14,7 +14,7 @@ public class BotChannel : IDisposable
 
     public BotChannel(IConfig config)
     {
-        this.channel = GrpcChannel.ForAddress(config.LLM_URI);
+        this.channel = GrpcChannel.ForAddress(config.INFERENCE_URL);
         this.client = new ChatServiceClient(channel);
     }
 

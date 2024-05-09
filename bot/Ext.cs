@@ -1,5 +1,6 @@
-using System;
+using System.Net.Http;
 using System.Text;
+using Newtonsoft.Json;
 
 public static class Ext
 {
@@ -7,5 +8,10 @@ public static class Ext
     {
         sb.Clear();
         sb.Append(value);
+    }
+
+    public static StringContent ToJsonContent<T>(this T obj)
+    {
+        return new StringContent(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json");
     }
 }

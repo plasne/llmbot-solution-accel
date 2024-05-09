@@ -9,7 +9,7 @@ public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, Li
     [JsonProperty("input", Required = Required.Always)]
     public TInput Input { get; set; } = input;
 
-    [JsonProperty("output", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("output", NullValueHandling = NullValueHandling.Ignore)]
     public TOutput? Output { get; set; }
 
     [JsonProperty("logs", Required = Required.Always)]

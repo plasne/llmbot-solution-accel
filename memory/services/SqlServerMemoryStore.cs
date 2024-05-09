@@ -287,6 +287,7 @@ public class SqlServerMemoryStore(
                     conversation.Id = reader.GetGuid(conversationIdOrdinal);
                     var turn = new Turn
                     {
+                        Msg = string.Empty,
                         Role = reader.GetString(roleOrdinal).AsEnum(() => Roles.UNKNOWN),
                     };
                     if (!await reader.IsDBNullAsync(messageOrdinal))

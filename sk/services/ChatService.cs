@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Shared.Models.Memory;
 using System.Net.Http.Json;
+using Newtonsoft.Json;
 
 public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
     : ChatServiceBase
@@ -39,16 +40,24 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         var res = await httpClient.GetAsync(
             $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/current",
             serverCallContext.CancellationToken);
-        res.EnsureSuccessStatusCode();
-        var conversation = await res.Content.ReadFromJsonAsync<Conversation>();
+        var responseContent = await res.Content.ReadAsStringAsync();
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception($"failed to get conversation for user {request.UserId}: {responseContent}");
+        }
+        var conversation = JsonConvert.DeserializeObject<Conversation>(responseContent);
         if (conversation?.Turns is null || !conversation.Turns.Any())
         {
-            throw new Exception($"no conversation was found for user {request.UserId}");
+            throw new Exception($"no turns were found for user {request.UserId}");
         }
 
         // build grounding data
         var turns = conversation.Turns.ToList();
-        var userQuery = turns.Last();
+        var userQuery = turns.LastOrDefault();
+        if (userQuery is null || userQuery.Role != Roles.USER || string.IsNullOrEmpty(userQuery.Msg))
+        {
+            throw new Exception($"the last turn must be a query from the user.");
+        }
         turns.Remove(userQuery);
         var groundingData = new GroundingData
         {

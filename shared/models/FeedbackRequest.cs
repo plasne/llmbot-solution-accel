@@ -4,12 +4,12 @@ namespace Shared.Models.Memory;
 
 public class FeedbackRequest
 {
-    [JsonProperty("activity_id", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("activity_id", NullValueHandling = NullValueHandling.Ignore)]
     public string? ActivityId { get; set; }
 
-    [JsonProperty("rating", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("rating", NullValueHandling = NullValueHandling.Ignore)]
     public string? Rating { get; set; }
 
-    [JsonProperty("comment", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("comment", NullValueHandling = NullValueHandling.Ignore)]
     public string? Comment { get; set; }
 }

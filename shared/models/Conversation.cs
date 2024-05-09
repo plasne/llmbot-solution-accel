@@ -8,6 +8,6 @@ public class Conversation
     [JsonProperty("turns", Required = Required.Always)]
     public required IList<Turn> Turns { get; set; }
 
-    [JsonProperty("custom_instructions", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("custom_instructions", NullValueHandling = NullValueHandling.Ignore)]
     public string? CustomInstructions { get; set; }
 }
