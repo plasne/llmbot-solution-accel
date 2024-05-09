@@ -78,10 +78,11 @@ public class SqlServerMemoryStore(
             .ExecuteAsync(onExecuteAsync);
     }
 
-    public async Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
+    public async Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
+        var conversationId = Guid.Empty;
         try
         {
             await this.ExecuteWithRetryOnTransient(
@@ -130,7 +131,7 @@ public class SqlServerMemoryStore(
                     using (var reader = await command.ExecuteReaderAsync())
                     {
                         await reader.ReadAsync();
-                        var conversationId = reader.GetGuid(0);
+                        conversationId = reader.GetGuid(0);
                         request.ConversationId = conversationId;
                         response.ConversationId = conversationId;
                     }
@@ -150,6 +151,7 @@ public class SqlServerMemoryStore(
             }
             throw;
         }
+        return conversationId;
     }
 
     public async Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default)

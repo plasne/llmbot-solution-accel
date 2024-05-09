@@ -19,7 +19,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost("conversations/current/turns")]
-    public async Task<IActionResult> StartGenerationAsync(
+    public async Task<ActionResult<StartGenerationResponse>> StartGenerationAsync(
         [FromRoute] string userId,
         [FromServices] IConfig config,
         [FromServices] IMemoryStore store,
@@ -27,8 +27,8 @@ public class UsersController : ControllerBase
         CancellationToken cancellationToken)
     {
         var (req, res) = body.ToInteractions(userId);
-        await store.StartGenerationAsync(req, res, config.DEFAULT_RETENTION, cancellationToken);
-        return Ok();
+        var conversationId = await store.StartGenerationAsync(req, res, config.DEFAULT_RETENTION, cancellationToken);
+        return Ok(new StartGenerationResponse { ConversationId = conversationId });
     }
 
     [HttpPut("conversations/current/turns")]

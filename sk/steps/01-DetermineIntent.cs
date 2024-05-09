@@ -17,7 +17,7 @@ public class DetermineIntent(
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
-    : BaseStep<IGroundingData, IDeterminedIntent>(logger)
+    : BaseStep<GroundingData, DeterminedIntent>(logger)
 {
     private readonly IConfig config = config;
     private readonly IContext context = context;
@@ -27,8 +27,8 @@ public class DetermineIntent(
 
     public override string Name => "DetermineIntent";
 
-    public override async Task<IDeterminedIntent> ExecuteInternal(
-        IGroundingData input,
+    public override async Task<DeterminedIntent> ExecuteInternal(
+        GroundingData input,
         CancellationToken cancellationToken = default)
     {
         // validate input

@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Shared.Models.Memory;
 
 public static class Ext
 {
-    public static ChatHistory ToChatHistory(this IEnumerable<ITurn> turns)
+    public static ChatHistory ToChatHistory(this IEnumerable<Turn> turns)
     {
         var history = new ChatHistory();
 

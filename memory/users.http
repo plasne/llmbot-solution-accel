@@ -1,5 +1,5 @@
 @userId = 90ec905a-957b-4d10-8bad-ee975f1fd372
-@conversationId = 694fe1a4-988f-426d-9349-0829a5512351
+@conversationId = 8b4fb3bc-e5a1-485b-b709-348f5c8423a1
 
 ### get the current conversation
 GET http://localhost:7010/api/users/{{userId}}/conversations/current HTTP/1.1

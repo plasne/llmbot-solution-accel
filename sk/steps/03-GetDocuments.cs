@@ -4,21 +4,21 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 public class GetDocuments(IContext context, SearchService searchService, ILogger<GetDocuments> logger)
-    : BaseStep<IDeterminedIntent, List<IDoc>>(logger)
+    : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {
     private readonly IContext context = context;
 
     public override string Name => "GetDocuments";
 
-    public override async Task<List<IDoc>> ExecuteInternal(
-        IDeterminedIntent intent,
+    public override async Task<List<Doc>> ExecuteInternal(
+        DeterminedIntent intent,
         CancellationToken cancellationToken = default)
     {
         // set status
         await this.context.Stream("Getting documents...");
 
         // getting documents
-        var docs = new List<IDoc>();
+        var docs = new List<Doc>();
         if (intent.SearchQueries is not null)
         {
             foreach (var query in intent.SearchQueries)

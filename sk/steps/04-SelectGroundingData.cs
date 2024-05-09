@@ -7,15 +7,15 @@ using DistributedChat;
 using Microsoft.Extensions.Logging;
 
 public class SelectGroundingData(ILogger<SelectGroundingData> logger)
-    : BaseStep<IGroundingData, IGroundingData>(logger)
+    : BaseStep<GroundingData, GroundingData>(logger)
 {
     public override string Name => "SelectGroundingData";
 
-    public override Task<IGroundingData> ExecuteInternal(
-        IGroundingData input,
+    public override Task<GroundingData> ExecuteInternal(
+        GroundingData input,
         CancellationToken cancellationToken = default)
     {
-        IGroundingData output = new GroundingData(input.UserQuery);
+        GroundingData output = new() { UserQuery = input.UserQuery };
 
         // Some ideas on what to do here:
         // - trim

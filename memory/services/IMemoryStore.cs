@@ -1,3 +1,4 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Iso8601DurationHelper;
@@ -7,7 +8,7 @@ public interface IMemoryStore
 {
     Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default);
 
-    Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
+    Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
 
     Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default);
 

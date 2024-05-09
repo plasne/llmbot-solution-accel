@@ -40,7 +40,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/current",
             serverCallContext.CancellationToken);
         res.EnsureSuccessStatusCode();
-        var conversation = await res.Content.ReadFromJsonAsync<IConversation>();
+        var conversation = await res.Content.ReadFromJsonAsync<Conversation>();
         if (conversation?.Turns is null || !conversation.Turns.Any())
         {
             throw new Exception($"no conversation was found for user {request.UserId}");
@@ -50,8 +50,9 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         var turns = conversation.Turns.ToList();
         var userQuery = turns.Last();
         turns.Remove(userQuery);
-        var groundingData = new GroundingData(userQuery.Msg)
+        var groundingData = new GroundingData
         {
+            UserQuery = userQuery.Msg,
             History = turns,
         };
 

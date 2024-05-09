@@ -10,9 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 public class WorkflowController : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<IWorkflowResponse>> RunWorkflow(
+    public async Task<ActionResult<WorkflowResponse>> RunWorkflow(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] IGroundingData groundingData,
+        [FromBody] GroundingData groundingData,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
@@ -22,9 +22,9 @@ public class WorkflowController : ControllerBase
     }
 
     [HttpPost("determine-intent")]
-    public async Task<ActionResult<IDeterminedIntent>> DetermineIntent(
+    public async Task<ActionResult<DeterminedIntent>> DetermineIntent(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] IGroundingData groundingData,
+        [FromBody] GroundingData groundingData,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
@@ -36,7 +36,7 @@ public class WorkflowController : ControllerBase
     [HttpPost("get-documents")]
     public async Task<ActionResult<List<Doc>>> GetDocuments(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] IDeterminedIntent intent,
+        [FromBody] DeterminedIntent intent,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
@@ -46,9 +46,9 @@ public class WorkflowController : ControllerBase
     }
 
     [HttpPost("select-grounding-data")]
-    public async Task<ActionResult<IGroundingData>> SelectGroundingData(
+    public async Task<ActionResult<GroundingData>> SelectGroundingData(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] IGroundingData input,
+        [FromBody] GroundingData input,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
@@ -60,7 +60,7 @@ public class WorkflowController : ControllerBase
     [HttpPost("generate-answer")]
     public async Task<ActionResult<string>> GenerateAnswer(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] IIntentAndData input,
+        [FromBody] IntentAndData input,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();

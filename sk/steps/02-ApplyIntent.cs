@@ -4,13 +4,13 @@ using Microsoft.Extensions.Logging;
 using Shared.Models.Memory;
 
 public class ApplyIntent(IContext context, ILogger<ApplyIntent> logger)
-    : BaseStep<IDeterminedIntent, IAppliedIntent>(logger)
+    : BaseStep<DeterminedIntent, AppliedIntent>(logger)
 {
     private readonly IContext context = context;
 
     public override string Name => "ApplyIntent";
 
-    public override async Task<IAppliedIntent> ExecuteInternal(IDeterminedIntent input, CancellationToken cancellationToken = default)
+    public override async Task<AppliedIntent> ExecuteInternal(DeterminedIntent input, CancellationToken cancellationToken = default)
     {
         switch (input.Intent)
         {

@@ -1,7 +1,11 @@
 using System.Collections.Generic;
+using Newtonsoft.Json;
 
-public class WorkflowResponse : IWorkflowResponse
+public class WorkflowResponse
 {
-    public IAnswer? Answer { get; set; }
+    [JsonProperty("answer", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    public Answer? Answer { get; set; }
+
+    [JsonProperty("steps", Required = Required.Always)]
     public IList<IWorkflowStepResponse> Steps { get; set; } = [];
 }

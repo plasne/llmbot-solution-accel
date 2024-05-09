@@ -14,7 +14,7 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
     private readonly ILogger<LocalMemoryStore> logger = logger;
     private readonly Dictionary<string, List<Interaction>> interactions = [];
 
-    public Task StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
+    public Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
     {
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
@@ -25,7 +25,7 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
             request.ConversationId = conversationId;
             response.ConversationId = conversationId;
             this.interactions.Add(request.UserId!, [request, response]);
-            return Task.CompletedTask;
+            return Task.FromResult(request.ConversationId);
         }
 
         var last = interactions!.Last();
@@ -39,7 +39,7 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
         interactions.Add(request);
         interactions.Add(response);
 
-        return Task.CompletedTask;
+        return Task.FromResult(request.ConversationId);
     }
 
     public Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default)

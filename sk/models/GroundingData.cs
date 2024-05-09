@@ -1,10 +1,17 @@
 using System.Collections.Generic;
-using Shared.Models.Memory;
+using Newtonsoft.Json;
 
-public class GroundingData(string userQuery) : IGroundingData
+public class GroundingData
 {
-    public IList<IDoc>? Docs { get; set; }
-    public IList<IContent>? Content { get; set; }
-    public string UserQuery { get; set; } = userQuery;
-    public IList<ITurn>? History { get; set; }
+    [JsonProperty("docs", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Doc>? Docs { get; set; }
+
+    [JsonProperty("content", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Content>? Content { get; set; }
+
+    [JsonProperty("user_query", Required = Required.Always)]
+    public required string UserQuery { get; set; }
+
+    [JsonProperty("history", Required = Required.AllowNull, NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Turn>? History { get; set; }
 }

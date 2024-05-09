@@ -6,8 +6,8 @@ public class Turn
 {
     [JsonProperty("role", Required = Required.Always)]
     [JsonConverter(typeof(StringEnumConverter))]
-    public Roles Role { get; set; }
+    public required Roles Role { get; set; }
 
-    [JsonProperty("msg", Required = Required.AllowNull)]
-    public string? Msg { get; set; }
+    [JsonProperty("msg", Required = Required.Always)]
+    public required string Msg { get; set; }
 }

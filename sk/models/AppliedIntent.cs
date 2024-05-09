@@ -1,4 +1,7 @@
-public class AppliedIntent : IAppliedIntent
+using Newtonsoft.Json;
+
+public class AppliedIntent
 {
-    public bool Continue { get; set; }
+    [JsonProperty("continue", Required = Required.Always)]
+    public required bool Continue { get; set; }
 }

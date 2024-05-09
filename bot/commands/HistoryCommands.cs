@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Schema;
+using Shared.Models.Memory;
 
 public class HistoryCommands(IConfig config, IHttpClientFactory httpClientFactory) : ICommands
 {
@@ -34,7 +35,7 @@ public class HistoryCommands(IConfig config, IHttpClientFactory httpClientFactor
             var userId = turnContext.Activity.From.AadObjectId;
             var res = await httpClient.PostAsJsonAsync(
                 $"{this.config.MEMORY_URL}/api/users/{userId}/conversations",
-                new ChangeTopicRequest(turnContext.Activity.Id),
+                new ChangeTopicRequest { Intent = Intents.TOPIC_CHANGE, ActivityId = turnContext.Activity.Id },
                 cancellationToken);
             res.EnsureSuccessStatusCode();
 

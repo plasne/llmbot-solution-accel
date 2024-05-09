@@ -20,7 +20,7 @@ public partial class GenerateAnswer(
     Kernel kernel,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
-    : BaseStep<IIntentAndData, IAnswer>(logger)
+    : BaseStep<IntentAndData, Answer>(logger)
 {
     private readonly IConfig config = config;
     private readonly IContext context = context;
@@ -30,8 +30,8 @@ public partial class GenerateAnswer(
 
     public override string Name => "GenerateAnswer";
 
-    public override async Task<IAnswer> ExecuteInternal(
-        IIntentAndData input,
+    public override async Task<Answer> ExecuteInternal(
+        IntentAndData input,
         CancellationToken cancellationToken = default)
     {
         // validate input
