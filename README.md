@@ -12,8 +12,7 @@ Please see the README.MD files in each of these services to get up and going:
 ## TODO
 
 - Add Stylecop
-- Explicit topic change (/new)
-- Implicit topic change
+- Ensure topic change cannot happen during generation
 - `/rate up` and `/rate down` commands
 - `/comment ???` to give feedback on the last exchange
 - `/feedback` to show the feedback and rating

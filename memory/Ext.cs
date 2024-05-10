@@ -1,5 +1,7 @@
 using System;
+using System.Text;
 using Iso8601DurationHelper;
+using Shared;
 using Shared.Models.Memory;
 
 public static class Ext
@@ -11,6 +13,36 @@ public static class Ext
             return duration;
         }
         return dflt();
+    }
+
+    public static bool TryDecodeBase64String(this string value, out string decoded)
+    {
+        try
+        {
+            decoded = Encoding.UTF8.GetString(Convert.FromBase64String(value));
+            return true;
+        }
+        catch
+        {
+            decoded = string.Empty;
+            return false;
+        }
+    }
+
+    public static string Decode(this string activityId)
+    {
+        if (int.TryParse(activityId, out var asInt))
+        {
+            return asInt.ToString();
+        }
+        else if (activityId.TryDecodeBase64String(out var asDecoded))
+        {
+            return asDecoded;
+        }
+        else
+        {
+            throw new HttpException(400, "activityId must be an int or base64-encoded string.");
+        }
     }
 
     public static (Interaction req, Interaction res) ToInteractions(this StartGenerationRequest req, string userId)

@@ -2,10 +2,10 @@
 @conversationId = 8b4fb3bc-e5a1-485b-b709-348f5c8423a1
 
 ### get the current conversation
-GET http://localhost:7010/api/users/{{userId}}/conversations/current HTTP/1.1
+GET http://localhost:7010/api/users/{{userId}}/conversations/:last HTTP/1.1
 
 ### create a new turn in the current conversation
-POST http://localhost:7010/api/users/{{userId}}/conversations/current/turns HTTP/1.1
+POST http://localhost:7010/api/users/{{userId}}/conversations/:last/turns HTTP/1.1
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 }
 
 ### complete generation in the current conversation
-PUT http://localhost:7010/api/users/{{userId}}/conversations/current/turns HTTP/1.1
+PUT http://localhost:7010/api/users/{{userId}}/conversations/:last/turns/:last HTTP/1.1
 Content-Type: application/json
 
 {
@@ -26,8 +26,8 @@ Content-Type: application/json
   "state": "UNMODIFIED"
 }
 
-### delete 1 turn
-DELETE http://localhost:7010/api/users/{{userId}}/turns HTTP/1.1
+### delete the last activity
+DELETE http://localhost:7010/api/users/{{userId}}/activities/:last HTTP/1.1
 
 ### change conversation topic
 PUT http://localhost:7010/api/users/{{userId}}/conversations HTTP/1.1

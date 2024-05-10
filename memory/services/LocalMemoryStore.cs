@@ -83,12 +83,16 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public Task DeleteLastActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    {
+        throw new HttpException(501, "not currently implemented");
+    }
+    public Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default)
     {
         var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
 

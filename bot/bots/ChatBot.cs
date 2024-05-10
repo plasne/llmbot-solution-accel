@@ -148,7 +148,7 @@ public class ChatBot(
     private async Task<Guid> StartGenerationAsync(HttpClient httpClient, string userId, StartGenerationRequest req, CancellationToken cancellationToken)
     {
         var res = await httpClient.PostAsync(
-            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns",
             req.ToJsonContent(),
             cancellationToken);
         var content = await res.Content.ReadAsStringAsync(cancellationToken);
@@ -164,7 +164,7 @@ public class ChatBot(
     private async Task CompleteGenerationAsync(HttpClient httpClient, string userId, CompleteGenerationRequest req, CancellationToken cancellationToken)
     {
         var res = await httpClient.PutAsync(
-            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/current/turns",
+            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns/:last",
             req.ToJsonContent(),
             cancellationToken);
         if (!res.IsSuccessStatusCode)

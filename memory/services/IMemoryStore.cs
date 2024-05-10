@@ -6,13 +6,15 @@ using Shared.Models.Memory;
 
 public interface IMemoryStore
 {
-    Task<Conversation> GetCurrentConversationAsync(string userId, CancellationToken cancellationToken = default);
+    Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default);
 
     Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
 
     Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default);
 
-    Task DeleteLastInteractionsAsync(string userId, int count = 1, CancellationToken cancellationToken = default);
+    Task DeleteLastActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default);
+
+    Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default);
 
     Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry, CancellationToken cancellationToken = default);
 

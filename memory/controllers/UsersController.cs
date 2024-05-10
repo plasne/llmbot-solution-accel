@@ -7,18 +7,18 @@ using Shared.Models.Memory;
 [ApiController]
 public class UsersController : ControllerBase
 {
-    [HttpGet("conversations/current")]
-    public async Task<ActionResult<Conversation>> GetCurrentConversationAsync(
+    [HttpGet("conversations/:last")]
+    public async Task<ActionResult<Conversation>> GetLastConversationAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
         // TODO: support max-size
-        var conversation = await store.GetCurrentConversationAsync(userId, cancellationToken);
+        var conversation = await store.GetLastConversationAsync(userId, cancellationToken);
         return Ok(conversation);
     }
 
-    [HttpPost("conversations/current/turns")]
+    [HttpPost("conversations/:last/turns")]
     public async Task<ActionResult<StartGenerationResponse>> StartGenerationAsync(
         [FromRoute] string userId,
         [FromServices] IConfig config,
@@ -31,7 +31,7 @@ public class UsersController : ControllerBase
         return Ok(new StartGenerationResponse { ConversationId = conversationId });
     }
 
-    [HttpPut("conversations/current/turns")]
+    [HttpPut("conversations/:last/turns/:last")]
     public async Task<IActionResult> CompleteGenerationAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
@@ -42,14 +42,25 @@ public class UsersController : ControllerBase
         return Ok();
     }
 
-    [HttpDelete("turns")]
-    public async Task<IActionResult> DeleteLastTurnsAsync(
+    [HttpDelete("activities/{activityId}")]
+    public async Task<IActionResult> DeleteActivityAsync(
+        [FromRoute] string userId,
+        [FromRoute] string activityId,
+        [FromServices] IMemoryStore store,
+        CancellationToken cancellationToken)
+    {
+        await store.DeleteActivityAsync(userId, activityId.Decode(), cancellationToken);
+        return Ok();
+    }
+
+    [HttpDelete("activities/:last")]
+    public async Task<IActionResult> DeleteLastActivitiesAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken,
         [FromQuery] int count = 1)
     {
-        await store.DeleteLastInteractionsAsync(userId, count, cancellationToken);
+        await store.DeleteLastActivitiesAsync(userId, count, cancellationToken);
         return Ok();
     }
 
@@ -73,49 +84,76 @@ public class UsersController : ControllerBase
         return Ok();
     }
 
-    [HttpPost("conversations/current/feedback")]
+    [HttpPut("activities/:last/feedback")]
     public async Task<IActionResult> RateMessageAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         [FromBody] FeedbackRequest body,
         CancellationToken cancellationToken)
     {
-        var hasActivity = string.IsNullOrEmpty(body.ActivityId);
-        var hasRating = string.IsNullOrEmpty(body.Rating);
-        var hasComment = string.IsNullOrEmpty(body.Comment);
-        if (!hasActivity && !hasRating && !hasComment)
+        if (string.IsNullOrEmpty(body.Rating) && string.IsNullOrEmpty(body.Comment))
         {
-            return BadRequest("you must supply at least one of activityId, rating, or comment.");
+            return BadRequest("you must supply at least one of rating or comment.");
         }
 
-        if (hasRating)
+        if (!string.IsNullOrEmpty(body.Rating))
         {
-            await (hasActivity
-                ? store.RateMessageAsync(userId, body.ActivityId!, body.Rating!, cancellationToken)
-                : store.RateMessageAsync(userId, body.Rating!, cancellationToken));
+            await store.RateMessageAsync(userId, body.Rating, cancellationToken);
         }
 
-        if (hasComment)
+        if (!string.IsNullOrEmpty(body.Comment))
         {
-            await (hasActivity
-                ? store.CommentOnMessageAsync(userId, body.ActivityId!, body.Rating!, cancellationToken)
-                : store.CommentOnMessageAsync(userId, body.Rating!, cancellationToken));
+            await store.CommentOnMessageAsync(userId, body.Comment, cancellationToken);
         }
 
         return Ok();
     }
 
-    [HttpDelete("conversations/current/feedback")]
+    [HttpPut("activities/{activityId}/feedback")]
+    public async Task<IActionResult> RateMessageAsync(
+        [FromRoute] string userId,
+        [FromRoute] string activityId,
+        [FromServices] IMemoryStore store,
+        [FromBody] FeedbackRequest body,
+        CancellationToken cancellationToken)
+    {
+        var decodedActivityId = activityId.Decode();
+        if (string.IsNullOrEmpty(body.Rating) && string.IsNullOrEmpty(body.Comment))
+        {
+            return BadRequest("you must supply at least one of rating or comment.");
+        }
+
+        if (!string.IsNullOrEmpty(body.Rating))
+        {
+            await store.RateMessageAsync(userId, decodedActivityId, body.Rating, cancellationToken);
+        }
+
+        if (!string.IsNullOrEmpty(body.Comment))
+        {
+            await store.CommentOnMessageAsync(userId, decodedActivityId, body.Comment, cancellationToken);
+        }
+
+        return Ok();
+    }
+
+    [HttpDelete("activities/:last/feedback")]
     public async Task<IActionResult> ClearFeedbackAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
-        [FromBody] ClearFeedbackRequest body,
         CancellationToken cancellationToken)
     {
-        var hasActivity = string.IsNullOrEmpty(body.ActivityId);
-        await (hasActivity
-            ? store.ClearFeedbackAsync(userId, body.ActivityId, cancellationToken)
-            : store.ClearFeedbackAsync(userId, cancellationToken));
+        await store.ClearFeedbackAsync(userId, cancellationToken);
+        return Ok();
+    }
+
+    [HttpDelete("activities/{activityId}/feedback")]
+    public async Task<IActionResult> ClearFeedbackAsync(
+        [FromRoute] string userId,
+        [FromRoute] string activityId,
+        [FromServices] IMemoryStore store,
+        CancellationToken cancellationToken)
+    {
+        await store.ClearFeedbackAsync(userId, activityId.Decode(), cancellationToken);
         return Ok();
     }
 
