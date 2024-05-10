@@ -16,5 +16,5 @@ public class InferenceFile
     public string? Answer { get; set; }
 
     [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Content>? Content { get; set; }
+    public IList<Context>? Context { get; set; }
 }

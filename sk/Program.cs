@@ -82,7 +82,7 @@ switch (config.MEMORY_TERM)
 }
 
 // add the workflow services
-builder.Services.AddScoped<IContext, Context>();
+builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<Workflow>();
 builder.Services.AddTransient<DetermineIntent>();
 builder.Services.AddTransient<ApplyIntent>();

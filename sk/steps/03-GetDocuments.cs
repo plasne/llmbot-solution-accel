@@ -3,10 +3,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-public class GetDocuments(IContext context, SearchService searchService, ILogger<GetDocuments> logger)
+public class GetDocuments(IWorkflowContext context, SearchService searchService, ILogger<GetDocuments> logger)
     : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {
-    private readonly IContext context = context;
+    private readonly IWorkflowContext context = context;
 
     public override string Name => "GetDocuments";
 

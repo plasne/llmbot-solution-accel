@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using System.Net.Http;
 using Shared.Models.Memory;
-using System.Net.Http.Json;
 using Newtonsoft.Json;
 
 public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
@@ -67,7 +66,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
 
         // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IContext>();
+        var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
 
         var logger = this.serviceProvider.GetRequiredService<ILogger<ChatService>>();

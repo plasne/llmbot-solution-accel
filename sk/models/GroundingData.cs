@@ -7,7 +7,7 @@ public class GroundingData
     public IList<Doc>? Docs { get; set; }
 
     [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Content>? Content { get; set; }
+    public IList<Context>? Context { get; set; }
 
     [JsonProperty("user_query")]
     public required string UserQuery { get; set; }

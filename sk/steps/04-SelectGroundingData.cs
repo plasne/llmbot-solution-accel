@@ -26,12 +26,12 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         if (input.Docs is not null)
         {
             var ordered = input.Docs.OrderByDescending(x => x.SearchScore);
-            output.Content = [];
+            output.Context = [];
             foreach (var doc in input.Docs.Take(10))
             {
-                int index = output.Content.Count;
+                int index = output.Context.Count;
                 var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
-                var content = new Content
+                var context = new Context
                 {
                     Text = chunk,
                     Citation = new Citation
@@ -41,7 +41,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
                         Uri = "https://" + doc.Title // update to some kind of URL
                     }
                 };
-                output.Content.Add(content);
+                output.Context.Add(context);
             }
         }
 

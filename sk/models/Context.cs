@@ -1,7 +1,7 @@
 using DistributedChat;
 using Newtonsoft.Json;
 
-public class Content
+public class Context
 {
     [JsonProperty("text", Required = Required.Always)]
     public required string Text { get; set; }
