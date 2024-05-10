@@ -17,11 +17,6 @@ enum Intent {
   TOPIC_CHANGE = 6;
 }
 
-message Turn {
-  string role = 1;
-  string msg = 2;
-}
-
 message ChatRequest {
   string userId = 1;
   int32 minCharsToStream = 2;
