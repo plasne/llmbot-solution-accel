@@ -38,7 +38,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         // get current conversation
         using var httpClient = this.httpClientFactory.CreateClient("retry");
         var res = await httpClient.GetAsync(
-            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/current",
+            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/:last",
             serverCallContext.CancellationToken);
         var responseContent = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
