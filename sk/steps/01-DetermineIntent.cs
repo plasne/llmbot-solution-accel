@@ -9,17 +9,18 @@ using System.Threading;
 using Azure.AI.OpenAI;
 using SharpToken;
 using System;
+using Shared;
 
 public class DetermineIntent(
     IConfig config,
-    IContext context,
+    IWorkflowContext context,
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
     : BaseStep<GroundingData, DeterminedIntent>(logger)
 {
     private readonly IConfig config = config;
-    private readonly IContext context = context;
+    private readonly IWorkflowContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
     private readonly ILogger<DetermineIntent> logger = logger;

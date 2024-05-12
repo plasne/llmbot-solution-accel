@@ -75,8 +75,8 @@ public class InferencePipelineService(
         turns?.Remove(userQuery);
         var groundingData = new GroundingData
         {
-            UserQuery = userQuery?.Msg,
-            History = turns?.Select(x => new DistributedChat.Turn { Role = x.Role, Msg = x.Msg }).ToList(),
+            UserQuery = userQuery.Msg,
+            History = turns,
         };
 
         // process through the workflow
@@ -85,8 +85,8 @@ public class InferencePipelineService(
         var workflowResponse = await workflow.Execute(groundingData, cancellationToken);
 
         // build the evaluation request
-        var generateAnswerStep = workflowResponse.Steps.Find(x => x.Name == "GenerateAnswer") as WorkflowStepResponse<IntentAndData, Answer>;
-        var content = generateAnswerStep?.Input?.Data?.Content?.Where(x =>
+        var generateAnswerStep = workflowResponse.Steps.FirstOrDefault(x => x.Name == "GenerateAnswer") as WorkflowStepResponse<IntentAndData, Answer>;
+        var context = generateAnswerStep?.Input?.Data?.Context?.Where(x =>
             generateAnswerStep.Output?.Citations?.ToList().Any(y => y.Ref == x.Citation?.Ref) ?? false);
         var evaluationRequest = new InferenceFile
         {
@@ -94,7 +94,7 @@ public class InferencePipelineService(
             History = inputFile.History,
             GroundTruth = inputFile.GroundTruth,
             Answer = workflowResponse.Answer?.Text,
-            Content = content?.ToList(),
+            Context = context?.ToList(),
         };
 
         // attempt to upload the inference file

@@ -8,11 +8,16 @@ using System;
 using System.Text;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using System.Net.Http;
+using Shared.Models.Memory;
+using Newtonsoft.Json;
 
-public class ChatService(IServiceProvider serviceProvider)
+public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttpClientFactory httpClientFactory)
     : ChatServiceBase
 {
+    private readonly IConfig config = config;
     private readonly IServiceProvider serviceProvider = serviceProvider;
+    private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
 
     private class Buffer
     {
@@ -29,19 +34,39 @@ public class ChatService(IServiceProvider serviceProvider)
         IServerStreamWriter<ChatResponse> responseStream,
         ServerCallContext serverCallContext)
     {
+        // get current conversation
+        using var httpClient = this.httpClientFactory.CreateClient("retry");
+        var res = await httpClient.GetAsync(
+            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/:last",
+            serverCallContext.CancellationToken);
+        var responseContent = await res.Content.ReadAsStringAsync();
+        if (!res.IsSuccessStatusCode)
+        {
+            throw new Exception($"failed to get conversation for user {request.UserId}: {responseContent}");
+        }
+        var conversation = JsonConvert.DeserializeObject<Conversation>(responseContent);
+        if (conversation?.Turns is null || !conversation.Turns.Any())
+        {
+            throw new Exception($"no turns were found for user {request.UserId}");
+        }
+
         // build grounding data
-        var turns = request.Turns?.ToList();
-        var userQuery = turns?.LastOrDefault();
-        turns?.Remove(userQuery);
+        var turns = conversation.Turns.ToList();
+        var userQuery = turns.LastOrDefault();
+        if (userQuery is null || userQuery.Role != Roles.USER || string.IsNullOrEmpty(userQuery.Msg))
+        {
+            throw new Exception($"the last turn must be a query from the user.");
+        }
+        turns.Remove(userQuery);
         var groundingData = new GroundingData
         {
-            UserQuery = userQuery?.Msg,
+            UserQuery = userQuery.Msg,
             History = turns,
         };
 
         // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
-        var context = scope.ServiceProvider.GetRequiredService<IContext>();
+        var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
 
         var logger = this.serviceProvider.GetRequiredService<ILogger<ChatService>>();

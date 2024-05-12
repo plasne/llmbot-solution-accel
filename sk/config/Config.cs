@@ -8,10 +8,10 @@ public class Config : IConfig
     public Config(NetBricks.IConfig config)
     {
         this.config = config;
-        this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 5210);
-        this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 5211);
+        this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 7020);
+        this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 7030);
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
-        this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum<MemoryTerm>(() => MemoryTerm.Long);
+        this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.LLM_DEPLOYMENT_NAME = config.Get<string>("LLM_DEPLOYMENT_NAME");
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
@@ -26,6 +26,9 @@ public class Config : IConfig
         this.AZURE_STORAGE_ACCOUNT_NAME = config.Get<string>("AZURE_STORAGE_ACCOUNT_NAME");
         this.AZURE_STORAGE_INFERENCE_QUEUE = config.Get<string>("AZURE_STORAGE_INFERENCE_QUEUE");
         this.AZURE_STORAGE_EVALUATION_QUEUE = config.Get<string>("AZURE_STORAGE_EVALUATION_QUEUE");
+        this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
+        this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
+        this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
     }
 
     public int GRPC_PORT { get; }
@@ -64,6 +67,12 @@ public class Config : IConfig
 
     public string AZURE_STORAGE_EVALUATION_QUEUE { get; }
 
+    public string MEMORY_URL { get; }
+
+    public int MAX_RETRY_ATTEMPTS { get; }
+
+    public int SECONDS_BETWEEN_RETRIES { get; }
+
     public void Validate()
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
@@ -87,5 +96,8 @@ public class Config : IConfig
         this.config.Optional("AZURE_STORAGE_ACCOUNT_NAME", this.AZURE_STORAGE_ACCOUNT_NAME);
         this.config.Optional("AZURE_STORAGE_INFERENCE_QUEUE", this.AZURE_STORAGE_INFERENCE_QUEUE);
         this.config.Optional("AZURE_STORAGE_EVALUATION_QUEUE", this.AZURE_STORAGE_EVALUATION_QUEUE);
+        this.config.Require("MEMORY_URL", this.MEMORY_URL);
+        this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
+        this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
     }
 }

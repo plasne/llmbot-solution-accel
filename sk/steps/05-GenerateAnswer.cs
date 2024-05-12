@@ -11,18 +11,19 @@ using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
+using Shared;
 using SharpToken;
 
 public partial class GenerateAnswer(
     IConfig config,
-    IContext context,
+    IWorkflowContext context,
     Kernel kernel,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
     : BaseStep<IntentAndData, Answer>(logger)
 {
     private readonly IConfig config = config;
-    private readonly IContext context = context;
+    private readonly IWorkflowContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
     private readonly ILogger<GenerateAnswer> logger = logger;
@@ -68,8 +69,8 @@ public partial class GenerateAnswer(
         ChatHistory history = input.Data?.History?.ToChatHistory() ?? [];
 
         // get the responses
-        var contextString = (input.Data?.Content is not null)
-            ? string.Join("\n", input.Data.Content.Select(x => x.Text))
+        var contextString = (input.Data?.Context is not null)
+            ? string.Join("\n", input.Data.Context.Select(x => x.Text))
             : string.Empty;
 
         // execute
@@ -113,7 +114,7 @@ public partial class GenerateAnswer(
         {
             if (!citations.ContainsKey(match.Value))
             {
-                var content = input.Data?.Content?.Find(x => $"[{x.Citation?.Ref}]" == match.Value);
+                var content = input.Data?.Context?.FirstOrDefault(x => $"[{x.Citation?.Ref}]" == match.Value);
                 if (content is not null && content.Citation is not null)
                 {
                     citations.Add(match.Value, content.Citation);

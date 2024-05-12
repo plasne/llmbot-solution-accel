@@ -1,32 +1,21 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-
-public enum Intents
-{
-    UNKNOWN = 0,
-    GREETING = 1,
-    GOODBYE = 2,
-    IN_DOMAIN = 3,
-    OUT_OF_DOMAIN = 4,
-    TOPIC_CHANGE = 5,
-}
+using Shared.Models.Memory;
 
 public class DeterminedIntent
 {
-    [JsonProperty("intent")]
-    [JsonConverter(typeof(StringEnumConverter))]
-    public Intents Intent { get; set; }
+    [JsonProperty("intent", Required = Required.Always)]
+    public required Intents Intent { get; set; }
 
-    [JsonProperty("query")]
-    public string? Query { get; set; }
+    [JsonProperty("query", Required = Required.Always)]
+    public required string Query { get; set; }
 
-    [JsonProperty("search_queries")]
-    public List<string>? SearchQueries { get; set; }
+    [JsonProperty("search_queries", NullValueHandling = NullValueHandling.Ignore)]
+    public IList<string>? SearchQueries { get; set; }
 
-    [JsonProperty("game_name")]
+    [JsonProperty("game_name", NullValueHandling = NullValueHandling.Ignore)]
     public string? GameName { get; set; }
 
-    [JsonProperty("edition")]
+    [JsonProperty("edition", NullValueHandling = NullValueHandling.Ignore)]
     public string? Edition { get; set; }
 }

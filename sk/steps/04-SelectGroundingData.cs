@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +15,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         GroundingData input,
         CancellationToken cancellationToken = default)
     {
-        var output = new GroundingData();
+        GroundingData output = new() { UserQuery = input.UserQuery };
 
         // Some ideas on what to do here:
         // - trim
@@ -25,12 +26,12 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         if (input.Docs is not null)
         {
             var ordered = input.Docs.OrderByDescending(x => x.SearchScore);
-            output.Content = [];
+            output.Context = [];
             foreach (var doc in input.Docs.Take(10))
             {
-                int index = output.Content.Count;
+                int index = output.Context.Count;
                 var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
-                var content = new Content
+                var context = new Context
                 {
                     Text = chunk,
                     Citation = new Citation
@@ -40,12 +41,12 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
                         Uri = "https://" + doc.Title // update to some kind of URL
                     }
                 };
-                output.Content.Add(content);
+                output.Context.Add(context);
             }
         }
 
         // trim to 5 turns of the conversation
-        output.History = input.History?.Skip(Math.Max(0, input.History.Count - 5)).ToList();
+        output.History = input.History?.Skip(Math.Max(0, input.History.Count() - 5)).ToList();
 
         return Task.FromResult(output);
     }

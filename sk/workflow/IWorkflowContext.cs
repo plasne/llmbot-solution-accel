@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DistributedChat;
 
-public interface IContext
+public interface IWorkflowContext
 {
     event Func<string?, string?, Intent, List<Citation>?, int, int, Task> OnStream;
 

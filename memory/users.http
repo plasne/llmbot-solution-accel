@@ -1,0 +1,53 @@
+@userId = 90ec905a-957b-4d10-8bad-ee975f1fd372
+@conversationId = 8b4fb3bc-e5a1-485b-b709-348f5c8423a1
+
+### get the current conversation
+GET http://localhost:7010/api/users/{{userId}}/conversations/:last HTTP/1.1
+
+### create a new turn in the current conversation
+POST http://localhost:7010/api/users/{{userId}}/conversations/:last/turns HTTP/1.1
+Content-Type: application/json
+
+{
+  "request_activity_id": "fake-request-id",
+  "query": "Can you answer this fake question?",
+  "response_activity_id": "fake-response-id"
+}
+
+### complete generation in the current conversation
+PUT http://localhost:7010/api/users/{{userId}}/conversations/:last/turns/:last HTTP/1.1
+Content-Type: application/json
+
+{
+  "conversation_id": "{{conversationId}}",
+  "activity_id": "fake-response-id",
+  "message": "Here is the answer to the fake question.",
+  "intent": "IN_DOMAIN",
+  "state": "UNMODIFIED"
+}
+
+### delete the last activity
+DELETE http://localhost:7010/api/users/{{userId}}/activities/:last HTTP/1.1
+
+### change conversation topic
+PUT http://localhost:7010/api/users/{{userId}}/conversations HTTP/1.1
+Content-Type: application/json
+
+{
+  "activity_id": "fake-response-id",
+  "intent": "TOPIC_CHANGE"
+}
+
+### get custom instructions
+GET http://localhost:7010/api/users/{{userId}}/instructions HTTP/1.1
+
+### set custom instructions
+PUT http://localhost:7010/api/users/{{userId}}/instructions HTTP/1.1
+Content-Type: application/json
+
+{
+  "prompt": "Always talk to me like you are a pirate."
+}
+
+### delete custom instructions
+DELETE http://localhost:7010/api/users/{{userId}}/instructions HTTP/1.1

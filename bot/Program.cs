@@ -11,6 +11,8 @@ using NetBricks;
 using dotenv.net;
 using Shared;
 using System;
+using Polly;
+using Polly.Extensions.Http;
 
 DotEnv.Load();
 
@@ -30,8 +32,14 @@ builder.Services.AddSingleLineConsoleLogger();
 builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
-// add basic services
-builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
+// add http client with retry
+builder.Services.AddHttpClient("retry")
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .WaitAndRetryAsync(config.MAX_RETRY_ATTEMPTS, retryAttempt => TimeSpan.FromSeconds(config.SECONDS_BETWEEN_RETRIES)));
+
+// add controllers
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.MaxDepth = HttpHelper.BotMessageSerializerSettings.MaxDepth;
 });
@@ -39,18 +47,6 @@ builder.Services.AddHttpClient().AddControllers().AddNewtonsoftJson(options =>
 // add the services required for communicating with the bot
 builder.Services.AddSingleton<ICardProvider, InMemoryCardProvider>();
 builder.Services.AddSingleton<BotChannel>();
-
-// add the appropriate history service
-if (!string.IsNullOrEmpty(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING))
-{
-    Console.WriteLine("ADDING SERVICE: SqlServerHistoryService");
-    builder.Services.AddSingleton<IHistoryService, SqlServerHistoryService>();
-}
-else
-{
-    Console.WriteLine("ADDING SERVICE: LocalMemoryHistoryService");
-    builder.Services.AddSingleton<IHistoryService, LocalMemoryHistoryService>();
-}
 
 // add bot framework authentication
 builder.Services.AddSingleton<BotFrameworkAuthentication, ConfigurationBotFrameworkAuthentication>();
@@ -64,10 +60,7 @@ builder.Services.AddTransient<IBot, ChatBot>();
 // add commands
 builder.Services.AddTransient<ICommands, HelpCommand>();
 builder.Services.AddTransient<ICommands, FeedbackCommands>();
-builder.Services.AddTransient<ICommands, HistoryCommands>();
-
-// host the lifecycle service
-builder.Services.AddHostedService<LifecycleService>();
+builder.Services.AddTransient<ICommands, MemoryCommands>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

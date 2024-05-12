@@ -1,5 +1,4 @@
 ﻿using Azure.Monitor.OpenTelemetry.Exporter;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Metrics;

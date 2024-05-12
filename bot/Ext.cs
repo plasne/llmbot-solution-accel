@@ -1,21 +1,17 @@
-using System;
+using System.Net.Http;
 using System.Text;
-using Iso8601DurationHelper;
+using Newtonsoft.Json;
 
 public static class Ext
 {
-    public static Duration AsDuration(this string value, Func<Duration> dflt)
-    {
-        if (Duration.TryParse(value, out var duration))
-        {
-            return duration;
-        }
-        return dflt();
-    }
-
     public static void ResetTo(this StringBuilder sb, string value)
     {
         sb.Clear();
         sb.Append(value);
+    }
+
+    public static StringContent ToJsonContent<T>(this T obj)
+    {
+        return new StringContent(JsonConvert.SerializeObject(obj), Encoding.UTF8, "application/json");
     }
 }

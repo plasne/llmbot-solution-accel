@@ -18,6 +18,9 @@ public interface IConfig
     string AZURE_STORAGE_ACCOUNT_NAME { get; }
     string AZURE_STORAGE_INFERENCE_QUEUE { get; }
     string AZURE_STORAGE_EVALUATION_QUEUE { get; }
+    string MEMORY_URL { get; }
+    int MAX_RETRY_ATTEMPTS { get; }
+    int SECONDS_BETWEEN_RETRIES { get; }
 
     void Validate();
 }

@@ -3,18 +3,18 @@ using Newtonsoft.Json;
 
 public class InferenceFile
 {
-    [JsonProperty("ref")]
-    public string? Ref { get; set; }
+    [JsonProperty("ref", Required = Required.Always)]
+    public required string Ref { get; set; }
 
-    [JsonProperty("history")]
-    public List<PipelineTurn>? History { get; set; }
+    [JsonProperty("history", NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Turn>? History { get; set; }
 
-    [JsonProperty("ground_truth")]
+    [JsonProperty("ground_truth", NullValueHandling = NullValueHandling.Ignore)]
     public string? GroundTruth { get; set; }
 
-    [JsonProperty("answer")]
+    [JsonProperty("answer", NullValueHandling = NullValueHandling.Ignore)]
     public string? Answer { get; set; }
 
-    [JsonProperty("content")]
-    public List<Content>? Content { get; set; }
+    [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Context>? Context { get; set; }
 }

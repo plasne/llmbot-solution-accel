@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Shared;
 
 public class Workflow(
     DetermineIntent determineIntent,
@@ -44,7 +45,7 @@ public class Workflow(
             step3.Output = await this.getDocuments.Execute(step1.Output, cancellationToken);
 
             // STEP 3: select grounding data
-            var step4Input = new GroundingData { Docs = step3.Output, History = groundingData.History };
+            var step4Input = new GroundingData { UserQuery = step1.Input.UserQuery, Docs = step3.Output, History = groundingData.History };
             var step4 = new WorkflowStepResponse<GroundingData, GroundingData>("SelectGroundingData", step4Input, this.selectGroundingData.Logs);
             response.Steps.Add(step4);
             step4.Output = await this.selectGroundingData.Execute(step4Input, cancellationToken);

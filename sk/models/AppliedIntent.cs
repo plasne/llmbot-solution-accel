@@ -2,6 +2,6 @@ using Newtonsoft.Json;
 
 public class AppliedIntent
 {
-    [JsonProperty("continue")]
-    public bool Continue { get; set; }
+    [JsonProperty("continue", Required = Required.Always)]
+    public required bool Continue { get; set; }
 }

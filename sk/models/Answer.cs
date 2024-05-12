@@ -4,9 +4,9 @@ using Newtonsoft.Json;
 
 public class Answer
 {
-    [JsonProperty("text")]
-    public string? Text { get; set; }
+    [JsonProperty("text", Required = Required.Always)]
+    public required string Text { get; set; }
 
-    [JsonProperty("citations")]
-    public List<Citation>? Citations { get; set; }
+    [JsonProperty("citations", NullValueHandling = NullValueHandling.Ignore)]
+    public IList<Citation>? Citations { get; set; }
 }

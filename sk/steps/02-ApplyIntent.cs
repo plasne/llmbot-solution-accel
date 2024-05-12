@@ -1,10 +1,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Shared.Models.Memory;
 
-public class ApplyIntent(IContext context, ILogger<ApplyIntent> logger) : BaseStep<DeterminedIntent, AppliedIntent>(logger)
+public class ApplyIntent(IWorkflowContext context, ILogger<ApplyIntent> logger)
+    : BaseStep<DeterminedIntent, AppliedIntent>(logger)
 {
-    private readonly IContext context = context;
+    private readonly IWorkflowContext context = context;
 
     public override string Name => "ApplyIntent";
 
