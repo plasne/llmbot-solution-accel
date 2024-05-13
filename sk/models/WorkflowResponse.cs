@@ -7,5 +7,5 @@ public class WorkflowResponse
     public Answer? Answer { get; set; }
 
     [JsonProperty("steps", Required = Required.Always)]
-    public IList<IWorkflowStepResponse> Steps { get; set; } = [];
+    public List<IWorkflowStepResponse> Steps { get; set; } = [];
 }

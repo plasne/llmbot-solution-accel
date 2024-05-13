@@ -23,9 +23,6 @@ public class Config : IConfig
         this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
         this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => []);
-        this.AZURE_STORAGE_ACCOUNT_NAME = config.Get<string>("AZURE_STORAGE_ACCOUNT_NAME");
-        this.AZURE_STORAGE_INFERENCE_QUEUE = config.Get<string>("AZURE_STORAGE_INFERENCE_QUEUE");
-        this.AZURE_STORAGE_EVALUATION_QUEUE = config.Get<string>("AZURE_STORAGE_EVALUATION_QUEUE");
         this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
@@ -61,12 +58,6 @@ public class Config : IConfig
 
     public string[] SEARCH_VECTOR_FIELDS { get; }
 
-    public string AZURE_STORAGE_ACCOUNT_NAME { get; }
-
-    public string AZURE_STORAGE_INFERENCE_QUEUE { get; }
-
-    public string AZURE_STORAGE_EVALUATION_QUEUE { get; }
-
     public string MEMORY_URL { get; }
 
     public int MAX_RETRY_ATTEMPTS { get; }
@@ -93,9 +84,6 @@ public class Config : IConfig
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
         this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
-        this.config.Optional("AZURE_STORAGE_ACCOUNT_NAME", this.AZURE_STORAGE_ACCOUNT_NAME);
-        this.config.Optional("AZURE_STORAGE_INFERENCE_QUEUE", this.AZURE_STORAGE_INFERENCE_QUEUE);
-        this.config.Optional("AZURE_STORAGE_EVALUATION_QUEUE", this.AZURE_STORAGE_EVALUATION_QUEUE);
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);

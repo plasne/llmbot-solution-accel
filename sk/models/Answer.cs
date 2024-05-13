@@ -8,5 +8,5 @@ public class Answer
     public required string Text { get; set; }
 
     [JsonProperty("citations", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Citation>? Citations { get; set; }
+    public List<Citation>? Citations { get; set; }
 }

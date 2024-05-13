@@ -1,17 +1,19 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using Shared.Models.Memory;
 
 public class DeterminedIntent
 {
     [JsonProperty("intent", Required = Required.Always)]
+    [JsonConverter(typeof(StringEnumConverter))]
     public required Intents Intent { get; set; }
 
     [JsonProperty("query", Required = Required.Always)]
     public required string Query { get; set; }
 
     [JsonProperty("search_queries", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<string>? SearchQueries { get; set; }
+    public List<string>? SearchQueries { get; set; }
 
     [JsonProperty("game_name", NullValueHandling = NullValueHandling.Ignore)]
     public string? GameName { get; set; }
