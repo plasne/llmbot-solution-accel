@@ -30,16 +30,6 @@ builder.Services.AddSingleLineConsoleLogger();
 builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
-// add the inference pipeline service
-if (!string.IsNullOrEmpty(config.AZURE_STORAGE_ACCOUNT_NAME)
-    && !string.IsNullOrEmpty(config.AZURE_STORAGE_INFERENCE_QUEUE)
-    && !string.IsNullOrEmpty(config.AZURE_STORAGE_EVALUATION_QUEUE))
-{
-    Console.WriteLine("ADDING SERVICE: InferencePipelineService");
-    builder.Services.AddHttpClient();
-    builder.Services.AddHostedService<InferencePipelineService>();
-}
-
 // add http client with retry
 builder.Services.AddHttpClient("retry")
     .AddPolicyHandler(HttpPolicyExtensions

@@ -4,14 +4,14 @@ using Newtonsoft.Json;
 public class GroundingData
 {
     [JsonProperty("docs", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Doc>? Docs { get; set; }
+    public List<Doc>? Docs { get; set; }
 
-    [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Context>? Context { get; set; }
+    [JsonProperty("context", NullValueHandling = NullValueHandling.Ignore)]
+    public List<Context>? Context { get; set; }
 
     [JsonProperty("user_query")]
     public required string UserQuery { get; set; }
 
     [JsonProperty("history", NullValueHandling = NullValueHandling.Ignore)]
-    public IList<Turn>? History { get; set; }
+    public List<Turn>? History { get; set; }
 }
