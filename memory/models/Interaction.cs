@@ -1,6 +1,8 @@
 using System;
 using Shared.Models.Memory;
 
+namespace Memory;
+
 public class Interaction
 {
     public Guid ConversationId { get; set; }

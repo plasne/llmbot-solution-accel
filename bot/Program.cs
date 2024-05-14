@@ -5,14 +5,13 @@ using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Connector.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
-using Bots;
-using Channels;
 using NetBricks;
 using dotenv.net;
 using Shared;
 using System;
 using Polly;
 using Polly.Extensions.Http;
+using Bot;
 
 DotEnv.Load();
 
@@ -22,9 +21,9 @@ var builder = WebApplication.CreateBuilder(args);
 // add config
 var netConfig = new NetBricks.Config();
 await netConfig.Apply();
-var config = new Config(netConfig);
+var config = new Bot.Config(netConfig);
 config.Validate();
-builder.Services.AddSingleton<IConfig>(config);
+builder.Services.AddSingleton<Bot.IConfig>(config);
 
 // add logging
 builder.Logging.ClearProviders();

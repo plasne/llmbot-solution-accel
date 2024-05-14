@@ -1,4 +1,4 @@
-﻿namespace Bots;
+﻿namespace Bot;
 
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
 using Microsoft.Bot.Builder.TraceExtensions;

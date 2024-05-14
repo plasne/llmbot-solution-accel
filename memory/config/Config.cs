@@ -1,6 +1,8 @@
 using Iso8601DurationHelper;
 using NetBricks;
 
+namespace Memory;
+
 public class Config : IConfig
 {
     private readonly NetBricks.IConfig config;

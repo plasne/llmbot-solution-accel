@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
-using Azure.Identity;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
@@ -11,14 +9,12 @@ using Polly;
 using Shared;
 using Shared.Models.Memory;
 
-public class SqlServerMemoryStore(
-    IConfig config,
-    DefaultAzureCredential defaultAzureCredential,
-    ILogger<SqlServerMemoryStore> logger)
+namespace Memory;
+
+public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> logger)
 : MemoryStoreBase, IMemoryStore
 {
     private readonly IConfig config = config;
-    private readonly DefaultAzureCredential defaultAzureCredential = defaultAzureCredential;
     private readonly ILogger<SqlServerMemoryStore> logger = logger;
 
     private bool IsTransientFault(Exception ex)

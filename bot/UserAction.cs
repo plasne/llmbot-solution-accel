@@ -1,3 +1,5 @@
+namespace Bot;
+
 public class UserAction
 {
     public string? ChatId;

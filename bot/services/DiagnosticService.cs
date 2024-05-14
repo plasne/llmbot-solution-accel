@@ -1,7 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-public class DiagnosticService
+namespace Bot;
+
+public static class DiagnosticService
 {
     const string SourceName = "bot";
     public static readonly ActivitySource Source = new(SourceName);

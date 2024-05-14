@@ -4,8 +4,11 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.TraceExtensions;
 using Microsoft.Bot.Schema;
 using Shared.Models.Memory;
+
+namespace Bot;
 
 public class MemoryCommands(IConfig config, IHttpClientFactory httpClientFactory) : ICommands
 {
@@ -24,10 +27,8 @@ public class MemoryCommands(IConfig config, IHttpClientFactory httpClientFactory
         { "/instructions-delete", "to delete your custom instructions." },
     };
 
-
     public async Task<bool> Try(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken = default)
     {
-        // TODO: write these after the history service
         if (turnContext.Activity.Text == "/new")
         {
             // write a topic change to the history service
@@ -48,6 +49,17 @@ public class MemoryCommands(IConfig config, IHttpClientFactory httpClientFactory
             await turnContext.SendActivityAsync(activity, cancellationToken);
 
             return true;
+        }
+
+        switch (turnContext.Activity.Text)
+        {
+            case "/stop":
+            case "/delete":
+            case "/delete all":
+            case "/instructions-set":
+            case "/instructions-show":
+            case "/instructions-delete":
+                throw new NotImplementedException();
         }
 
         return false;

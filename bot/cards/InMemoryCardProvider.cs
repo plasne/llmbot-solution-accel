@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards.Templating;
 
+namespace Bot;
+
 public class InMemoryCardProvider : ICardProvider
 {
     private readonly ConcurrentDictionary<string, Lazy<Task<AdaptiveCardTemplate>>> cards = new();

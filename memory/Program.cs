@@ -6,6 +6,7 @@ using dotenv.net;
 using Microsoft.Extensions.Logging;
 using Shared;
 using System;
+using Memory;
 
 DotEnv.Load();
 
@@ -14,9 +15,9 @@ var builder = WebApplication.CreateBuilder(args);
 // add config
 var netConfig = new NetBricks.Config();
 await netConfig.Apply();
-var config = new Config(netConfig);
+var config = new Memory.Config(netConfig);
 config.Validate();
-builder.Services.AddSingleton<IConfig>(config);
+builder.Services.AddSingleton<Memory.IConfig>(config);
 builder.Services.AddSingleton<NetBricks.IConfig>(netConfig);
 builder.Services.AddDefaultAzureCredential();
 

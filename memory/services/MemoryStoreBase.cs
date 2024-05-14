@@ -2,6 +2,8 @@ using System;
 using Shared;
 using Shared.Models.Memory;
 
+namespace Memory;
+
 public abstract class MemoryStoreBase
 {
     public void ValidateInteractionForStartGeneration(Interaction interaction)

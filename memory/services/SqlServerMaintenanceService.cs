@@ -2,23 +2,20 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+
+namespace Memory;
 
 public class SqlServerMaintenanceService : BackgroundService
 {
     private readonly SqlServerMemoryStore sqlServerMemoryStore;
-    private readonly ILogger<SqlServerMaintenanceService> logger;
 
-    public SqlServerMaintenanceService(
-        IMemoryStore memoryStore,
-        ILogger<SqlServerMaintenanceService> logger)
+    public SqlServerMaintenanceService(IMemoryStore memoryStore)
     {
-        if (memoryStore is not SqlServerMemoryStore sqlServerMemoryStore)
+        if (memoryStore is not SqlServerMemoryStore store)
         {
             throw new Exception("SqlServerMaintenanceService can only be used in conjuction with SqlServerMemoryStore.");
         }
-        this.sqlServerMemoryStore = sqlServerMemoryStore;
-        this.logger = logger;
+        this.sqlServerMemoryStore = store;
     }
 
     public override async Task StartAsync(CancellationToken cancellationToken)
@@ -30,13 +27,6 @@ public class SqlServerMaintenanceService : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         // start the retention loop
-        // TODO: implement this
-        /*
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            // do stuff
-        }
-        */
         return Task.CompletedTask;
     }
 }

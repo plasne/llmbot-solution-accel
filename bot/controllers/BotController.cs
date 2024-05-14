@@ -1,9 +1,9 @@
-﻿namespace Controllers;
-
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Integration.AspNet.Core;
+
+namespace Bot;
 
 [Route("api/messages")]
 [ApiController]
