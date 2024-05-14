@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Shared.Models.Memory;
 
+namespace Inference;
+
 public class ApplyIntent(IWorkflowContext context, ILogger<ApplyIntent> logger)
     : BaseStep<DeterminedIntent, AppliedIntent>(logger)
 {

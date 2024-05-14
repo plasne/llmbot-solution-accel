@@ -11,6 +11,8 @@ using SharpToken;
 using System;
 using Shared;
 
+namespace Inference;
+
 public class DetermineIntent(
     IConfig config,
     IWorkflowContext context,

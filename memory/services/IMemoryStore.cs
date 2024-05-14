@@ -4,6 +4,8 @@ using System.Threading.Tasks;
 using Iso8601DurationHelper;
 using Shared.Models.Memory;
 
+namespace Memory;
+
 public interface IMemoryStore
 {
     Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default);

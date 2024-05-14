@@ -1,3 +1,5 @@
+namespace Bot;
+
 public interface IConfig
 {
     int PORT { get; }

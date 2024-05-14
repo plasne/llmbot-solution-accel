@@ -9,6 +9,8 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
+namespace Bot;
+
 public class HelpCommand(IServiceProvider serviceProvider, ICardProvider cardProvider) : ICommands
 {
     private readonly IServiceProvider serviceProvider = serviceProvider;

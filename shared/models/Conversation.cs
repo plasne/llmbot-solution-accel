@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
 
+namespace Shared.Models.Memory;
+
 public class Conversation
 {
     [JsonProperty("id", Required = Required.Always)]

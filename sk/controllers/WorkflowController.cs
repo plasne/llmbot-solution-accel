@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
+namespace Inference;
+
 [Route("api/workflow")]
 [ApiController]
 public class WorkflowController : ControllerBase

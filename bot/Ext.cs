@@ -2,6 +2,8 @@ using System.Net.Http;
 using System.Text;
 using Newtonsoft.Json;
 
+namespace Bot;
+
 public static class Ext
 {
     public static void ResetTo(this StringBuilder sb, string value)

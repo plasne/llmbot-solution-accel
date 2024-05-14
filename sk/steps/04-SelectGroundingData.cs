@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using DistributedChat;
 using Microsoft.Extensions.Logging;
 
+namespace Inference;
+
 public class SelectGroundingData(ILogger<SelectGroundingData> logger)
     : BaseStep<GroundingData, GroundingData>(logger)
 {
@@ -26,7 +28,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         {
             var ordered = input.Docs.OrderByDescending(x => x.SearchScore);
             output.Context = [];
-            foreach (var doc in input.Docs.Take(10))
+            foreach (var doc in ordered.Take(10))
             {
                 int index = output.Context.Count;
                 var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
@@ -45,7 +47,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         }
 
         // trim to 5 turns of the conversation
-        output.History = input.History?.Skip(Math.Max(0, input.History.Count() - 5)).ToList();
+        output.History = input.History?.Skip(Math.Max(0, input.History.Count - 5)).ToList();
 
         return Task.FromResult(output);
     }

@@ -1,6 +1,8 @@
 using DistributedChat;
 using Newtonsoft.Json;
 
+namespace Inference;
+
 public class Context
 {
     [JsonProperty("text", Required = Required.Always)]

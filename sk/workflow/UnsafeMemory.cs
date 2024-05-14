@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
+namespace Inference;
+
 public class UnsafeMemory : IMemory
 {
     private readonly Dictionary<string, object> store = new();

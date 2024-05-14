@@ -14,6 +14,8 @@ using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using Shared;
 using SharpToken;
 
+namespace Inference;
+
 public partial class GenerateAnswer(
     IConfig config,
     IWorkflowContext context,
@@ -26,7 +28,6 @@ public partial class GenerateAnswer(
     private readonly IWorkflowContext context = context;
     private readonly Kernel kernel = kernel;
     private readonly IMemory memory = memory;
-    private readonly ILogger<GenerateAnswer> logger = logger;
 
     public override string Name => "GenerateAnswer";
 
@@ -114,7 +115,7 @@ public partial class GenerateAnswer(
         {
             if (!citations.ContainsKey(match.Value))
             {
-                var content = input.Data?.Context?.FirstOrDefault(x => $"[{x.Citation?.Ref}]" == match.Value);
+                var content = input.Data?.Context?.Find(x => $"[{x.Citation?.Ref}]" == match.Value);
                 if (content is not null && content.Citation is not null)
                 {
                     citations.Add(match.Value, content.Citation);

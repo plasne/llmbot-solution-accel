@@ -1,3 +1,5 @@
+namespace Inference;
+
 public interface IConfig
 {
     int GRPC_PORT { get; }

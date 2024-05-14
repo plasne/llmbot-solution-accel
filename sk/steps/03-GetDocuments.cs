@@ -3,6 +3,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
+namespace Inference;
+
 public class GetDocuments(IWorkflowContext context, SearchService searchService, ILogger<GetDocuments> logger)
     : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {

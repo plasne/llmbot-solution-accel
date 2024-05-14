@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
+namespace Inference;
+
 public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, List<LogEntry> logs) : IWorkflowStepResponse
 {
     [JsonProperty("name", Required = Required.Always)]

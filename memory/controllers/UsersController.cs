@@ -3,6 +3,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Shared.Models.Memory;
 
+namespace Memory;
+
 [Route("api/users/{userId}")]
 [ApiController]
 public class UsersController : ControllerBase
@@ -13,7 +15,6 @@ public class UsersController : ControllerBase
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
-        // TODO: support max-size
         var conversation = await store.GetLastConversationAsync(userId, cancellationToken);
         return Ok(conversation);
     }

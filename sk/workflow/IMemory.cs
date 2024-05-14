@@ -1,11 +1,7 @@
 using System;
 using System.Threading.Tasks;
 
-public enum MemoryTerm
-{
-    Short,
-    Long
-}
+namespace Inference;
 
 public interface IMemory
 {

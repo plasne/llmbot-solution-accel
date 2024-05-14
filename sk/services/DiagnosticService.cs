@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
-public class DiagnosticService
+namespace Inference;
+
+public static class DiagnosticService
 {
     const string SourceName = "sk";
     public static readonly ActivitySource Source = new(SourceName);

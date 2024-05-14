@@ -7,7 +7,7 @@ using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-// TODO: there is still plenty of code to write in here
+namespace Bot;
 
 public class FeedbackCommands(ILogger<FeedbackCommands> logger) : ICommands
 {
@@ -83,9 +83,8 @@ public class FeedbackCommands(ILogger<FeedbackCommands> logger) : ICommands
         await turnContext.SendActivityAsync(activity, cancellationToken);
     }
 
-    private async Task ShowFeedback(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
+    private Task ShowFeedback(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
-        var chatId = await this.GetLastChatId();
         throw new NotImplementedException();
     }
 }

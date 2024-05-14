@@ -1,5 +1,7 @@
 using Newtonsoft.Json;
 
+namespace Inference;
+
 public class IntentAndData
 {
     [JsonProperty("intent", Required = Required.Always)]

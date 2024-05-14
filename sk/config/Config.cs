@@ -1,6 +1,8 @@
 using NetBricks;
 using SharpToken;
 
+namespace Inference;
+
 public class Config : IConfig
 {
     private readonly NetBricks.IConfig config;

@@ -1,7 +1,8 @@
 using System;
-using System.Threading.Tasks;
 using Microsoft.SemanticKernel;
 using SharpToken;
+
+namespace Inference;
 
 public class PromptTokenCountFilter(string modelName, Action<int> onRendered) : IPromptFilter
 {

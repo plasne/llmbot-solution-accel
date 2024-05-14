@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using DistributedChat;
 
+namespace Inference;
+
 public class WorkflowContext : IWorkflowContext
 {
     public event Func<string?, string?, Intent, List<Citation>?, int, int, Task>? OnStream;

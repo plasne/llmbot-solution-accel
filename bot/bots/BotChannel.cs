@@ -1,8 +1,8 @@
-namespace Channels;
-
 using System;
 using Grpc.Net.Client;
 using static DistributedChat.ChatService;
+
+namespace Bot;
 
 public class BotChannel : IDisposable
 {

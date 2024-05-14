@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Shared;
 
+namespace Inference;
+
 public class Workflow(
     DetermineIntent determineIntent,
     ApplyIntent applyIntent,
@@ -34,7 +36,7 @@ public class Workflow(
             var step2 = new WorkflowStepResponse<DeterminedIntent, AppliedIntent>("ApplyIntent", step1.Output, this.applyIntent.Logs);
             response.Steps.Add(step2);
             step2.Output = await this.applyIntent.Execute(step1.Output, cancellationToken);
-            if (step2.Output.Continue == false)
+            if (!step2.Output.Continue)
             {
                 return response;
             }
@@ -61,7 +63,7 @@ public class Workflow(
         }
         catch (Exception ex)
         {
-            throw new HttpExceptionWithResponse(500, ex.Message, response);
+            throw new HttpWithResponseException(500, ex.Message, response);
         }
     }
 }

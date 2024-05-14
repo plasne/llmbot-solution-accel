@@ -4,14 +4,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Iso8601DurationHelper;
-using Microsoft.Extensions.Logging;
 using Shared;
 using Shared.Models.Memory;
 
-public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
-: MemoryStoreBase, IMemoryStore
+namespace Memory;
+
+public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
 {
-    private readonly ILogger<LocalMemoryStore> logger = logger;
     private readonly Dictionary<string, List<Interaction>> interactions = [];
 
     public Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default)
@@ -19,7 +18,7 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
         base.ValidateInteractionForStartGeneration(request);
         base.ValidateInteractionForStartGeneration(response);
 
-        if (!this.interactions.TryGetValue(request.UserId!, out List<Interaction>? interactions))
+        if (!this.interactions.TryGetValue(request.UserId!, out List<Interaction>? list))
         {
             var conversationId = Guid.NewGuid();
             request.ConversationId = conversationId;
@@ -28,7 +27,7 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
             return Task.FromResult(request.ConversationId);
         }
 
-        var last = interactions!.Last();
+        var last = list[^1];
         if (last.State == States.GENERATING)
         {
             throw new HttpException(423, "a response is already being generated.");
@@ -36,8 +35,8 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
 
         request.ConversationId = last.ConversationId;
         response.ConversationId = last.ConversationId;
-        interactions.Add(request);
-        interactions.Add(response);
+        list.Add(request);
+        list.Add(response);
 
         return Task.FromResult(request.ConversationId);
     }
@@ -53,13 +52,13 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
     {
         base.ValidateInteractionForTopicChange(changeTopic);
 
-        if (!this.interactions.TryGetValue(changeTopic.UserId!, out List<Interaction>? interactions))
+        if (!this.interactions.TryGetValue(changeTopic.UserId!, out List<Interaction>? list))
         {
             this.interactions.Add(changeTopic.UserId!, [changeTopic]);
             return Task.CompletedTask;
         }
 
-        interactions.Add(changeTopic);
+        list.Add(changeTopic);
         return Task.CompletedTask;
     }
 
@@ -96,13 +95,13 @@ public class LocalMemoryStore(ILogger<LocalMemoryStore> logger)
     {
         var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
 
-        if (!this.interactions.TryGetValue(userId, out List<Interaction>? interactions))
+        if (!this.interactions.TryGetValue(userId, out List<Interaction>? list))
         {
             return Task.FromResult(conversation);
         }
 
-        var last = interactions.Last();
-        var filtered = interactions
+        var last = list[^1];
+        var filtered = list
             .Where(x => x.ConversationId == last.ConversationId)
             .Where(x => x.State == States.EDITED || x.State == States.STOPPED || x.State == States.UNMODIFIED);
         foreach (var interaction in filtered)

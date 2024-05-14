@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
 
+namespace Inference;
+
 public class GroundingData
 {
     [JsonProperty("docs", NullValueHandling = NullValueHandling.Ignore)]

@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
+namespace Inference;
+
 public class SearchService
 {
     private readonly IConfig config;

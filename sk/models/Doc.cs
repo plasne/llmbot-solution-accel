@@ -1,10 +1,12 @@
 using System.Text.Json.Serialization;
 using Newtonsoft.Json;
 
-// NOTE: Azure AI Search uses System.Text.Json
+namespace Inference;
 
 public class Doc
 {
+    // NOTE: Azure AI Search uses System.Text.Json
+
     [JsonProperty("@search.score", NullValueHandling = NullValueHandling.Ignore)]
     [JsonPropertyName("@search.score")]
     public double SearchScore { get; set; }

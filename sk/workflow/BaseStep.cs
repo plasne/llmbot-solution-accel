@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
+namespace Inference;
+
 public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, TOutput>
 {
     private readonly ILogger logger = logger;

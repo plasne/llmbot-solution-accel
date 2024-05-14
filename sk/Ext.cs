@@ -1,7 +1,8 @@
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Shared.Models.Memory;
+
+namespace Inference;
 
 public static class Ext
 {

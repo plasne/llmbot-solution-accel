@@ -1,5 +1,7 @@
 using Iso8601DurationHelper;
 
+namespace Memory;
+
 public interface IConfig
 {
     int PORT { get; }

@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Shared.Models.Memory;
 
+namespace Inference;
+
 public class DeterminedIntent
 {
     [JsonProperty("intent", Required = Required.Always)]

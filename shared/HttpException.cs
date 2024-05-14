@@ -10,7 +10,7 @@ public class HttpException(int statusCode, string message) : Exception(message)
     public object? ResponsePayload { get; set; }
 }
 
-public class HttpExceptionWithResponse(int statusCode, string message, object response) : Exception(message)
+public class HttpWithResponseException(int statusCode, string message, object response) : Exception(message)
 {
     public int StatusCode { get; } = statusCode;
     public object Response { get; } = response;
@@ -27,7 +27,7 @@ public class HttpExceptionMiddleware(RequestDelegate next, ILogger<HttpException
         {
             await this.next(context);
         }
-        catch (HttpExceptionWithResponse ex)
+        catch (HttpWithResponseException ex)
         {
             this.logger.LogError(ex, "HTTP exception with response...");
             context.Response.StatusCode = ex.StatusCode;

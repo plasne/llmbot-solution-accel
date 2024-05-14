@@ -10,6 +10,7 @@ using Shared;
 using System;
 using Polly.Extensions.Http;
 using Polly;
+using Inference;
 
 DotEnv.Load();
 
@@ -18,9 +19,9 @@ var builder = WebApplication.CreateBuilder(args);
 // add config
 var netConfig = new NetBricks.Config();
 await netConfig.Apply();
-var config = new Config(netConfig);
+var config = new Inference.Config(netConfig);
 config.Validate();
-builder.Services.AddSingleton<IConfig>(config);
+builder.Services.AddSingleton<Inference.IConfig>(config);
 builder.Services.AddSingleton<NetBricks.IConfig>(netConfig);
 builder.Services.AddDefaultAzureCredential();
 
@@ -43,7 +44,7 @@ builder.Services.AddSwaggerGen().AddSwaggerGenNewtonsoftSupport();
 // add the kernel service
 builder.Services.AddSingleton(provider =>
 {
-    var config = provider.GetRequiredService<IConfig>()!;
+    var config = provider.GetRequiredService<Inference.IConfig>()!;
 
     var kernalBuilder = Kernel.CreateBuilder();
     kernalBuilder.Services

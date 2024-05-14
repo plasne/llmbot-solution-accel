@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using DistributedChat;
 using Newtonsoft.Json;
 
+namespace Inference;
+
 public class Answer
 {
     [JsonProperty("text", Required = Required.Always)]

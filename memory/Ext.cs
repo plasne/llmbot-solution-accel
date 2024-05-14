@@ -4,6 +4,8 @@ using Iso8601DurationHelper;
 using Shared;
 using Shared.Models.Memory;
 
+namespace Memory;
+
 public static class Ext
 {
     public static Duration AsDuration(this string value, Func<Duration> dflt)
