@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using DistributedChat;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
@@ -115,7 +114,7 @@ public partial class GenerateAnswer(
         {
             if (!citations.ContainsKey(match.Value))
             {
-                var content = input.Data?.Context?.Find(x => $"[{x.Citation?.Ref}]" == match.Value);
+                var content = input.Data?.Context?.Find(x => $"[{x.Citation?.Id}]" == match.Value);
                 if (content is not null && content.Citation is not null)
                 {
                     citations.Add(match.Value, content.Citation);

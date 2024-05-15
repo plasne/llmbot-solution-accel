@@ -1,0 +1,7 @@
+### run a workflow
+POST http://localhost:7030/api/workflow HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_query": "How many players can play Fury of Dracula 4th edition?"
+}

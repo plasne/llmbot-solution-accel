@@ -60,15 +60,15 @@ public class ChatBot(
             {
                 if (!string.IsNullOrEmpty(citation.Title) && !string.IsNullOrEmpty(citation.Uri))
                 {
-                    reply = reply.Replace($"[{citation.Ref}]", $"[[{citation.Title}]]({citation.Uri})");
+                    reply = reply.Replace($"[{citation.Id}]", $"[[{citation.Title}]]({citation.Uri})");
                 }
                 else if (!string.IsNullOrEmpty(citation.Title))
                 {
-                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Title}]");
+                    reply = reply.Replace($"[{citation.Id}]", $"[{citation.Title}]");
                 }
                 else if (!string.IsNullOrEmpty(citation.Uri))
                 {
-                    reply = reply.Replace($"[{citation.Ref}]", $"[{citation.Ref}]({citation.Uri})");
+                    reply = reply.Replace($"[{citation.Id}]", $"[{citation.Id}]({citation.Uri})");
                 }
             }
         }
@@ -186,12 +186,11 @@ public class ChatBot(
         var useAdaptiveCard = true;
         switch (chatResponse.Intent)
         {
-            case Intent.Unset:
+            case Intent.Unknown:
                 break;
             case Intent.InDomain:
                 completeRequest.Intent = Intents.IN_DOMAIN;
                 break;
-            case Intent.Unknown:
             case Intent.Greeting:
                 completeRequest.Intent = Intents.GREETING;
                 status = this.config.FINAL_STATUS;
@@ -291,7 +290,7 @@ public class ChatBot(
                 {
                     foreach (var citation in chatResponse.Citations)
                     {
-                        citations.TryAdd(citation.Ref, citation);
+                        citations.TryAdd(citation.Id, citation);
                     }
                 }
 

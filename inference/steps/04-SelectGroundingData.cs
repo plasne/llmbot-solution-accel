@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DistributedChat;
 using Microsoft.Extensions.Logging;
 
 namespace Inference;
@@ -37,9 +36,9 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
                     Text = chunk,
                     Citation = new Citation
                     {
-                        Ref = "ref" + index,
-                        Title = doc.Title,
-                        Uri = "https://" + doc.Title // update to some kind of URL
+                        Id = "ref" + index,
+                        Title = doc.Title ?? doc.Url ?? $"Document {index}",
+                        Uri = doc.Url
                     }
                 };
                 output.Context.Add(context);

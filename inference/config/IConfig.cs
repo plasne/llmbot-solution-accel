@@ -20,6 +20,7 @@ public interface IConfig
     string MEMORY_URL { get; }
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
+    int MAX_TIMEOUT_IN_SECONDS { get; }
 
     void Validate();
 }

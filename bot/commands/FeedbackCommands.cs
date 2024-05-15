@@ -18,7 +18,7 @@ public class FeedbackCommands(ILogger<FeedbackCommands> logger) : ICommands
         { "/feedback", "shows your rating and comments for the last response from the bot." },
         { "/rate up", "rates the last response from the bot as positive." },
         { "/rate down", "rates the last response from the bot as negative." },
-        { "/comment ???", "allows you to give feedback comments on the last response from the bot."  },
+        { "/rate-comment ???", "allows you to give feedback comments on the last response from the bot."  },
         { "/revoke", "to clear your rating and comments for the last response from the bot."  },
     };
 

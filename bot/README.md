@@ -31,10 +31,19 @@ The settings available are:
 
 - __LLM_URI__ [STRING, DEFAULT: http://localhost:5210]: The URI of the LLM API.
 
-        this.config.Require("PORT", PORT);
-        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING);
-        this.config.Require("LLM_URI", this.LLM_URI);
-        this.config.Require("CHARACTERS_PER_UPDATE", this.CHARACTERS_PER_UPDATE);
-        this.config.Require("MicrosoftAppType");
-        this.config.Require("MicrosoftAppId");
-        this.config.Require("MicrosoftAppPassword", hideValue: true);
+## TODO
+
+- Stop and delete (Event Hub).
+- Implement editing (OnMessageUpdateActivityAsync) and deleting (OnMessageDeleteActivityAsync) user messages.
+- Change thumbs-up/down card to highlight option and open further feedback.
+- Implement FeedbackCommands (/feedback, /rate up, /rate down, /rate-comment ???, /revoke).
+- Implement MemoryCommands (/stop, /delete, /delete #, /delete all, /instructions-set ???, /instructions-show, /instructions-delete).
+- Move citations to the bottom of the response.
+- Develop the user's welcome experience (OnMembersAddedAsync).
+- Develop the exception handling (AdapterWithErrorHandler).
+- Make OPEN_TELEMETRY_CONNECTION_STRING optional.
+- Add a very basic HTTP endpoint (localhost only) for debugging the bot without registering with Bot Service.
+  - make MicrosoftAppType, MicrosoftAppId, MicrosoftAppPassword optional.
+- Add Dockerfile.
+- Documentation.
+- Unit testing/integration testing.

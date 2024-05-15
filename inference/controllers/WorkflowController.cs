@@ -14,24 +14,24 @@ public class WorkflowController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<WorkflowResponse>> RunWorkflow(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] GroundingData groundingData,
+        [FromBody] WorkflowRequest request,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
-        var response = await workflow.Execute(groundingData, cancellationToken);
+        var response = await workflow.Execute(request, cancellationToken);
         return Ok(response);
     }
 
     [HttpPost("determine-intent")]
     public async Task<ActionResult<DeterminedIntent>> DetermineIntent(
         [FromServices] IServiceProvider serviceProvider,
-        [FromBody] GroundingData groundingData,
+        [FromBody] WorkflowRequest request,
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         var determineIntent = scope.ServiceProvider.GetRequiredService<DetermineIntent>();
-        var intent = await determineIntent.Execute(groundingData, cancellationToken);
+        var intent = await determineIntent.Execute(request, cancellationToken);
         return Ok(intent);
     }
 
