@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Shared.Models.Memory;
 using Newtonsoft.Json;
+using NetBricks;
 
 namespace Inference;
 
@@ -24,7 +25,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
     {
         public string? Status { get; set; }
         public StringBuilder Message { get; } = new();
-        public Intent Intent { get; set; }
+        public Intents Intent { get; set; }
         public List<Citation> Citations { get; } = [];
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
@@ -43,14 +44,31 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             response.Msg = buffer.Message.ToString();
             buffer.Message.Clear();
         }
-        if (buffer.Intent != Intent.Unset)
+        if (buffer.Intent != Intents.UNKNOWN)
         {
-            response.Intent = buffer.Intent;
-            buffer.Intent = Intent.Unset;
+            switch (buffer.Intent)
+            {
+                case Intents.GOODBYE:
+                    response.Intent = Intent.Goodbye;
+                    break;
+                case Intents.GREETING:
+                    response.Intent = Intent.Greeting;
+                    break;
+                case Intents.IN_DOMAIN:
+                    response.Intent = Intent.InDomain;
+                    break;
+                case Intents.OUT_OF_DOMAIN:
+                    response.Intent = Intent.OutOfDomain;
+                    break;
+                case Intents.TOPIC_CHANGE:
+                    response.Intent = Intent.TopicChange;
+                    break;
+            }
+            buffer.Intent = Intents.UNKNOWN;
         }
         if (buffer.Citations.Count > 0)
         {
-            response.Citations.AddRange(buffer.Citations);
+            response.Citations.AddRange(buffer.Citations.Select(x => x.ToGrpcCitation()));
             buffer.Citations.Clear();
         }
         if (buffer.PromptTokens > 0)
@@ -89,7 +107,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             throw new Exception($"no turns were found for user {request.UserId}");
         }
 
-        // build grounding data
+        // build the request
         var turns = conversation.Turns.ToList();
         var userQuery = turns.LastOrDefault();
         if (userQuery is null || userQuery.Role != Roles.USER || string.IsNullOrEmpty(userQuery.Msg))
@@ -97,10 +115,11 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             throw new Exception($"the last turn must be a query from the user.");
         }
         turns.Remove(userQuery);
-        var groundingData = new GroundingData
+        var workflowRequest = new WorkflowRequest
         {
             UserQuery = userQuery.Msg,
             History = turns,
+            CustomInstructions = conversation.CustomInstructions,
         };
 
         // create scope, context, and workflow
@@ -115,7 +134,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         {
             // add to the buffer
             buffer.Message.Append(message);
-            if (intent != Intent.Unset)
+            if (intent != Intents.UNKNOWN)
             {
                 buffer.Intent = intent;
             }
@@ -141,6 +160,6 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         };
 
         // execute the workflow
-        await workflow.Execute(groundingData, context.CancellationToken);
+        await workflow.Execute(workflowRequest, context.CancellationToken);
     }
 }

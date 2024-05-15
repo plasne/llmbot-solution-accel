@@ -22,4 +22,8 @@ public class Doc
     [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)]
     [JsonPropertyName("title")]
     public string? Title { get; set; }
+
+    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
 }

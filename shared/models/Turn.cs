@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using Shared.Models.Memory;
+
+namespace Shared.Models.Memory;
 
 public class Turn
 {

@@ -60,7 +60,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// use routing, gRPC, and controllers
+// use routing and controllers
 app.UseRouting();
 app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapControllers();

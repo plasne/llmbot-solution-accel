@@ -64,6 +64,8 @@ public class SearchService
         options.Select.Add("edition");
 
         // submit the query
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        cts.CancelAfter(TimeSpan.FromSeconds(this.config.MAX_TIMEOUT_IN_SECONDS));
         var searchResults = await searchClient.SearchAsync<Doc>(options, cancellationToken);
 
         // get back results async

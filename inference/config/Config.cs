@@ -28,6 +28,7 @@ public class Config : IConfig
         this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
+        this.MAX_TIMEOUT_IN_SECONDS = config.Get<string>("MAX_TIMEOUT_IN_SECONDS").AsInt(() => 60);
     }
 
     public int GRPC_PORT { get; }
@@ -66,6 +67,8 @@ public class Config : IConfig
 
     public int SECONDS_BETWEEN_RETRIES { get; }
 
+    public int MAX_TIMEOUT_IN_SECONDS { get; }
+
     public void Validate()
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
@@ -89,5 +92,6 @@ public class Config : IConfig
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
+        this.config.Require("MAX_TIMEOUT_IN_SECONDS", this.MAX_TIMEOUT_IN_SECONDS);
     }
 }

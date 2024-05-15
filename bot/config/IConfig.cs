@@ -10,6 +10,7 @@ public interface IConfig
     string FINAL_STATUS { get; }
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
+    int MAX_TIMEOUT_IN_SECONDS { get; }
 
     void Validate();
 }

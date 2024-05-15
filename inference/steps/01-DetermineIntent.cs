@@ -19,7 +19,7 @@ public class DetermineIntent(
     Kernel kernel,
     IMemory memory,
     ILogger<DetermineIntent> logger)
-    : BaseStep<GroundingData, DeterminedIntent>(logger)
+    : BaseStep<WorkflowRequest, DeterminedIntent>(logger)
 {
     private readonly IConfig config = config;
     private readonly IWorkflowContext context = context;
@@ -30,7 +30,7 @@ public class DetermineIntent(
     public override string Name => "DetermineIntent";
 
     public override async Task<DeterminedIntent> ExecuteInternal(
-        GroundingData input,
+        WorkflowRequest input,
         CancellationToken cancellationToken = default)
     {
         // validate input
