@@ -7,13 +7,13 @@ namespace Inference;
 
 public class WorkflowContext : IWorkflowContext
 {
-    public event Func<string?, string?, Intents, List<Citation>?, int, int, Task>? OnStream;
+    public event Func<string?, string?, Intents, List<Context>?, int, int, Task>? OnStream;
 
     public Task Stream(
         string? status = null,
         string? message = null,
         Intents intent = Intents.UNKNOWN,
-        List<Citation>? citations = null,
+        List<Context>? citations = null,
         int promptTokens = 0,
         int completionTokens = 0)
     {

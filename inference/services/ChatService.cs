@@ -26,7 +26,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         public string? Status { get; set; }
         public StringBuilder Message { get; } = new();
         public Intents Intent { get; set; }
-        public List<Citation> Citations { get; } = [];
+        public List<Context> Citations { get; } = [];
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
     }

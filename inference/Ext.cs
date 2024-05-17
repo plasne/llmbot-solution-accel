@@ -26,7 +26,7 @@ public static class Ext
         return history;
     }
 
-    public static DistributedChat.Citation ToGrpcCitation(this Citation source)
+    public static DistributedChat.Citation ToGrpcCitation(this Context source)
     {
         var target = new DistributedChat.Citation
         {

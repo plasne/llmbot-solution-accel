@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Inference;
 
-public class Citation
+public class Context
 {
     [JsonProperty("id", Required = Required.Always)]
     public required string Id { get; set; }
@@ -12,4 +12,7 @@ public class Citation
 
     [JsonProperty("uri", NullValueHandling = NullValueHandling.Ignore)]
     public string? Uri { get; set; }
+
+    [JsonProperty("text", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Text { get; set; }
 }

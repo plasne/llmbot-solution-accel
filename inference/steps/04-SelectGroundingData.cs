@@ -33,13 +33,10 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
                 var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
                 var context = new Context
                 {
+                    Id = "ref" + index,
+                    Title = doc.Title ?? doc.Url ?? $"Document {index}",
+                    Uri = doc.Url,
                     Text = chunk,
-                    Citation = new Citation
-                    {
-                        Id = "ref" + index,
-                        Title = doc.Title ?? doc.Url ?? $"Document {index}",
-                        Uri = doc.Url
-                    }
                 };
                 output.Context.Add(context);
             }

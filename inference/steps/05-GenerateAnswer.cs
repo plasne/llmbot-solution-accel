@@ -108,24 +108,24 @@ public partial class GenerateAnswer(
         }
 
         // find citations
-        Dictionary<string, Citation> citations = [];
+        Dictionary<string, Context> citations = [];
         MatchCollection matches = MatchRef().Matches(buffer.ToString());
         foreach (Match match in matches)
         {
             if (!citations.ContainsKey(match.Value))
             {
-                var content = input.Data?.Context?.Find(x => $"[{x.Citation?.Id}]" == match.Value);
-                if (content is not null && content.Citation is not null)
+                var content = input.Data?.Context?.Find(x => $"[{x.Id}]" == match.Value);
+                if (content is not null)
                 {
-                    citations.Add(match.Value, content.Citation);
+                    citations.Add(match.Value, content);
                 }
             }
         }
 
         // send response
-        List<Citation> citationList = [.. citations.Values];
+        List<Context> citationList = [.. citations.Values];
         await this.context.Stream("Generated.", citations: citationList, promptTokens: promptTokenCount, completionTokens: completionTokenCount);
-        return new Answer { Text = buffer.ToString(), Citations = citationList };
+        return new Answer { Text = buffer.ToString(), Context = citationList };
     }
 
     [GeneratedRegex(@"\[ref\d+\]")]
