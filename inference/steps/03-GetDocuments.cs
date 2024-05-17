@@ -31,6 +31,7 @@ public class GetDocuments(IWorkflowContext context, SearchService searchService,
                 }
             }
         }
+        DiagnosticService.RecordSearchQueryCount(docs.Count);
         return docs;
     }
 }

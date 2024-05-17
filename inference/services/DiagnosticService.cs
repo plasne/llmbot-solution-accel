@@ -21,6 +21,13 @@ public static class DiagnosticService
 
     static readonly Histogram<double> CompletionTokensPerSec = Metrics.CreateHistogram<double>(name: "completion_tokens_per_second", "sec", description: "Completion tokens per second");
 
+    static readonly Histogram<int> SearchQueryCount = Metrics.CreateHistogram<int>("search_query_count", "Count of search queries executed");
+
+    public static void RecordSearchQueryCount(int count)
+    {
+        SearchQueryCount.Record(count);
+    }
+
     public static void RecordEmbeddingTokenCount(int tokenCount, string modelName, string step)
     {
         var modelTag = new KeyValuePair<string, object?>(Model, modelName);
