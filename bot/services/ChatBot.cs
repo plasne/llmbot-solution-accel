@@ -303,7 +303,7 @@ public class ChatBot(
             }
             completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - this.started).TotalMilliseconds;
             DiagnosticService.RecordTimeToLastResponse(completeRequest.TimeToLastResponse);
-            DiagnosticService.RecordTimePerOutputToken((double)(completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
+            DiagnosticService.RecordTimePerOutputToken((completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
 
             // write the generated message
             completeRequest.Message = completeRequest.State != States.EMPTY
