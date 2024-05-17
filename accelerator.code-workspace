@@ -15,6 +15,10 @@
     {
       "name": "proto",
       "path": "proto"
+    },
+    {
+      "name": "inference",
+      "path": "inference"
     }
   ],
   "settings": {}

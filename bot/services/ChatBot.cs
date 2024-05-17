@@ -301,8 +301,9 @@ public class ChatBot(
                 // handle the response
                 activityId = await this.HandleResponse(turnContext, activityId, chatResponse, summaries, completeRequest, cancellationToken);
             }
-            completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
+            completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - this.started).TotalMilliseconds;
             DiagnosticService.RecordTimeToLastResponse(completeRequest.TimeToLastResponse);
+            DiagnosticService.RecordTimePerOutputToken((double)(completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
 
             // write the generated message
             completeRequest.Message = completeRequest.State != States.EMPTY
