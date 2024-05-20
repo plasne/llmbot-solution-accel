@@ -14,6 +14,8 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
 
     public List<LogEntry> Logs { get; } = [];
 
+    public Usage Usage { get; } = new();
+
     protected void LogDebug(string message)
     {
         this.logger.LogDebug(message);
@@ -42,11 +44,24 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
     {
         try
         {
+            // check for cancellation
             if (cancellationToken.IsCancellationRequested)
             {
                 return Task.FromCanceled<TOutput>(cancellationToken);
             }
 
+            // start an activity for the step
+            using var activity = DiagnosticService.Source.StartActivity(this.Name);
+            if (activity is not null)
+            {
+                activity.SetBaggage("step", this.Name);
+                foreach (var baggage in activity.Baggage)
+                {
+                    activity.SetTag(baggage.Key, baggage.Value);
+                }
+            }
+
+            // execute the step
             return this.ExecuteInternal(input, cancellationToken);
         }
         catch (Exception ex)

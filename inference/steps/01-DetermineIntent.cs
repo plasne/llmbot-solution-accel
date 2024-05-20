@@ -59,11 +59,10 @@ public class DetermineIntent(
         );
 
         // add prompt token count reporting using sharpToken
-        var promptTokenCount = 0;
         kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
         {
-            promptTokenCount = count;
-            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME, this.GetType().Name);
+            this.Usage.PromptTokenCount = count;
+            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME);
         }));
 
         // build the history
@@ -82,24 +81,13 @@ public class DetermineIntent(
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
         // record completion token count using sharpToken
-        var completionTokenCount = 0;
-        if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var usageOut) && usageOut is CompletionsUsage usage)
-        {
-            var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
-            completionTokenCount = encoding.CountTokens(response.ToString());
-            if (completionTokenCount != usage.CompletionTokens)
-            {
-                this.LogWarning("completion token count mismatch: {completionTokenCount} != {usage.CompletionTokens}");
-            }
-            DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
-        }
+        var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
+        this.Usage.CompletionTokenCount = encoding.CountTokens(response.ToString());
+        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
 
         // record tokens per second
-        if (completionTokenCount > 0)
-        {
-            var tokensPerSecond = completionTokenCount / elapsedSeconds;
-            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME, this.GetType().Name);
-        }
+        var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
+        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME);
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)
@@ -110,7 +98,7 @@ public class DetermineIntent(
         this.logger.LogDebug(response.ToString());
 
         // send token counts
-        await this.context.Stream(promptTokens: promptTokenCount, completionTokens: completionTokenCount);
+        await this.context.Stream(promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
 
         // record to context
         return intent;

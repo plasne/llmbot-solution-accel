@@ -58,11 +58,10 @@ public partial class GenerateAnswer(
         );
 
         // add prompt token count reporting
-        var promptTokenCount = 0;
         kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
         {
-            promptTokenCount = count;
-            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME, this.GetType().Name);
+            this.Usage.PromptTokenCount = count;
+            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME);
         }));
 
         // build the history
@@ -95,17 +94,13 @@ public partial class GenerateAnswer(
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
         // record completion token count using sharpToken
-        var completionTokenCount = 0;
         var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
-        completionTokenCount = encoding.CountTokens(buffer.ToString());
-        DiagnosticService.RecordCompletionTokenCount(completionTokenCount, this.config.LLM_MODEL_NAME, this.GetType().Name);
+        this.Usage.CompletionTokenCount = encoding.CountTokens(buffer.ToString());
+        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
 
         // record tokens per second
-        if (completionTokenCount > 0)
-        {
-            var tokensPerSecond = completionTokenCount / elapsedSeconds;
-            DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME, this.GetType().Name);
-        }
+        var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
+        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME);
 
         // find citations
         Dictionary<string, Context> citations = [];
@@ -124,7 +119,7 @@ public partial class GenerateAnswer(
 
         // send response
         List<Context> citationList = [.. citations.Values];
-        await this.context.Stream("Generated.", citations: citationList, promptTokens: promptTokenCount, completionTokens: completionTokenCount);
+        await this.context.Stream("Generated.", citations: citationList, promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
         return new Answer { Text = buffer.ToString(), Context = citationList };
     }
 

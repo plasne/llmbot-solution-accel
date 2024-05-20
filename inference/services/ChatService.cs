@@ -160,6 +160,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         };
 
         // execute the workflow
+        using var activity = DiagnosticService.Source.StartActivity("Workflow");
         await workflow.Execute(workflowRequest, context.CancellationToken);
     }
 }

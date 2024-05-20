@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Shared.Models.Memory;
@@ -38,5 +39,11 @@ public static class Ext
             target.Uri = source.Uri;
         }
         return target;
+    }
+
+    public static decimal AsDecimal(this string str, Func<decimal> dflt)
+    {
+        if (decimal.TryParse(str, out decimal val)) return val;
+        return dflt();
     }
 }

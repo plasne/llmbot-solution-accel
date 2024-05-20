@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 
 namespace Inference;
 
-public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, List<LogEntry> logs) : IWorkflowStepResponse
+public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, List<LogEntry> logs, Usage usage) : IWorkflowStepResponse
 {
     [JsonProperty("name", Required = Required.Always)]
     public string Name { get; set; } = name;
@@ -16,4 +16,7 @@ public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, Li
 
     [JsonProperty("logs", Required = Required.Always)]
     public List<LogEntry> Logs { get; set; } = logs;
+
+    [JsonProperty("usage", Required = Required.Always)]
+    public Usage Usage { get; set; } = usage;
 }

@@ -13,24 +13,34 @@ public static class DiagnosticService
     static readonly Histogram<int> CompletionTokenCount = Metrics.CreateHistogram<int>(name: "completion_token_count", description: "Count of completion tokens");
     static readonly Histogram<double> CompletionTokensPerSec = Metrics.CreateHistogram<double>(name: "completion_tokens_per_second", "sec", description: "Completion tokens per second");
 
-    public static void RecordPromptTokenCount(int tokenCount, string modelName, string step)
+    private static TagList AddBaggage(TagList tags)
     {
-        var modelTag = new KeyValuePair<string, object?>("model", modelName);
-        var stepTag = new KeyValuePair<string, object?>("step", step);
-        PromptTokenCount.Record(tokenCount, modelTag, stepTag);
+        if (Activity.Current is null) return tags;
+        foreach (var bag in Activity.Current.Baggage)
+        {
+            tags.Add(bag.Key, bag.Value);
+        }
+        return tags;
     }
 
-    public static void RecordCompletionTokenCount(int tokenCount, string modelName, string step)
+    public static void RecordPromptTokenCount(int tokenCount, string modelName)
     {
-        var modelTag = new KeyValuePair<string, object?>("model", modelName);
-        var stepTag = new KeyValuePair<string, object?>("step", step);
-        CompletionTokenCount.Record(tokenCount, modelTag, stepTag);
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        PromptTokenCount.Record(tokenCount, tags);
     }
 
-    public static void RecordTokensPerSecond(double tokensPerSecond, string modelName, string step)
+    public static void RecordCompletionTokenCount(int tokenCount, string modelName)
     {
-        var modelTag = new KeyValuePair<string, object?>("model", modelName);
-        var stepTag = new KeyValuePair<string, object?>("step", step);
-        CompletionTokensPerSec.Record(tokensPerSecond, modelTag, stepTag);
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        CompletionTokenCount.Record(tokenCount, tags);
+    }
+
+    public static void RecordTokensPerSecond(double tokensPerSecond, string modelName)
+    {
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        CompletionTokensPerSec.Record(tokensPerSecond, tags);
     }
 }
