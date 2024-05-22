@@ -78,8 +78,10 @@ switch (config.MEMORY_TERM)
 
 // add the workflow services
 builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
-builder.Services.AddTransient<Workflow>();
+builder.Services.AddTransient<PrimaryWorkflow>();
+builder.Services.AddTransient<InDomainOnlyWorkflow>();
 builder.Services.AddTransient<DetermineIntent>();
+builder.Services.AddTransient<InDomainOnlyIntent>();
 builder.Services.AddTransient<ApplyIntent>();
 builder.Services.AddTransient<GetDocuments>();
 builder.Services.AddTransient<SelectGroundingData>();

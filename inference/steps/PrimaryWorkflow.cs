@@ -6,12 +6,13 @@ using Shared;
 
 namespace Inference;
 
-public class Workflow(
+public class PrimaryWorkflow(
     DetermineIntent determineIntent,
     ApplyIntent applyIntent,
     GetDocuments getDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer)
+    : IWorkflow
 {
     private readonly DetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;

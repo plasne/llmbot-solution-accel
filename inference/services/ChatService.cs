@@ -125,7 +125,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
         var workflowContext = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
-        var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
+        var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
 
         // add stream event
         // NOTE: we should always end on a status change or it isn't flushed

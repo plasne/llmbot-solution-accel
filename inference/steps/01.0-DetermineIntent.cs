@@ -6,7 +6,6 @@ using Newtonsoft.Json;
 using System.IO;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading;
-using Azure.AI.OpenAI;
 using SharpToken;
 using System;
 using Shared;
