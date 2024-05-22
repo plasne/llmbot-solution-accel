@@ -1,5 +1,13 @@
-### run a workflow
-POST http://localhost:7030/api/workflow HTTP/1.1
+### run the primary workflow
+POST http://localhost:7030/api/workflows/primary HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_query": "How many players can play Fury of Dracula 4th edition?"
+}
+
+### run the in-domain-only workflow
+POST http://localhost:7030/api/workflows/in-domain-only HTTP/1.1
 Content-Type: application/json
 
 {

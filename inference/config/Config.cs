@@ -29,6 +29,8 @@ public class Config : IConfig
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.MAX_TIMEOUT_IN_SECONDS = config.Get<string>("MAX_TIMEOUT_IN_SECONDS").AsInt(() => 60);
+        this.COST_PER_PROMPT_TOKEN = config.Get<string>("COST_PER_PROMPT_TOKEN").AsDecimal(() => 0.0m);
+        this.COST_PER_COMPLETION_TOKEN = config.Get<string>("COST_PER_COMPLETION_TOKEN").AsDecimal(() => 0.0m);
     }
 
     public int GRPC_PORT { get; }
@@ -69,6 +71,10 @@ public class Config : IConfig
 
     public int MAX_TIMEOUT_IN_SECONDS { get; }
 
+    public decimal COST_PER_PROMPT_TOKEN { get; } = 0.0m;
+
+    public decimal COST_PER_COMPLETION_TOKEN { get; } = 0.0m;
+
     public void Validate()
     {
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
@@ -93,5 +99,7 @@ public class Config : IConfig
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
         this.config.Require("MAX_TIMEOUT_IN_SECONDS", this.MAX_TIMEOUT_IN_SECONDS);
+        this.config.Require("COST_PER_PROMPT_TOKEN", this.COST_PER_PROMPT_TOKEN.ToString());
+        this.config.Require("COST_PER_COMPLETION_TOKEN", this.COST_PER_COMPLETION_TOKEN.ToString());
     }
 }

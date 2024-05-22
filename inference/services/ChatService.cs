@@ -26,7 +26,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         public string? Status { get; set; }
         public StringBuilder Message { get; } = new();
         public Intents Intent { get; set; }
-        public List<Citation> Citations { get; } = [];
+        public List<Context> Citations { get; } = [];
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
     }
@@ -125,7 +125,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
         var workflowContext = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
-        var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
+        var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
 
         // add stream event
         // NOTE: we should always end on a status change or it isn't flushed
@@ -160,6 +160,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         };
 
         // execute the workflow
+        using var activity = DiagnosticService.Source.StartActivity("Workflow");
         await workflow.Execute(workflowRequest, context.CancellationToken);
     }
 }

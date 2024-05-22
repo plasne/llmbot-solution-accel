@@ -7,27 +7,15 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Inference;
 
-[Route("api/workflow")]
+[Route("api/steps")]
 [ApiController]
-public class WorkflowController : ControllerBase
+public class StepsController() : ControllerBase
 {
-    [HttpPost]
-    public async Task<ActionResult<WorkflowResponse>> RunWorkflow(
-        [FromServices] IServiceProvider serviceProvider,
-        [FromBody] WorkflowRequest request,
-        CancellationToken cancellationToken)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var workflow = scope.ServiceProvider.GetRequiredService<Workflow>();
-        var response = await workflow.Execute(request, cancellationToken);
-        return Ok(response);
-    }
-
     [HttpPost("determine-intent")]
     public async Task<ActionResult<DeterminedIntent>> DetermineIntent(
-        [FromServices] IServiceProvider serviceProvider,
-        [FromBody] WorkflowRequest request,
-        CancellationToken cancellationToken)
+       [FromServices] IServiceProvider serviceProvider,
+       [FromBody] WorkflowRequest request,
+       CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         var determineIntent = scope.ServiceProvider.GetRequiredService<DetermineIntent>();

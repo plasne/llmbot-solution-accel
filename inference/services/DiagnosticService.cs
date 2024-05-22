@@ -1,15 +1,11 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.Metrics;
 
 namespace Inference;
 
 public static class DiagnosticService
 {
-    const string SourceName = "sk";
-    const string Model = "model";
-    const string Step = "step";
-
+    const string SourceName = "inference";
     public static readonly ActivitySource Source = new(SourceName);
     static readonly Meter Metrics = new(SourceName);
 
@@ -21,32 +17,42 @@ public static class DiagnosticService
 
     static readonly Histogram<double> CompletionTokensPerSec = Metrics.CreateHistogram<double>(name: "completion_tokens_per_second", "sec", description: "Completion tokens per second");
 
-    public static void RecordEmbeddingTokenCount(int tokenCount, string modelName, string step)
+    private static TagList AddBaggage(TagList tags)
     {
-        var modelTag = new KeyValuePair<string, object?>(Model, modelName);
-        var stepTag = new KeyValuePair<string, object?>(Step, step);
-        EmbeddingTokenCount.Record(tokenCount, modelTag, stepTag);
+        if (Activity.Current is null) return tags;
+        foreach (var bag in Activity.Current.Baggage)
+        {
+            tags.Add(bag.Key, bag.Value);
+        }
+        return tags;
     }
 
-    public static void RecordPromptTokenCount(int tokenCount, string modelName, string step)
+    public static void RecordEmbeddingTokenCount(int tokenCount, string modelName)
     {
-        var modelTag = new KeyValuePair<string, object?>(Model, modelName);
-        var stepTag = new KeyValuePair<string, object?>(Step, step);
-        PromptTokenCount.Record(tokenCount, modelTag, stepTag);
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        EmbeddingTokenCount.Record(tokenCount, tags);
     }
 
-    public static void RecordCompletionTokenCount(int tokenCount, string modelName, string step)
+    public static void RecordPromptTokenCount(int tokenCount, string modelName)
     {
-        var modelTag = new KeyValuePair<string, object?>(Model, modelName);
-        var stepTag = new KeyValuePair<string, object?>(Step, step);
-        CompletionTokenCount.Record(tokenCount, modelTag, stepTag);
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        PromptTokenCount.Record(tokenCount, tags);
     }
 
-    public static void RecordTokensPerSecond(double tokensPerSecond, string modelName, string step)
+    public static void RecordCompletionTokenCount(int tokenCount, string modelName)
     {
-        var modelTag = new KeyValuePair<string, object?>(Model, modelName);
-        var stepTag = new KeyValuePair<string, object?>(Step, step);
-        CompletionTokensPerSec.Record(tokensPerSecond, modelTag, stepTag);
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        CompletionTokenCount.Record(tokenCount, tags);
+    }
+
+    public static void RecordTokensPerSecond(double tokensPerSecond, string modelName)
+    {
+        var tags = new TagList() { { "model", modelName } };
+        tags = AddBaggage(tags);
+        CompletionTokensPerSec.Record(tokensPerSecond, tags);
     }
 
 }
