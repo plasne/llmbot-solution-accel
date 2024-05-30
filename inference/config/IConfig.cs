@@ -7,9 +7,11 @@ public interface IConfig
     MemoryTerm MEMORY_TERM { get; }
     string OPEN_TELEMETRY_CONNECTION_STRING { get; }
     string LLM_DEPLOYMENT_NAME { get; }
-    string EMBEDDING_DEPLOYMENT_NAME { get; }
     string LLM_ENDPOINT_URI { get; }
     string LLM_API_KEY { get; }
+    string EMBEDDING_DEPLOYMENT_NAME { get; }
+    string EMBEDDING_ENDPOINT_URI { get; }
+    string EMBEDDING_API_KEY { get; }
     string LLM_MODEL_NAME { get; }
     string LLM_ENCODING_MODEL { get; set; }
     string SEARCH_INDEX { get; }
