@@ -9,4 +9,7 @@ public class Usage
 
     [JsonProperty("completion_token_count", Required = Required.Always)]
     public int CompletionTokenCount { get; set; }
+
+    [JsonProperty("execution_time", Required = Required.Always)]
+    public long ExecutionTime { get; set; }
 }

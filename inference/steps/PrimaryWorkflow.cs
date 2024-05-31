@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Shared;
 
 namespace Inference;
@@ -11,7 +12,8 @@ public class PrimaryWorkflow(
     ApplyIntent applyIntent,
     GetDocuments getDocuments,
     SelectGroundingData selectGroundingData,
-    GenerateAnswer generateAnswer)
+    GenerateAnswer generateAnswer,
+    ILogger<PrimaryWorkflow> logger)
     : IWorkflow
 {
     private readonly DetermineIntent determineIntent = determineIntent;
@@ -19,6 +21,7 @@ public class PrimaryWorkflow(
     private readonly GetDocuments getDocuments = getDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;
+    private readonly ILogger<PrimaryWorkflow> logger = logger;
 
     public async Task<WorkflowResponse> Execute(
         WorkflowRequest workflowRequest,
@@ -63,7 +66,8 @@ public class PrimaryWorkflow(
         }
         catch (Exception ex)
         {
-            throw new HttpWithResponseException(500, ex.Message, response);
+            this.logger.LogError(ex, "An error occurred while executing the primary workflow.");
+            throw new HttpWithResponseException(500, $"{ex.GetType()}: {ex.Message}", response);
         }
     }
 }

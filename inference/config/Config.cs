@@ -15,9 +15,11 @@ public class Config : IConfig
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.LLM_DEPLOYMENT_NAME = config.Get<string>("LLM_DEPLOYMENT_NAME");
+        this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI, ENDPOINT_URI");
+        this.LLM_API_KEY = config.GetSecret<string>("LLM_API_KEY, API_KEY").Result;
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
-        this.LLM_ENDPOINT_URI = config.Get<string>("LLM_ENDPOINT_URI");
-        this.LLM_API_KEY = config.GetSecret<string>("LLM_API_KEY").Result;
+        this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI, ENDPOINT_URI");
+        this.EMBEDDING_API_KEY = config.GetSecret<string>("EMBEDDING_API_KEY, API_KEY").Result;
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME").AsString(() => this.LLM_DEPLOYMENT_NAME);
         this.LLM_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
@@ -43,11 +45,15 @@ public class Config : IConfig
 
     public string LLM_DEPLOYMENT_NAME { get; }
 
-    public string EMBEDDING_DEPLOYMENT_NAME { get; }
-
     public string LLM_ENDPOINT_URI { get; }
 
     public string LLM_API_KEY { get; }
+
+    public string EMBEDDING_DEPLOYMENT_NAME { get; }
+
+    public string EMBEDDING_ENDPOINT_URI { get; }
+
+    public string EMBEDDING_API_KEY { get; }
 
     public string LLM_MODEL_NAME { get; }
 
@@ -82,9 +88,11 @@ public class Config : IConfig
         this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
         this.config.Require("LLM_DEPLOYMENT_NAME", this.LLM_DEPLOYMENT_NAME);
-        this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("LLM_ENDPOINT_URI", this.LLM_ENDPOINT_URI);
         this.config.Require("LLM_API_KEY", this.LLM_API_KEY, hideValue: true);
+        this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
+        this.config.Require("EMBEDDING_ENDPOINT_URI", this.EMBEDDING_ENDPOINT_URI);
+        this.config.Require("EMBEDDING_API_KEY", this.EMBEDDING_API_KEY, hideValue: true);
 
         this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
         this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);

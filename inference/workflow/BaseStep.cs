@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -40,14 +41,14 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
         this.Logs.Add(new LogEntry("ERROR", message + ": " + ex.Message));
     }
 
-    public Task<TOutput> Execute(TInput input, CancellationToken cancellationToken = default)
+    public async Task<TOutput> Execute(TInput input, CancellationToken cancellationToken = default)
     {
         try
         {
             // check for cancellation
             if (cancellationToken.IsCancellationRequested)
             {
-                return Task.FromCanceled<TOutput>(cancellationToken);
+                throw new TaskCanceledException();
             }
 
             // start an activity for the step
@@ -62,7 +63,12 @@ public abstract class BaseStep<TInput, TOutput>(ILogger logger) : IStep<TInput, 
             }
 
             // execute the step
-            return this.ExecuteInternal(input, cancellationToken);
+            var watch = Stopwatch.StartNew();
+            var output = await this.ExecuteInternal(input, cancellationToken);
+            watch.Stop();
+            this.Usage.ExecutionTime = watch.ElapsedMilliseconds;
+
+            return output;
         }
         catch (Exception ex)
         {

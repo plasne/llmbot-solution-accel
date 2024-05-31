@@ -58,8 +58,8 @@ builder.Services.AddSingleton(provider =>
             config.LLM_API_KEY)
         .AddAzureOpenAITextEmbeddingGeneration(
             config.EMBEDDING_DEPLOYMENT_NAME,
-            config.LLM_ENDPOINT_URI,
-            config.LLM_API_KEY);
+            config.EMBEDDING_ENDPOINT_URI,
+            config.EMBEDDING_API_KEY);
 
     kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
     return kernalBuilder.Build();
