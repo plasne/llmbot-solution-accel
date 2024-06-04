@@ -12,6 +12,7 @@ using Polly.Extensions.Http;
 using Polly;
 using Inference;
 using System.Net.Http;
+using Microsoft.Extensions.Azure;
 
 DotEnv.Load();
 
@@ -32,7 +33,7 @@ builder.Services.AddSingleLineConsoleLogger();
 builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
 builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
 
-// add http client with retry
+// add http clients (not OpenAI)
 builder.Services
     .AddHttpClient("retry", options =>
     {
@@ -40,35 +41,26 @@ builder.Services
     })
     .AddPolicyHandler(HttpPolicyExtensions
         .HandleTransientHttpError()
+        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
+        .WaitAndRetryAsync(config.MAX_RETRY_ATTEMPTS, retryAttempt => TimeSpan.FromSeconds(config.SECONDS_BETWEEN_RETRIES)));
+
+// add http clients (OpenAI)
+builder.Services
+    .AddHttpClient("openai-with-retry", options =>
+    {
+        options.Timeout = TimeSpan.FromSeconds(config.MAX_TIMEOUT_IN_SECONDS);
+    })
+    .AddPolicyHandler(HttpPolicyExtensions
+        .HandleTransientHttpError()
+        .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.TooManyRequests)
         .WaitAndRetryAsync(config.MAX_RETRY_ATTEMPTS, retryAttempt => TimeSpan.FromSeconds(config.SECONDS_BETWEEN_RETRIES)));
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen().AddSwaggerGenNewtonsoftSupport();
 
-// add the kernel service
-builder.Services.AddSingleton(provider =>
-{
-    var config = provider.GetRequiredService<Inference.IConfig>();
-    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-    var httpClient = httpClientFactory.CreateClient("openai");
-
-    var kernalBuilder = Kernel.CreateBuilder();
-    kernalBuilder
-        .AddAzureOpenAIChatCompletion(
-            config.LLM_DEPLOYMENT_NAME,
-            config.LLM_ENDPOINT_URI,
-            config.LLM_API_KEY,
-            httpClient: httpClient)
-        .AddAzureOpenAITextEmbeddingGeneration(
-            config.EMBEDDING_DEPLOYMENT_NAME,
-            config.EMBEDDING_ENDPOINT_URI,
-            config.EMBEDDING_API_KEY,
-            httpClient: httpClient);
-
-    kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
-    return kernalBuilder.Build();
-});
+// add the kernel factory service
+builder.Services.AddSingleton<KernelFactory>();
 
 // register memory provider
 switch (config.MEMORY_TERM)
@@ -92,10 +84,12 @@ builder.Services.AddTransient<GetDocuments>();
 builder.Services.AddTransient<SelectGroundingData>();
 builder.Services.AddTransient<GenerateAnswer>();
 
+// add supporting services
+builder.Services.AddTransient<SearchService>();
+
 // add other services
 builder.Services.AddGrpc();
 builder.Services.AddControllers().AddNewtonsoftJson();
-builder.Services.AddSingleton<SearchService>();
 
 // listen (disable TLS)
 builder.WebHost.UseKestrel(options =>

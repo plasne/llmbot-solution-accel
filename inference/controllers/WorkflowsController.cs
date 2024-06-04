@@ -60,6 +60,7 @@ public class WorkflowsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IWorkflowContext>().IsForEvaluation = true;
         var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
         return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }
@@ -74,6 +75,7 @@ public class WorkflowsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IWorkflowContext>().IsForEvaluation = true;
         var workflow = scope.ServiceProvider.GetRequiredService<InDomainOnlyWorkflow>();
         return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }

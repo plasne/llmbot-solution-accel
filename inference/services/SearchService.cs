@@ -1,7 +1,6 @@
 using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
-using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
 using System;
 using System.Collections.Generic;
@@ -14,16 +13,18 @@ public class SearchService
 {
     private readonly IConfig config;
     private readonly SearchClient searchClient;
-    private readonly Kernel kernel;
+    private readonly IWorkflowContext context;
+    private readonly KernelFactory kernelFactory;
 
-    public SearchService(IConfig config, Kernel kernel)
+    public SearchService(IConfig config, IWorkflowContext context, KernelFactory kernelFactory)
     {
         this.config = config;
 
         AzureKeyCredential credential = new(config.SEARCH_API_KEY);
         this.searchClient = new(new Uri(config.SEARCH_ENDPOINT_URI), config.SEARCH_INDEX, credential);
 
-        this.kernel = kernel;
+        this.context = context;
+        this.kernelFactory = kernelFactory;
     }
 
     public async IAsyncEnumerable<Doc> SearchAsync(
@@ -33,6 +34,9 @@ public class SearchService
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         // create the vector query
+        var kernel = this.context.IsForInference
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken)
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken);
         var embedding = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         ReadOnlyMemory<float> vector = await embedding.GenerateEmbeddingAsync(text, kernel, cancellationToken);
         VectorizedQuery vectorQuery = new(vector)
