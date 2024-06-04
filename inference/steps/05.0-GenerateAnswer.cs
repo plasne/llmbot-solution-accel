@@ -18,14 +18,14 @@ namespace Inference;
 public partial class GenerateAnswer(
     IConfig config,
     IWorkflowContext context,
-    Kernel kernel,
+    KernelFactory kernelFactory,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
     : BaseStep<IntentAndData, Answer>(logger)
 {
     private readonly IConfig config = config;
     private readonly IWorkflowContext context = context;
-    private readonly Kernel kernel = kernel;
+    private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
 
     public override string Name => "GenerateAnswer";
@@ -48,7 +48,10 @@ public partial class GenerateAnswer(
         });
 
         // build the function
-        var func = this.kernel.CreateFunctionFromPrompt(
+        var kernel = this.context.IsForInference
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken)
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken);
+        var func = kernel.CreateFunctionFromPrompt(
             new()
             {
                 Template = template,
@@ -74,7 +77,7 @@ public partial class GenerateAnswer(
 
         // execute
         var startTime = DateTime.UtcNow;
-        var response = this.kernel.InvokeStreamingAsync(
+        var response = kernel.InvokeStreamingAsync(
             func,
             new()
             {

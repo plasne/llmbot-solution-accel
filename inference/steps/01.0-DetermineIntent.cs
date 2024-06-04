@@ -15,14 +15,14 @@ namespace Inference;
 public class DetermineIntent(
     IConfig config,
     IWorkflowContext context,
-    Kernel kernel,
+    KernelFactory kernelFactory,
     IMemory memory,
     ILogger<DetermineIntent> logger)
     : BaseStep<WorkflowRequest, DeterminedIntent>(logger)
 {
     private readonly IConfig config = config;
     private readonly IWorkflowContext context = context;
-    private readonly Kernel kernel = kernel;
+    private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
     private readonly ILogger<DetermineIntent> logger = logger;
 
@@ -48,7 +48,10 @@ public class DetermineIntent(
         });
 
         // build the function
-        var func = this.kernel.CreateFunctionFromPrompt(
+        var kernel = this.context.IsForInference
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken)
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken);
+        var func = kernel.CreateFunctionFromPrompt(
             new()
             {
                 Template = template,
@@ -69,7 +72,7 @@ public class DetermineIntent(
 
         // execute
         var startTime = DateTime.UtcNow;
-        var response = await this.kernel.InvokeAsync(
+        var response = await kernel.InvokeAsync(
             func,
             new()
             {

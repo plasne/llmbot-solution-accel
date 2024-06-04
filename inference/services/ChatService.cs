@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Net.Http;
 using Shared.Models.Memory;
 using Newtonsoft.Json;
-using NetBricks;
 
 namespace Inference;
 
@@ -124,6 +123,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
 
         // create scope, context, and workflow
         using var scope = this.serviceProvider.CreateScope();
+        scope.ServiceProvider.GetRequiredService<IWorkflowContext>().IsForInference = true;
         var workflowContext = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
 

@@ -7,6 +7,9 @@ namespace Inference;
 
 public interface IWorkflowContext
 {
+    public bool IsForInference { get; set; }
+    public bool IsForEvaluation { get; set; }
+
     event Func<string?, string?, Intents, List<Context>?, int, int, Task> OnStream;
 
     public Task Stream(
