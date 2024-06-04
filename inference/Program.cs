@@ -11,6 +11,7 @@ using System;
 using Polly.Extensions.Http;
 using Polly;
 using Inference;
+using System.Net.Http;
 
 DotEnv.Load();
 
@@ -48,18 +49,22 @@ builder.Services.AddSwaggerGen().AddSwaggerGenNewtonsoftSupport();
 // add the kernel service
 builder.Services.AddSingleton(provider =>
 {
-    var config = provider.GetRequiredService<Inference.IConfig>()!;
+    var config = provider.GetRequiredService<Inference.IConfig>();
+    var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("openai");
 
     var kernalBuilder = Kernel.CreateBuilder();
-    kernalBuilder.Services
+    kernalBuilder
         .AddAzureOpenAIChatCompletion(
             config.LLM_DEPLOYMENT_NAME,
             config.LLM_ENDPOINT_URI,
-            config.LLM_API_KEY)
+            config.LLM_API_KEY,
+            httpClient: httpClient)
         .AddAzureOpenAITextEmbeddingGeneration(
             config.EMBEDDING_DEPLOYMENT_NAME,
             config.EMBEDDING_ENDPOINT_URI,
-            config.EMBEDDING_API_KEY);
+            config.EMBEDDING_API_KEY,
+            httpClient: httpClient);
 
     kernalBuilder.AddOpenTelemetry(builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
     return kernalBuilder.Build();
@@ -117,4 +122,5 @@ app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapGrpcService<ChatService>();
 app.MapControllers();
 
-app.Run();
+// run
+await app.RunAsync();

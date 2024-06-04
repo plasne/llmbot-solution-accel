@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.SemanticKernel;
 using Shared;
 
 namespace Inference;
@@ -64,9 +66,14 @@ public class PrimaryWorkflow(
             response.Answer = step5.Output;
             return response;
         }
+        catch (HttpOperationException ex) when (ex.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            this.logger.LogError(ex, "There were too many requests against the OpenAI service...");
+            throw new HttpWithResponseException(429, ex.Message, response);
+        }
         catch (Exception ex)
         {
-            this.logger.LogError(ex, "An error occurred while executing the primary workflow.");
+            this.logger.LogError(ex, "An error occurred while executing the primary workflow...");
             throw new HttpWithResponseException(500, $"{ex.GetType()}: {ex.Message}", response);
         }
     }
