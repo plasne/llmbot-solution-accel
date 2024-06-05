@@ -45,6 +45,9 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
         // trim to 5 turns of the conversation
         output.History = input.History?.Skip(Math.Max(0, input.History.Count - 5)).ToList();
 
+        // NOTE: you could re-rank the documents here as well. GenerateAnswer should respect the re-ranking when
+        // it emits citations. (ie. the citations are in order from most to least relevant.)
+
         return Task.FromResult(output);
     }
 }
