@@ -105,25 +105,17 @@ public partial class GenerateAnswer(
         var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
         DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME);
 
-        // find citations
-        Dictionary<string, Context> citations = [];
-        MatchCollection matches = MatchRef().Matches(buffer.ToString());
-        foreach (Match match in matches)
+        // emit citations in order of relevance
+        var citationIds = new HashSet<string>(MatchRef().Matches(buffer.ToString()).Select(m => m.Value));
+        List<Context> citations = [];
+        input.Data?.Context?.ForEach(x =>
         {
-            if (!citations.ContainsKey(match.Value))
-            {
-                var content = input.Data?.Context?.Find(x => $"[{x.Id}]" == match.Value);
-                if (content is not null)
-                {
-                    citations.Add(match.Value, content);
-                }
-            }
-        }
+            if (citationIds.Contains($"[{x.Id}]")) citations.Add(x);
+        });
 
         // send response
-        List<Context> citationList = [.. citations.Values];
-        await this.context.Stream("Generated.", citations: citationList, promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
-        return new Answer { Text = buffer.ToString(), Context = citationList };
+        await this.context.Stream("Generated.", citations: citations, promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
+        return new Answer { Text = buffer.ToString(), Context = citations };
     }
 
     [GeneratedRegex(@"\[ref\d+\]")]
