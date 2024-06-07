@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.SemanticKernel;
 using NetBricks;
 using dotenv.net;
 using Microsoft.Extensions.Logging;
@@ -11,8 +10,6 @@ using System;
 using Polly.Extensions.Http;
 using Polly;
 using Inference;
-using System.Net.Http;
-using Microsoft.Extensions.Azure;
 
 DotEnv.Load();
 
@@ -74,6 +71,7 @@ switch (config.MEMORY_TERM)
 }
 
 // add the workflow services
+builder.Services.AddSingleton<IServiceContext, ServiceContext>();
 builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<PrimaryWorkflow>();
 builder.Services.AddTransient<InDomainOnlyWorkflow>();

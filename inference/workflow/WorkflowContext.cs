@@ -5,8 +5,9 @@ using Shared.Models.Memory;
 
 namespace Inference;
 
-public class WorkflowContext : IWorkflowContext
+public class WorkflowContext(IServiceContext serviceContext) : IWorkflowContext
 {
+    private int AIChatEndpointIndex = serviceContext.GetAIChatEndpointIndex();
     private bool isForInference;
     private bool isForEvaluation;
 
@@ -28,6 +29,11 @@ public class WorkflowContext : IWorkflowContext
             this.isForEvaluation = value;
             this.isForInference = !value;
         }
+    }
+
+    public int GetAIChatEndpointIndex()
+    {
+        return this.AIChatEndpointIndex;
     }
 
     public event Func<string?, string?, Intents, List<Context>?, int, int, Task>? OnStream;

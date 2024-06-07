@@ -19,4 +19,6 @@ public interface IWorkflowContext
         List<Context>? citations = null,
         int promptTokens = 0,
         int completionTokens = 0);
+
+    public int GetAIChatEndpointIndex();
 }

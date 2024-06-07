@@ -49,8 +49,8 @@ public class DetermineIntent(
 
         // build the function
         var kernel = this.context.IsForInference
-            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken)
-            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken);
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken, context.GetAIChatEndpointIndex())
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken, context.GetAIChatEndpointIndex());
         var func = kernel.CreateFunctionFromPrompt(
             new()
             {
