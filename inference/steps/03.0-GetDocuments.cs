@@ -29,6 +29,7 @@ public class GetDocuments(IWorkflowContext context, SearchService searchService,
                 {
                     docs.Add(result);
                 }
+                break;
             }
         }
         return docs;

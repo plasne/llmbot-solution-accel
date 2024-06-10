@@ -35,8 +35,8 @@ public class SearchService
     {
         // create the vector query
         var kernel = this.context.IsForInference
-            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(cancellationToken)
-            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(cancellationToken);
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.LLMEndpointIndex, cancellationToken);
         var embedding = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         ReadOnlyMemory<float> vector = await embedding.GenerateEmbeddingAsync(text, kernel, cancellationToken);
         VectorizedQuery vectorQuery = new(vector)
@@ -64,8 +64,6 @@ public class SearchService
         options.Select.Add("title");
         options.Select.Add("chunk_id");
         options.Select.Add("chunk");
-        options.Select.Add("game_name");
-        options.Select.Add("edition");
 
         // submit the query
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
