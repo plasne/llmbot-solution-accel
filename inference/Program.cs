@@ -66,10 +66,10 @@ builder.Services.AddSingleton<KernelFactory>();
 switch (config.MEMORY_TERM)
 {
     case MemoryTerm.Long:
-        builder.Services.AddSingleton<IMemory, UnsafeMemory>();
+        builder.Services.AddSingleton<IMemory, SafeMemory>();
         break;
     case MemoryTerm.Short:
-        builder.Services.AddScoped<IMemory, UnsafeMemory>();
+        builder.Services.AddScoped<IMemory, SafeMemory>();
         break;
 }
 
