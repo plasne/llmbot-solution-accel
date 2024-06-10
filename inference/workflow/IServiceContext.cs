@@ -2,5 +2,5 @@ namespace Inference;
 
 public interface IServiceContext
 {
-    public int GetAIChatEndpointIndex();
+    public int GetLLMEndpointIndex();
 }

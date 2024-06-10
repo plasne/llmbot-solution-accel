@@ -9,6 +9,7 @@ public interface IWorkflowContext
 {
     public bool IsForInference { get; set; }
     public bool IsForEvaluation { get; set; }
+    public int LLMEndpointIndex { get; }
 
     event Func<string?, string?, Intents, List<Context>?, int, int, Task> OnStream;
 
@@ -19,6 +20,4 @@ public interface IWorkflowContext
         List<Context>? citations = null,
         int promptTokens = 0,
         int completionTokens = 0);
-
-    public int GetAIChatEndpointIndex();
 }

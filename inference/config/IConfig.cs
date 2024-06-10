@@ -6,7 +6,7 @@ public interface IConfig
     int WEB_PORT { get; }
     MemoryTerm MEMORY_TERM { get; }
     string OPEN_TELEMETRY_CONNECTION_STRING { get; }
-    string[] CHAT_LLM_CONNECTION_STRINGS { get; }
+    string[] LLM_CONNECTION_STRINGS { get; }
     string EMBEDDING_DEPLOYMENT_NAME { get; }
     string EMBEDDING_ENDPOINT_URI { get; }
     string EMBEDDING_API_KEY { get; }

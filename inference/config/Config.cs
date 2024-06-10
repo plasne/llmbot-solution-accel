@@ -13,7 +13,7 @@ public class Config : IConfig
         this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 7020);
         this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 7030);
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
-        this.CHAT_LLM_CONNECTION_STRINGS = config.Get<string>("CHAT_LLM_CONNECTION_STRINGS").AsArray(() => new string[] { });
+        this.LLM_CONNECTION_STRINGS = config.Get<string>("LLM_CONNECTION_STRINGS").AsArray(() => new string[] { });
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI, ENDPOINT_URI");
@@ -39,7 +39,7 @@ public class Config : IConfig
 
     public string OPEN_TELEMETRY_CONNECTION_STRING { get; }
 
-    public string[] CHAT_LLM_CONNECTION_STRINGS { get; }
+    public string[] LLM_CONNECTION_STRINGS { get; }
 
     public MemoryTerm MEMORY_TERM { get; }
 
@@ -80,7 +80,7 @@ public class Config : IConfig
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
         this.config.Require("WEB_PORT", this.WEB_PORT);
         this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
-        this.config.Require("CHAT_LLM_CONNECTION_STRINGS", this.CHAT_LLM_CONNECTION_STRINGS, hideValue: true);
+        this.config.Require("LLM_CONNECTION_STRINGS", this.LLM_CONNECTION_STRINGS, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_ENDPOINT_URI", this.EMBEDDING_ENDPOINT_URI);

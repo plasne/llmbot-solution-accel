@@ -17,15 +17,14 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
     private readonly SemaphoreSlim semaphore = new(1);
     private List<Kernel>? kernelsForEvaluation;
     private List<Kernel>? kernelsForInference;
-    private int llmKernelIndex = 0;
 
     private Kernel
     CreateKernel(HttpClient httpClient, int llmKernelIndex)
     {
         var kernalBuilder = Kernel.CreateBuilder();
 
-        var llm_endpont_connection_string = config.CHAT_LLM_CONNECTION_STRINGS[llmKernelIndex].Split(';');
-        var connectionStringParts = llm_endpont_connection_string.Select(part => part.Split('=')).ToDictionary(split => split[0], split => split[1]);
+        var llm_endpoint_connection_string = config.LLM_CONNECTION_STRINGS[llmKernelIndex].Split(';');
+        var connectionStringParts = llm_endpoint_connection_string.Select(part => part.Split('=')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
         var llm_deployment_name = connectionStringParts["DeploymentName"];
         var llm_endpoint_uri = connectionStringParts["Endpoint"];
         var llm_api_key = connectionStringParts["ApiKey"];
@@ -50,17 +49,16 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
         return kernalBuilder.Build();
     }
 
-    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(CancellationToken cancellationToken = default, int? index = null)
+    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int llmKernelIndex, CancellationToken cancellationToken = default)
     {
-        this.kernelsForInference ??= new List<Kernel>(config.CHAT_LLM_CONNECTION_STRINGS.Length);
-        this.llmKernelIndex = index ?? this.llmKernelIndex;
-
-        if (this.kernelsForInference[llmKernelIndex] is not null) return this.kernelsForInference[llmKernelIndex];
-
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForInference[llmKernelIndex] is not null) return this.kernelsForInference[llmKernelIndex];
+             this.kernelsForInference ??= new List<Kernel>(config.LLM_CONNECTION_STRINGS.Length);
+            if (llmKernelIndex >= 0 && llmKernelIndex < this.kernelsForInference.Count)
+            {
+                return this.kernelsForInference[llmKernelIndex];
+            }
             var httpClient = this.httpClientFactory.CreateClient("openai-with-retry");
             this.kernelsForInference.Add(this.CreateKernel(httpClient, llmKernelIndex));
             return this.kernelsForInference[llmKernelIndex];
@@ -71,16 +69,16 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
         }
     }
 
-    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(CancellationToken cancellationToken = default, int? index = null)
+    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(int llmKernelIndex, CancellationToken cancellationToken = default)
     {
-        this.kernelsForEvaluation ??= new List<Kernel>(config.CHAT_LLM_CONNECTION_STRINGS.Length);
-        this.llmKernelIndex = index ?? this.llmKernelIndex;
-        if (this.kernelsForEvaluation[llmKernelIndex] is not null) return this.kernelsForEvaluation[llmKernelIndex];
-
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForEvaluation[llmKernelIndex] is not null) return this.kernelsForEvaluation[llmKernelIndex];
+            this.kernelsForEvaluation ??= new List<Kernel>(config.LLM_CONNECTION_STRINGS.Length);
+            if (llmKernelIndex >= 0 && llmKernelIndex < this.kernelsForEvaluation.Count)
+            {
+                return this.kernelsForEvaluation[llmKernelIndex];
+            }
             var httpClient = this.httpClientFactory.CreateClient("openai-without-retry");
             this.kernelsForEvaluation.Add(this.CreateKernel(httpClient, llmKernelIndex));
             return this.kernelsForEvaluation[llmKernelIndex];
