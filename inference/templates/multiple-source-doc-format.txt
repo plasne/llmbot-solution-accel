@@ -1,0 +1,6 @@
+{
+    "score": Score,
+    "title": Dcoument.title,
+    "content": Document.content,
+    "url": Document.urls[0]
+}

@@ -35,7 +35,7 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
                 {
                     Text = chunk,
                     Id = "ref" + index,
-                    Title = doc.Title ?? doc.Url ?? doc.Filepath ?? $"Document {index}",
+                    Title = doc.Title ?? doc.Url ?? $"Document {index}",
                     Uri = doc.Url,
                 };
                 output.Context.Add(context);

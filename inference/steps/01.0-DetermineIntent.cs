@@ -44,7 +44,7 @@ public class DetermineIntent(
         // get or set the prompt template
         string template = await this.memory.GetOrSet("prompt:intent", null, () =>
         {
-            return File.ReadAllTextAsync("prompts/intent.txt");
+            return File.ReadAllTextAsync(this.config.INTENT_PROMPT_FILE);
         });
 
         // build the function
