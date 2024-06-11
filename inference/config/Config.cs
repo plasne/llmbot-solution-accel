@@ -17,8 +17,8 @@ public class Config : IConfig
         this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsLlmConnectionDetails(() => []);
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
-        this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI, ENDPOINT_URI");
-        this.EMBEDDING_API_KEY = config.GetSecret<string>("EMBEDDING_API_KEY, API_KEY").Result;
+        this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI");
+        this.EMBEDDING_API_KEY = config.GetSecret<string>("EMBEDDING_API_KEY").Result;
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
         this.LLM_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");

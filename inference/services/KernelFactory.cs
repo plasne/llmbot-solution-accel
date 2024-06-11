@@ -45,17 +45,15 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
 
     public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int index, CancellationToken cancellationToken = default)
     {
+        if (this.kernelsForInference.TryGetValue(index, out var kernel)) return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForInference.TryGetValue(index, out var kernel))
-            {
-                return kernel;
-            }
+            if (this.kernelsForInference.TryGetValue(index, out kernel)) return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-with-retry");
-            var newKernel = this.CreateKernel(httpClient, index);
-            this.kernelsForInference.Add(index, newKernel);
-            return newKernel;
+            kernel = this.CreateKernel(httpClient, index);
+            this.kernelsForInference.Add(index, kernel);
+            return kernel;
         }
         finally
         {
@@ -65,17 +63,15 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
 
     public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(int index, CancellationToken cancellationToken = default)
     {
+        if (this.kernelsForEvaluation.TryGetValue(index, out var kernel)) return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForEvaluation.TryGetValue(index, out var kernel))
-            {
-                return kernel;
-            }
+            if (this.kernelsForEvaluation.TryGetValue(index, out kernel)) return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-without-retry");
-            var newKernel = this.CreateKernel(httpClient, index);
-            this.kernelsForInference.Add(index, newKernel);
-            return newKernel;
+            kernel = this.CreateKernel(httpClient, index);
+            this.kernelsForEvaluation.Add(index, kernel);
+            return kernel;
         }
         finally
         {
