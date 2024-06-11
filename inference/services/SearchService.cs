@@ -61,9 +61,11 @@ public class SearchService
                 SemanticConfigurationName = this.config.SEARCH_SEMANTIC_CONFIG
             },
         };
-        options.Select.Add("title");
-        options.Select.Add("chunk_id");
-        options.Select.Add("chunk");
+        options.Select.Add("id");
+        options.Select.Add("content");
+        options.Select.Add("url");
+        options.Select.Add("filepath");
+        options.Select.Add("meta_json_string");
 
         // submit the query
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

@@ -30,13 +30,13 @@ public class SelectGroundingData(ILogger<SelectGroundingData> logger)
             foreach (var doc in ordered.Take(10))
             {
                 int index = output.Context.Count;
-                var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Chunk + "\n[/ref" + index + "]";
+                var chunk = "[ref" + index + "]\nTitle:" + doc.Title + "\n" + doc.Content + "\n[/ref" + index + "]";
                 var context = new Context
                 {
-                    Id = "ref" + index,
-                    Title = doc.Title ?? doc.Url ?? $"Document {index}",
-                    Uri = doc.Url,
                     Text = chunk,
+                    Id = "ref" + index,
+                    Title = doc.Title ?? doc.Url ?? doc.Filepath ?? $"Document {index}",
+                    Uri = doc.Url,
                 };
                 output.Context.Add(context);
             }
