@@ -5,8 +5,9 @@ using Shared.Models.Memory;
 
 namespace Inference;
 
-public class WorkflowContext : IWorkflowContext
+public class WorkflowContext(IServiceContext context) : IWorkflowContext
 {
+    private readonly int llmEndpointIndex = context.GetLLMEndpointIndex();
     private bool isForInference;
     private bool isForEvaluation;
 
@@ -28,6 +29,11 @@ public class WorkflowContext : IWorkflowContext
             this.isForEvaluation = value;
             this.isForInference = !value;
         }
+    }
+
+    public int LLMEndpointIndex
+    {
+        get => this.llmEndpointIndex;
     }
 
     public event Func<string?, string?, Intents, List<Context>?, int, int, Task>? OnStream;

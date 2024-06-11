@@ -11,19 +11,31 @@ public class Doc
     [JsonPropertyName("@search.score")]
     public double SearchScore { get; set; }
 
-    [JsonProperty("chunk_id", NullValueHandling = NullValueHandling.Ignore)]
-    [JsonPropertyName("chunk_id")]
-    public string? ChunkId { get; set; }
+    [JsonPropertyName("id")]
+    [JsonProperty("id", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Id { get; set; }
 
-    [JsonProperty("chunk", NullValueHandling = NullValueHandling.Ignore)]
-    [JsonPropertyName("chunk")]
-    public string? Chunk { get; set; }
-
-    [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)]
     [JsonPropertyName("title")]
+    [JsonProperty("title", NullValueHandling = NullValueHandling.Ignore)]
     public string? Title { get; set; }
 
-    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonPropertyName("content")]
+    [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Content { get; set; }
+
     [JsonPropertyName("url")]
+    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
     public string? Url { get; set; }
+
+    [JsonPropertyName("filepath")]
+    [JsonProperty("filepath", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Filepath { get; set; }
+
+    [JsonPropertyName("meta_json_string")]
+    [JsonProperty("meta_json_string", NullValueHandling = NullValueHandling.Ignore)]
+    public string? MetaData { get; set; }
+
+    [JsonPropertyName("contentVector")]
+    [JsonProperty("contentVector", NullValueHandling = NullValueHandling.Ignore)]
+    public float[]? ContentVector { get; set; }
 }
