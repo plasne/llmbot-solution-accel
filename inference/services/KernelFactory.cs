@@ -1,4 +1,3 @@
-using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,25 +14,20 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly IWebHostEnvironment webHostEnvironment = webHostEnvironment;
     private readonly SemaphoreSlim semaphore = new(1);
-    private List<Kernel>? kernelsForEvaluation;
-    private List<Kernel>? kernelsForInference;
+    private readonly Dictionary<int, Kernel> kernelsForEvaluation = [];
+    private readonly Dictionary<int, Kernel> kernelsForInference = [];
 
     private Kernel
-    CreateKernel(HttpClient httpClient, int llmKernelIndex)
+    CreateKernel(HttpClient httpClient, int index)
     {
         var kernalBuilder = Kernel.CreateBuilder();
-
-        var llm_endpoint_connection_string = config.LLM_CONNECTION_STRINGS[llmKernelIndex].Split(';');
-        var connectionStringParts = llm_endpoint_connection_string.Select(part => part.Split('=')).ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-        var llm_deployment_name = connectionStringParts["DeploymentName"];
-        var llm_endpoint_uri = connectionStringParts["Endpoint"];
-        var llm_api_key = connectionStringParts["ApiKey"];
+        var details = this.config.LLM_CONNECTION_STRINGS[index];
 
         kernalBuilder
             .AddAzureOpenAIChatCompletion(
-                llm_deployment_name,
-                llm_endpoint_uri,
-                llm_api_key,
+                details.DeploymentName,
+                details.Endpoint,
+                details.ApiKey,
                 httpClient: httpClient)
             .AddAzureOpenAITextEmbeddingGeneration(
                 config.EMBEDDING_DEPLOYMENT_NAME,
@@ -49,19 +43,17 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
         return kernalBuilder.Build();
     }
 
-    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int llmKernelIndex, CancellationToken cancellationToken = default)
+    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int index, CancellationToken cancellationToken = default)
     {
+        if (this.kernelsForInference.TryGetValue(index, out var kernel)) return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-             this.kernelsForInference ??= new List<Kernel>(config.LLM_CONNECTION_STRINGS.Length);
-            if (llmKernelIndex >= 0 && llmKernelIndex < this.kernelsForInference.Count)
-            {
-                return this.kernelsForInference[llmKernelIndex];
-            }
+            if (this.kernelsForInference.TryGetValue(index, out kernel)) return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-with-retry");
-            this.kernelsForInference.Add(this.CreateKernel(httpClient, llmKernelIndex));
-            return this.kernelsForInference[llmKernelIndex];
+            kernel = this.CreateKernel(httpClient, index);
+            this.kernelsForInference.Add(index, kernel);
+            return kernel;
         }
         finally
         {
@@ -69,19 +61,17 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
         }
     }
 
-    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(int llmKernelIndex, CancellationToken cancellationToken = default)
+    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(int index, CancellationToken cancellationToken = default)
     {
+        if (this.kernelsForEvaluation.TryGetValue(index, out var kernel)) return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            this.kernelsForEvaluation ??= new List<Kernel>(config.LLM_CONNECTION_STRINGS.Length);
-            if (llmKernelIndex >= 0 && llmKernelIndex < this.kernelsForEvaluation.Count)
-            {
-                return this.kernelsForEvaluation[llmKernelIndex];
-            }
+            if (this.kernelsForEvaluation.TryGetValue(index, out kernel)) return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-without-retry");
-            this.kernelsForEvaluation.Add(this.CreateKernel(httpClient, llmKernelIndex));
-            return this.kernelsForEvaluation[llmKernelIndex];
+            kernel = this.CreateKernel(httpClient, index);
+            this.kernelsForEvaluation.Add(index, kernel);
+            return kernel;
         }
         finally
         {

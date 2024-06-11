@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Shared.Models.Memory;
 
@@ -45,5 +46,33 @@ public static class Ext
     {
         if (decimal.TryParse(str, out decimal val)) return val;
         return dflt();
+    }
+
+    public static List<LlmConnectionDetails> AsLlmConnectionDetails(this string str, Func<List<LlmConnectionDetails>> dflt)
+    {
+        try
+        {
+            var list = new List<LlmConnectionDetails>();
+            var connectionStrings = str.Split(";;");
+            foreach (var connectionString in connectionStrings)
+            {
+                var parts = connectionString
+                    .Split(';')
+                    .Select(part => part.Split('='))
+                    .ToDictionary(split => split[0].Trim(), split => split[1].Trim());
+                var details = new LlmConnectionDetails
+                {
+                    DeploymentName = parts["DeploymentName"],
+                    Endpoint = parts["Endpoint"],
+                    ApiKey = parts["ApiKey"],
+                };
+                list.Add(details);
+            }
+            return list;
+        }
+        catch
+        {
+            return dflt();
+        }
     }
 }
