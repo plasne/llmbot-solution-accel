@@ -13,7 +13,7 @@ public class Config : IConfig
         this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 7020);
         this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 7030);
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
-        this.LLM_CONNECTION_STRINGS = config.Get<string>("LLM_CONNECTION_STRINGS").AsArray(() => new string[] { });
+        this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsArray(() => new string[] { });
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
         this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI, ENDPOINT_URI");
