@@ -5,14 +5,21 @@ using System.Collections.Generic;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.SemanticKernel;
 using Shared;
+using System;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Inference;
 
-public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory, IWebHostEnvironment webHostEnvironment)
+public class KernelFactory(
+    IConfig config,
+    IHttpClientFactory httpClientFactory,
+    IWebHostEnvironment webHostEnvironment,
+    IServiceProvider serviceProvider)
 {
     private readonly IConfig config = config;
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly IWebHostEnvironment webHostEnvironment = webHostEnvironment;
+    private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly SemaphoreSlim semaphore = new(1);
     private readonly Dictionary<int, Kernel> kernelsForEvaluation = [];
     private readonly Dictionary<int, Kernel> kernelsForInference = [];
@@ -40,7 +47,14 @@ public class KernelFactory(IConfig config, IHttpClientFactory httpClientFactory,
             kernalBuilder.AddOpenTelemetry(this.webHostEnvironment.ApplicationName, this.config.OPEN_TELEMETRY_CONNECTION_STRING);
         }
 
-        return kernalBuilder.Build();
+        var kernel = kernalBuilder.Build();
+
+        foreach (var filter in this.serviceProvider.GetServices<IPromptRenderFilter>())
+        {
+            kernel.PromptRenderFilters.Add(filter);
+        }
+
+        return kernel;
     }
 
     public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int index, CancellationToken cancellationToken = default)

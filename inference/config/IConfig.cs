@@ -19,6 +19,10 @@ public interface IConfig
     string SEARCH_API_KEY { get; }
     string SEARCH_SEMANTIC_CONFIG { get; }
     string[] SEARCH_VECTOR_FIELDS { get; }
+    string[] SEARCH_SELECT_FIELDS { get; }
+    string SEARCH_TRANSFORM_FILE { get; }
+    string INTENT_PROMPT_FILE { get; }
+    string CHAT_PROMPT_FILE { get; }
     string MEMORY_URL { get; }
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }

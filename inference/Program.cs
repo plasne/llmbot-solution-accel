@@ -10,6 +10,7 @@ using System;
 using Polly.Extensions.Http;
 using Polly;
 using Inference;
+using Microsoft.SemanticKernel;
 
 DotEnv.Load();
 
@@ -84,6 +85,9 @@ builder.Services.AddTransient<GenerateAnswer>();
 
 // add supporting services
 builder.Services.AddTransient<SearchService>();
+
+// add filters
+builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();
 
 // add other services
 builder.Services.AddGrpc();

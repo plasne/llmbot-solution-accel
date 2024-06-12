@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using NetBricks;
 using SharpToken;
 
@@ -25,7 +26,11 @@ public class Config : IConfig
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
         this.SEARCH_SEMANTIC_CONFIG = config.Get<string>("SEARCH_SEMANTIC_CONFIG").AsString(() => "default");
-        this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => []);
+        this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => ["contentVector"]);
+        this.SEARCH_SELECT_FIELDS = config.Get<string>("SEARCH_SELECT_FIELDS").AsArray(() => ["title", "content", "url"]);
+        this.SEARCH_TRANSFORM_FILE = this.config.Get<string>("SEARCH_TRANSFORM_FILE");
+        this.INTENT_PROMPT_FILE = config.Get<string>("INTENT_PROMPT_FILE").AsString(() => "./templates/intent-prompt.txt");
+        this.CHAT_PROMPT_FILE = config.Get<string>("CHAT_PROMPT_FILE").AsString(() => "./templates/chat-prompt.txt");
         this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
@@ -64,6 +69,14 @@ public class Config : IConfig
 
     public string[] SEARCH_VECTOR_FIELDS { get; }
 
+    public string[] SEARCH_SELECT_FIELDS { get; }
+
+    public string SEARCH_TRANSFORM_FILE { get; }
+
+    public string INTENT_PROMPT_FILE { get; }
+
+    public string CHAT_PROMPT_FILE { get; }
+
     public string MEMORY_URL { get; }
 
     public int MAX_RETRY_ATTEMPTS { get; }
@@ -96,6 +109,10 @@ public class Config : IConfig
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_SEMANTIC_CONFIG", this.SEARCH_SEMANTIC_CONFIG);
         this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
+        this.config.Require("SEARCH_SELECT_FIELDS", this.SEARCH_SELECT_FIELDS);
+        this.config.Optional("SEARCH_TRANSFORM_FILE", this.SEARCH_TRANSFORM_FILE);
+        this.config.Require("INTENT_PROMPT_FILE", this.INTENT_PROMPT_FILE);
+        this.config.Require("CHAT_PROMPT_FILE", this.CHAT_PROMPT_FILE);
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);

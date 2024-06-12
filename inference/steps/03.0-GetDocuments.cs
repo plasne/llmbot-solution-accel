@@ -25,7 +25,8 @@ public class GetDocuments(IWorkflowContext context, SearchService searchService,
         {
             foreach (var query in intent.SearchQueries)
             {
-                await foreach (var result in searchService.SearchAsync(query, cancellationToken: cancellationToken))
+                var results = await searchService.SearchAsync(query, cancellationToken: cancellationToken);
+                foreach (var result in results)
                 {
                     docs.Add(result);
                 }

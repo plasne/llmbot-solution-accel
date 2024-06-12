@@ -44,7 +44,7 @@ public partial class GenerateAnswer(
         // get or set the prompt template
         string template = await this.memory.GetOrSet("prompt:chat", null, () =>
         {
-            return File.ReadAllTextAsync("prompts/chat.txt");
+            return File.ReadAllTextAsync(this.config.CHAT_PROMPT_FILE);
         });
 
         // build the function
@@ -52,20 +52,13 @@ public partial class GenerateAnswer(
             ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
             : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.LLMEndpointIndex, cancellationToken);
         var func = kernel.CreateFunctionFromPrompt(
-            new()
+            new PromptTemplateConfig
             {
                 Template = template,
-                TemplateFormat = "handlebars"
+                TemplateFormat = "handlebars",
             },
             new HandlebarsPromptTemplateFactory()
         );
-
-        // add prompt token count reporting
-        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
-        {
-            this.Usage.PromptTokenCount = count;
-            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME);
-        }));
 
         // build the history
         ChatHistory history = input.Data?.History?.ToChatHistory() ?? [];
@@ -77,14 +70,15 @@ public partial class GenerateAnswer(
 
         // execute
         var startTime = DateTime.UtcNow;
-        var response = kernel.InvokeStreamingAsync(
-            func,
-            new()
+        var args = new KernelArguments
             {
                 { "history", history },
                 { "query", query },
                 { "context", contextString }
-            },
+            };
+        var response = kernel.InvokeStreamingAsync(
+            func,
+            args,
             cancellationToken);
 
         // stream each fragment
@@ -95,6 +89,13 @@ public partial class GenerateAnswer(
             await this.context.Stream("Generating answer...", fragment.ToString());
         }
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
+
+        // record prompt token count using a prompt filter that adds an argument
+        if (args.TryGetValue("internaluse:prompt-token-count", out var promptTokenCountObj) && promptTokenCountObj is int promptTokenCount)
+        {
+            this.Usage.PromptTokenCount = promptTokenCount;
+            DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.config.LLM_MODEL_NAME);
+        }
 
         // record completion token count using sharpToken
         var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
