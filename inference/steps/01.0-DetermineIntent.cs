@@ -9,6 +9,8 @@ using System.Threading;
 using SharpToken;
 using System;
 using Shared;
+using System.Collections.Generic;
+using Azure.AI.OpenAI;
 
 namespace Inference;
 
@@ -60,13 +62,6 @@ public class DetermineIntent(
             new HandlebarsPromptTemplateFactory()
         );
 
-        // add prompt token count reporting using sharpToken
-        kernel.PromptFilters.Add(new PromptTokenCountFilter(this.config.LLM_MODEL_NAME, count =>
-        {
-            this.Usage.PromptTokenCount = count;
-            DiagnosticService.RecordPromptTokenCount(count, this.config.LLM_MODEL_NAME);
-        }));
-
         // build the history
         ChatHistory history = input.History?.ToChatHistory() ?? [];
 
@@ -74,7 +69,7 @@ public class DetermineIntent(
         var startTime = DateTime.UtcNow;
         var response = await kernel.InvokeAsync(
             func,
-            new()
+            new KernelArguments
             {
                 { "history", history },
                 { "query", input.UserQuery },
@@ -82,10 +77,18 @@ public class DetermineIntent(
             cancellationToken);
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
-        // record completion token count using sharpToken
-        var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
-        this.Usage.CompletionTokenCount = encoding.CountTokens(response.ToString());
-        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
+        // extract metadata
+        if (response.Metadata is not null && response.Metadata.TryGetValue("Usage", out var promptFilterResultsObj))
+        {
+            var promptFilterResults = promptFilterResultsObj as CompletionsUsage;
+            if (promptFilterResults is not null)
+            {
+                this.Usage.PromptTokenCount = promptFilterResults.PromptTokens;
+                DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.config.LLM_MODEL_NAME);
+                this.Usage.CompletionTokenCount = promptFilterResults.CompletionTokens;
+                DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
+            }
+        }
 
         // record tokens per second
         var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;

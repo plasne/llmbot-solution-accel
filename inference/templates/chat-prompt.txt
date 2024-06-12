@@ -49,6 +49,9 @@ Examine the provided JSON documents diligently, extracting information relevant 
 - **The citation mark [ref+index] must not be part of the response sentence.**
 - **You cannot list the citation at the end of response. 
 - Every claim statement you generated must have at least one citation.**
+
+## Retrieved Documents
+{{context}}
 </message>
 
 {{#each history}}
@@ -56,5 +59,3 @@ Examine the provided JSON documents diligently, extracting information relevant 
 {{/each}}
 
 <message role="user">{{query}}</message>
-
-<message role="tool">{{context}}</message>
