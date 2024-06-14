@@ -35,6 +35,7 @@ public class Config : IConfig
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.MAX_TIMEOUT_IN_SECONDS = config.Get<string>("MAX_TIMEOUT_IN_SECONDS").AsInt(() => 60);
+        this.EMIT_USAGE_AS_RESPONSE_HEADERS = config.Get<string>("EMIT_USAGE_AS_RESPONSE_HEADERS").AsBool(() => false);
         this.COST_PER_PROMPT_TOKEN = config.Get<string>("COST_PER_PROMPT_TOKEN").AsDecimal(() => 0.0m);
         this.COST_PER_COMPLETION_TOKEN = config.Get<string>("COST_PER_COMPLETION_TOKEN").AsDecimal(() => 0.0m);
     }
@@ -85,9 +86,11 @@ public class Config : IConfig
 
     public int MAX_TIMEOUT_IN_SECONDS { get; }
 
-    public decimal COST_PER_PROMPT_TOKEN { get; } = 0.0m;
+    public bool EMIT_USAGE_AS_RESPONSE_HEADERS { get; }
 
-    public decimal COST_PER_COMPLETION_TOKEN { get; } = 0.0m;
+    public decimal COST_PER_PROMPT_TOKEN { get; }
+
+    public decimal COST_PER_COMPLETION_TOKEN { get; }
 
     public void Validate()
     {
@@ -117,6 +120,7 @@ public class Config : IConfig
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
         this.config.Require("MAX_TIMEOUT_IN_SECONDS", this.MAX_TIMEOUT_IN_SECONDS);
+        this.config.Require("EMIT_USAGE_AS_RESPONSE_HEADERS", value: this.EMIT_USAGE_AS_RESPONSE_HEADERS);
         this.config.Require("COST_PER_PROMPT_TOKEN", this.COST_PER_PROMPT_TOKEN.ToString());
         this.config.Require("COST_PER_COMPLETION_TOKEN", this.COST_PER_COMPLETION_TOKEN.ToString());
     }
