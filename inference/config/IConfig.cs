@@ -27,6 +27,7 @@ public interface IConfig
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
     int MAX_TIMEOUT_IN_SECONDS { get; }
+    bool EMIT_USAGE_AS_RESPONSE_HEADERS { get; }
     decimal COST_PER_PROMPT_TOKEN { get; }
     decimal COST_PER_COMPLETION_TOKEN { get; }
 

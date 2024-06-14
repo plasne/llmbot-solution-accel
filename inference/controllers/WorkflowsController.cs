@@ -32,19 +32,22 @@ public class WorkflowsController() : ControllerBase
         // execute the workflow
         var response = await workflow.Execute(request, cancellationToken);
 
-        // add some response headers
-        int promptTokenCount = 0, completionTokenCount = 0;
-        response.Steps.ForEach(step =>
+        // if requested, add some response headers
+        if (config.EMIT_USAGE_AS_RESPONSE_HEADERS)
         {
-            promptTokenCount += step.Usage.PromptTokenCount;
-            completionTokenCount += step.Usage.CompletionTokenCount;
-        });
-        Response.Headers.Append("x-metric-inf_prompt_token_count", promptTokenCount.ToString());
-        Response.Headers.Append("x-metric-inf_completion_token_count", completionTokenCount.ToString());
-        if (config.COST_PER_PROMPT_TOKEN > 0 && config.COST_PER_COMPLETION_TOKEN > 0)
-        {
-            var cost = promptTokenCount * config.COST_PER_PROMPT_TOKEN + completionTokenCount * config.COST_PER_COMPLETION_TOKEN;
-            Response.Headers.Append("x-metric-inf_cost", cost.ToString());
+            int promptTokenCount = 0, completionTokenCount = 0;
+            response.Steps.ForEach(step =>
+            {
+                promptTokenCount += step.Usage.PromptTokenCount;
+                completionTokenCount += step.Usage.CompletionTokenCount;
+            });
+            Response.Headers.Append("x-metric-inf_prompt_token_count", promptTokenCount.ToString());
+            Response.Headers.Append("x-metric-inf_completion_token_count", completionTokenCount.ToString());
+            if (config.COST_PER_PROMPT_TOKEN > 0 && config.COST_PER_COMPLETION_TOKEN > 0)
+            {
+                var cost = promptTokenCount * config.COST_PER_PROMPT_TOKEN + completionTokenCount * config.COST_PER_COMPLETION_TOKEN;
+                Response.Headers.Append("x-metric-inf_cost", cost.ToString());
+            }
         }
 
         return Ok(response);
