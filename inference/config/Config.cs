@@ -97,7 +97,9 @@ public class Config : IConfig
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
         this.config.Require("WEB_PORT", this.WEB_PORT);
         this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
-        this.config.Require("LLM_CONNECTION_STRINGS", this.LLM_CONNECTION_STRINGS.Count > 0 ? "(set)" : string.Empty);
+        this.config.Require("LLM_CONNECTION_STRINGS", this.LLM_CONNECTION_STRINGS.Count > 0
+            ? $"({this.LLM_CONNECTION_STRINGS.Count} set)"
+            : string.Empty);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
         this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
         this.config.Require("EMBEDDING_ENDPOINT_URI", this.EMBEDDING_ENDPOINT_URI);
