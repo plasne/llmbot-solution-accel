@@ -6,7 +6,7 @@ namespace Inference;
 public class Doc
 {
     [JsonPropertyName("@search.score")]
-    [JsonProperty("@search.score", NullValueHandling = NullValueHandling.Ignore)]
+    [JsonProperty("@search.score")]
     public double SearchScore { get; set; }
 
     [JsonPropertyName("title")]
