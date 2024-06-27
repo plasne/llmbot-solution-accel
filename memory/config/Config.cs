@@ -33,7 +33,7 @@ public class Config : IConfig
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
-        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
+        this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Optional("SQL_SERVER_MAX_RETRY_ATTEMPTS", this.SQL_SERVER_MAX_RETRY_ATTEMPTS);
         this.config.Optional("SQL_SERVER_SECONDS_BETWEEN_RETRIES", this.SQL_SERVER_SECONDS_BETWEEN_RETRIES);
         this.config.Optional("SQL_SERVER_HISTORY_SERVICE_CONNSTRING", this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING, hideValue: true);

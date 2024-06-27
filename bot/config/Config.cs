@@ -41,7 +41,7 @@ public class Config : IConfig
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
-        this.config.Require("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
+        this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("INFERENCE_URL", this.INFERENCE_URL);
         this.config.Require("CHARACTERS_PER_UPDATE", this.CHARACTERS_PER_UPDATE);
