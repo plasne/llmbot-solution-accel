@@ -24,8 +24,11 @@ builder.Services.AddDefaultAzureCredential();
 // add logging
 builder.Logging.ClearProviders();
 builder.Services.AddSingleLineConsoleLogger();
-builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
-builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
+if (!string.IsNullOrEmpty(config.OPEN_TELEMETRY_CONNECTION_STRING))
+{
+    builder.Logging.AddOpenTelemetry(config.OPEN_TELEMETRY_CONNECTION_STRING);
+    builder.Services.AddOpenTelemetry(DiagnosticService.Source.Name, builder.Environment.ApplicationName, config.OPEN_TELEMETRY_CONNECTION_STRING);
+}
 
 // add swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -65,4 +68,4 @@ app.UseRouting();
 app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();
