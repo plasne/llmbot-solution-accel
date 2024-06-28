@@ -3,7 +3,7 @@ POST http://localhost:7030/api/workflows/primary HTTP/1.1
 Content-Type: application/json
 
 {
-  "user_query": "How do I create a menu node for an IntelliPlex Collaborative Portal?"
+  "user_query": "How many players can play Fury of Dracula 4th edition?"
 }
 
 ### run the in-domain-only workflow
@@ -12,4 +12,15 @@ Content-Type: application/json
 
 {
   "user_query": "How many players can play Fury of Dracula 4th edition?"
+}
+
+### run the primary workflow
+POST http://localhost:7030/api/workflows/primary HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_query": "How many players can play Fury of Dracula 4th edition?",
+  "parameters": {
+    "INTENT_PROMPT_FILE": "./templates/intent-prompt-always-out-of-domain.txt"
+  }
 }

@@ -6,10 +6,8 @@ using Newtonsoft.Json;
 using System.IO;
 using Microsoft.SemanticKernel.ChatCompletion;
 using System.Threading;
-using SharpToken;
 using System;
 using Shared;
-using System.Collections.Generic;
 using Azure.AI.OpenAI;
 
 namespace Inference;
@@ -44,9 +42,13 @@ public class DetermineIntent(
         await this.context.Stream("Determining intent...");
 
         // get or set the prompt template
-        string template = await this.memory.GetOrSet("prompt:intent", null, () =>
+        string promptFile = !string.IsNullOrEmpty(this.context.Parameters?.INTENT_PROMPT_FILE)
+            ? this.context.Parameters.INTENT_PROMPT_FILE
+            : this.config.INTENT_PROMPT_FILE;
+        this.LogDebug($"using prompt file: {promptFile}...");
+        string template = await this.memory.GetOrSet($"prompt:{promptFile}", null, () =>
         {
-            return File.ReadAllTextAsync(this.config.INTENT_PROMPT_FILE);
+            return File.ReadAllTextAsync(promptFile);
         });
 
         // build the function
