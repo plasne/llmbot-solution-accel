@@ -14,7 +14,4 @@ public class WorkflowRequest
 
     [JsonProperty("custom_instructions", NullValueHandling = NullValueHandling.Ignore)]
     public string? CustomInstructions { get; set; }
-
-    [JsonProperty("parameters", NullValueHandling = NullValueHandling.Ignore)]
-    public WorkflowRequestParameters? Parameters { get; set; }
 }

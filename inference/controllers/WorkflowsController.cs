@@ -65,7 +65,7 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = request.Parameters;
+        context.Parameters = Request.Headers.ToParameters();
         var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
         return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }
@@ -82,7 +82,7 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = request.Parameters;
+        context.Parameters = Request.Headers.ToParameters();
         var workflow = scope.ServiceProvider.GetRequiredService<InDomainOnlyWorkflow>();
         return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }

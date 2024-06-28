@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
 using Microsoft.SemanticKernel.ChatCompletion;
 using Shared.Models.Memory;
 
@@ -74,5 +75,23 @@ public static class Ext
         {
             return dflt();
         }
+    }
+
+    public static WorkflowRequestParameters? ToParameters(this IHeaderDictionary headers)
+    {
+        var parameters = new WorkflowRequestParameters();
+        foreach (var header in headers)
+        {
+            switch (header.Key.ToUpper())
+            {
+                case "X-INTENT-PROMPT-FILE":
+                    parameters.INTENT_PROMPT_FILE = header.Value;
+                    break;
+                case "X-CHAT-PROMPT-FILE":
+                    parameters.CHAT_PROMPT_FILE = header.Value;
+                    break;
+            }
+        }
+        return parameters;
     }
 }
