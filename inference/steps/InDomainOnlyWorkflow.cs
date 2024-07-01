@@ -48,6 +48,10 @@ public class InDomainOnlyWorkflow(
             var step3 = new WorkflowStepResponse<DeterminedIntent, List<Doc>>("GetDocuments", step1.Output, this.getDocuments.Logs, this.getDocuments.Usage);
             response.Steps.Add(step3);
             step3.Output = await this.getDocuments.Execute(step1.Output, cancellationToken);
+            if (step3.Output.Count == 0)
+            {
+                return response;
+            }
 
             // STEP 4: select grounding data
             var step4Input = new GroundingData { UserQuery = step1.Input.UserQuery, Docs = step3.Output, History = workflowRequest.History };
@@ -60,6 +64,10 @@ public class InDomainOnlyWorkflow(
             var step5 = new WorkflowStepResponse<IntentAndData, Answer>("GenerateAnswer", step5Input, this.generateAnswer.Logs, this.generateAnswer.Usage);
             response.Steps.Add(step5);
             step5.Output = await this.generateAnswer.Execute(step5Input, cancellationToken);
+            if (step5.Output.Text.Equals("NULL", StringComparison.OrdinalIgnoreCase))
+            {
+                return response;
+            }
 
             response.Answer = step5.Output;
             return response;
