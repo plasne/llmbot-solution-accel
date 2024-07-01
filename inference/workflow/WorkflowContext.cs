@@ -36,6 +36,8 @@ public class WorkflowContext(IServiceContext context) : IWorkflowContext
         get => this.llmEndpointIndex;
     }
 
+    public WorkflowRequestParameters? Parameters { get; set; }
+
     public event Func<string?, string?, Intents, List<Context>?, int, int, Task>? OnStream;
 
     public Task Stream(

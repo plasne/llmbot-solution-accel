@@ -42,9 +42,13 @@ public partial class GenerateAnswer(
         }
 
         // get or set the prompt template
-        string template = await this.memory.GetOrSet("prompt:chat", null, () =>
+        string promptFile = !string.IsNullOrEmpty(this.context.Parameters?.CHAT_PROMPT_FILE)
+            ? this.context.Parameters.CHAT_PROMPT_FILE
+            : this.config.INTENT_PROMPT_FILE;
+        this.LogDebug($"using prompt file: {promptFile}...");
+        string template = await this.memory.GetOrSet($"prompt:{promptFile}", null, () =>
         {
-            return File.ReadAllTextAsync(this.config.CHAT_PROMPT_FILE);
+            return File.ReadAllTextAsync(promptFile);
         });
 
         // build the function
