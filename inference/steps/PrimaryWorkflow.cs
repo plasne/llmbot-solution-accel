@@ -50,7 +50,6 @@ public class PrimaryWorkflow(
             var step3 = new WorkflowStepResponse<DeterminedIntent, List<Doc>>("GetDocuments", step1.Output, this.getDocuments.Logs, this.getDocuments.Usage);
             response.Steps.Add(step3);
             step3.Output = await this.getDocuments.Execute(step1.Output, cancellationToken);
-            step3.Output.Add(new Doc { Title = "Llama", Content = "Llamas are awesome!" });
             if (step3.Output.Count == 0)
             {
                 return response;
