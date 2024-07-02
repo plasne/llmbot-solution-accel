@@ -9,6 +9,7 @@ using System.Threading;
 using System;
 using Shared;
 using Azure.AI.OpenAI;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Inference;
 
@@ -51,6 +52,12 @@ public class DetermineIntent(
             return File.ReadAllTextAsync(promptFile);
         });
 
+        // get or set the temperature
+        double temperature = this.context.Parameters?.INTENT_TEMPERATURE is not null
+            ? (double)this.context.Parameters.INTENT_TEMPERATURE
+            : (double)this.config.INTENT_TEMPERATURE;
+        this.LogDebug($"using temperature: {temperature:0.0}...");
+
         // build the function
         var kernel = this.context.IsForInference
             ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
@@ -69,13 +76,19 @@ public class DetermineIntent(
 
         // execute
         var startTime = DateTime.UtcNow;
+        var settings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = temperature,
+            Seed = this.config.INTENT_SEED,
+        };
+        var args = new KernelArguments(settings)
+        {
+            { "history", history },
+            { "query", input.UserQuery },
+        };
         var response = await kernel.InvokeAsync(
             func,
-            new KernelArguments
-            {
-                { "history", history },
-                { "query", input.UserQuery },
-            },
+            args,
             cancellationToken);
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 

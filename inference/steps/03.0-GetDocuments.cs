@@ -19,19 +19,22 @@ public class GetDocuments(IWorkflowContext context, SearchService searchService,
         // set status
         await this.context.Stream("Getting documents...");
 
+        // determine the queries
+        var queries = intent.SearchQueries is not null
+            ? intent.SearchQueries
+            : [intent.Query];
+
         // getting documents
         var docs = new List<Doc>();
-        if (intent.SearchQueries is not null)
+        foreach (var query in queries)
         {
-            foreach (var query in intent.SearchQueries)
+            var results = await searchService.SearchAsync(query, cancellationToken: cancellationToken);
+            foreach (var result in results)
             {
-                var results = await searchService.SearchAsync(query, cancellationToken: cancellationToken);
-                foreach (var result in results)
-                {
-                    docs.Add(result);
-                }
+                docs.Add(result);
             }
         }
+
         return docs;
     }
 }

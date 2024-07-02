@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using NetBricks;
 using SharpToken;
 
@@ -31,6 +30,10 @@ public class Config : IConfig
         this.SEARCH_TRANSFORM_FILE = this.config.Get<string>("SEARCH_TRANSFORM_FILE");
         this.INTENT_PROMPT_FILE = config.Get<string>("INTENT_PROMPT_FILE").AsString(() => "./templates/intent-prompt.txt");
         this.CHAT_PROMPT_FILE = config.Get<string>("CHAT_PROMPT_FILE").AsString(() => "./templates/chat-prompt.txt");
+        this.INTENT_TEMPERATURE = config.Get<string>("INTENT_TEMPERATURE").AsDecimal(() => 0.0m);
+        this.CHAT_TEMPERATURE = config.Get<string>("CHAT_TEMPERATURE").AsDecimal(() => 0.3m);
+        this.INTENT_SEED = config.Get<string>("INTENT_SEED, SEED").AsOptionalLong(() => null);
+        this.CHAT_SEED = config.Get<string>("CHAT_SEED, SEED").AsOptionalLong(() => null);
         this.MEMORY_URL = this.config.Get<string>("MEMORY_URL").AsString(() => "http://localhost:7010");
         this.MAX_RETRY_ATTEMPTS = config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
@@ -78,6 +81,14 @@ public class Config : IConfig
 
     public string CHAT_PROMPT_FILE { get; }
 
+    public decimal INTENT_TEMPERATURE { get; }
+
+    public decimal CHAT_TEMPERATURE { get; }
+
+    public long? INTENT_SEED { get; }
+
+    public long? CHAT_SEED { get; }
+
     public string MEMORY_URL { get; }
 
     public int MAX_RETRY_ATTEMPTS { get; }
@@ -118,6 +129,10 @@ public class Config : IConfig
         this.config.Optional("SEARCH_TRANSFORM_FILE", this.SEARCH_TRANSFORM_FILE);
         this.config.Require("INTENT_PROMPT_FILE", this.INTENT_PROMPT_FILE);
         this.config.Require("CHAT_PROMPT_FILE", this.CHAT_PROMPT_FILE);
+        this.config.Require("INTENT_TEMPERATURE", this.INTENT_TEMPERATURE.ToString());
+        this.config.Require("CHAT_TEMPERATURE", this.CHAT_TEMPERATURE.ToString());
+        this.config.Optional("INTENT_SEED", this.INTENT_SEED.ToString());
+        this.config.Optional("CHAT_SEED", this.CHAT_SEED.ToString());
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);

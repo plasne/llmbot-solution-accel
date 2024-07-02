@@ -41,16 +41,16 @@ public class WorkflowsController() : ControllerBase
                 promptTokenCount += step.Usage.PromptTokenCount;
                 completionTokenCount += step.Usage.CompletionTokenCount;
             });
-            Response.Headers.Append("x-metric-inf_prompt_token_count", promptTokenCount.ToString());
-            Response.Headers.Append("x-metric-inf_completion_token_count", completionTokenCount.ToString());
+            this.Response.Headers.Append("x-metric-inf_prompt_token_count", promptTokenCount.ToString());
+            this.Response.Headers.Append("x-metric-inf_completion_token_count", completionTokenCount.ToString());
             if (config.COST_PER_PROMPT_TOKEN > 0 && config.COST_PER_COMPLETION_TOKEN > 0)
             {
-                var cost = promptTokenCount * config.COST_PER_PROMPT_TOKEN + completionTokenCount * config.COST_PER_COMPLETION_TOKEN;
-                Response.Headers.Append("x-metric-inf_cost", cost.ToString());
+                var cost = (promptTokenCount * config.COST_PER_PROMPT_TOKEN) + (completionTokenCount * config.COST_PER_COMPLETION_TOKEN);
+                this.Response.Headers.Append("x-metric-inf_cost", cost.ToString());
             }
         }
 
-        return Ok(response);
+        return this.Ok(response);
     }
 
     [HttpPost("primary")]
@@ -65,9 +65,9 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = Request.Headers.ToParameters();
+        context.Parameters = this.Request.Headers.ToParameters();
         var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
-        return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
+        return await this.RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }
 
     [HttpPost("in-domain-only")]
@@ -82,8 +82,8 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = Request.Headers.ToParameters();
+        context.Parameters = this.Request.Headers.ToParameters();
         var workflow = scope.ServiceProvider.GetRequiredService<InDomainOnlyWorkflow>();
-        return await RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
+        return await this.RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
     }
 }
