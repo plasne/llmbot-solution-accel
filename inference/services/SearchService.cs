@@ -2,7 +2,6 @@ using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Jsonata.Net.Native;
-using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel.Embeddings;
 using Newtonsoft.Json;
 using System;
@@ -51,7 +50,7 @@ public class SearchService
     private async Task<List<Doc>> SearchAsyncWithTransform(
         SearchOptions options,
         double minRelevanceScore,
-        string template,
+        JsonataQuery query,
         CancellationToken cancellationToken = default)
     {
         var list = new List<Doc>();
@@ -60,12 +59,22 @@ public class SearchService
         {
             if (response is null || response.Score < minRelevanceScore) continue;
             var before = JsonConvert.SerializeObject(response);
-            var query = new JsonataQuery(template);
             var after = query.Eval(before);
             var doc = JsonConvert.DeserializeObject<Doc>(after);
             if (doc is not null) list.Add(doc);
         }
         return list;
+    }
+
+    private async Task<JsonataQuery?> GetTransformQuery()
+    {
+        if (string.IsNullOrEmpty(this.config.SEARCH_TRANSFORM_FILE))
+            return null;
+        var template = await this.memory.GetOrSet("doc:transform", null, () =>
+        {
+            return File.ReadAllTextAsync(this.config.SEARCH_TRANSFORM_FILE);
+        });
+        return new JsonataQuery(template);
     }
 
     public async Task<List<Doc>> SearchAsync(
@@ -108,23 +117,13 @@ public class SearchService
         }
 
         // get or set the transform template
-        var template = string.IsNullOrEmpty(this.config.SEARCH_TRANSFORM_FILE)
-            ? null
-            : await this.memory.GetOrSet("doc:transform", null, () =>
-                {
-                    return File.ReadAllTextAsync(this.config.SEARCH_TRANSFORM_FILE);
-                });
+        var transformQuery = await this.GetTransformQuery();
 
         // submit the query
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         cts.CancelAfter(TimeSpan.FromSeconds(this.config.MAX_TIMEOUT_IN_SECONDS));
-        if (template is null)
-        {
-            return await SearchAsync(options, minRelevanceScore, cts.Token);
-        }
-        else
-        {
-            return await SearchAsyncWithTransform(options, minRelevanceScore, template, cts.Token);
-        }
+        return transformQuery is null
+            ? await this.SearchAsync(options, minRelevanceScore, cts.Token)
+            : await this.SearchAsyncWithTransform(options, minRelevanceScore, transformQuery, cts.Token);
     }
 }

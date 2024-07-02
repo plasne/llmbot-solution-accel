@@ -45,8 +45,23 @@ public static class Ext
 
     public static decimal AsDecimal(this string str, Func<decimal> dflt)
     {
-        if (decimal.TryParse(str, out decimal val)) return val;
-        return dflt();
+        return decimal.TryParse(str, out decimal val)
+            ? val
+            : dflt();
+    }
+
+    public static decimal? AsOptionalDecimal(this string str, Func<decimal?> dflt)
+    {
+        return decimal.TryParse(str, out decimal val)
+            ? val
+            : dflt();
+    }
+
+    public static long? AsOptionalLong(this string str, Func<long?> dflt)
+    {
+        return long.TryParse(str, out long val)
+            ? val
+            : dflt();
     }
 
     public static List<LlmConnectionDetails> AsLlmConnectionDetails(this string str, Func<List<LlmConnectionDetails>> dflt)
@@ -89,6 +104,12 @@ public static class Ext
                     break;
                 case "X-CHAT-PROMPT-FILE":
                     parameters.CHAT_PROMPT_FILE = header.Value;
+                    break;
+                case "X-INTENT-TEMPERATURE":
+                    parameters.INTENT_TEMPERATURE = header.Value.ToString().AsOptionalDecimal(() => null);
+                    break;
+                case "X-CHAT-TEMPERATURE":
+                    parameters.CHAT_TEMPERATURE = header.Value.ToString().AsOptionalDecimal(() => null);
                     break;
             }
         }

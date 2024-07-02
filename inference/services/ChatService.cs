@@ -20,7 +20,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
 
-    private class Buffer
+    private sealed class Buffer
     {
         public string? Status { get; set; }
         public StringBuilder Message { get; } = new();

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.ChatCompletion;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
 using Microsoft.SemanticKernel.PromptTemplates.Handlebars;
 using Shared;
 using SharpToken;
@@ -51,6 +52,12 @@ public partial class GenerateAnswer(
             return File.ReadAllTextAsync(promptFile);
         });
 
+        // get or set the temperature
+        double temperature = this.context.Parameters?.CHAT_TEMPERATURE is not null
+            ? (double)this.context.Parameters.CHAT_TEMPERATURE
+            : (double)this.config.CHAT_TEMPERATURE;
+        this.LogDebug($"using temperature: {temperature:0.0}...");
+
         // build the function
         var kernel = this.context.IsForInference
             ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
@@ -74,7 +81,12 @@ public partial class GenerateAnswer(
 
         // execute
         var startTime = DateTime.UtcNow;
-        var args = new KernelArguments
+        var settings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = temperature,
+            Seed = this.config.CHAT_SEED,
+        };
+        var args = new KernelArguments(settings)
             {
                 { "history", history },
                 { "query", query },

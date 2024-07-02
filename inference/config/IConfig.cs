@@ -23,6 +23,10 @@ public interface IConfig
     string SEARCH_TRANSFORM_FILE { get; }
     string INTENT_PROMPT_FILE { get; }
     string CHAT_PROMPT_FILE { get; }
+    decimal INTENT_TEMPERATURE { get; }
+    decimal CHAT_TEMPERATURE { get; }
+    long? INTENT_SEED { get; }
+    long? CHAT_SEED { get; }
     string MEMORY_URL { get; }
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
