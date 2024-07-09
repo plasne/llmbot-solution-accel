@@ -12,6 +12,12 @@ public class BotController(IBotFrameworkHttpAdapter adapter, IBot bot) : Control
     private readonly IBotFrameworkHttpAdapter adapter = adapter;
     private readonly IBot bot = bot;
 
+    [HttpOptions]
+    public Task OptionsAsync()
+    {
+        return Task.CompletedTask;
+    }
+
     [HttpPost]
     [HttpGet]
     public Task PostAsync()
