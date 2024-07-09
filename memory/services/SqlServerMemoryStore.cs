@@ -2,6 +2,7 @@ using System;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
+using Azure.Identity;
 using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
@@ -11,11 +12,32 @@ using Shared.Models.Memory;
 
 namespace Memory;
 
-public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> logger)
+public class SqlServerMemoryStore(
+    IConfig config,
+    DefaultAzureCredential defaultAzureCredential,
+    ILogger<SqlServerMemoryStore> logger)
 : MemoryStoreBase, IMemoryStore
 {
     private readonly IConfig config = config;
+    private readonly DefaultAzureCredential defaultAzureCredential = defaultAzureCredential;
     private readonly ILogger<SqlServerMemoryStore> logger = logger;
+
+    private SqlConnection GetConnection()
+    {
+        // if the connection string contains a password, use it as is
+        if (this.config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING.Contains("Password=", StringComparison.OrdinalIgnoreCase))
+        {
+            return new SqlConnection(this.config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+        }
+
+        // use an access token
+        var context = new Azure.Core.TokenRequestContext(["https://database.windows.net/.default"]);
+        var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING)
+        {
+            AccessToken = this.defaultAzureCredential.GetToken(context).Token
+        };
+        return connection;
+    }
 
     private bool IsTransientFault(Exception ex)
     {
@@ -85,11 +107,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
                 async () =>
                 {
                     this.logger.LogDebug("attempting to insert interaction for user {u} into the history database...", request.UserId);
-                    using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                    using var connection = this.GetConnection();
                     await connection.OpenAsync();
-                    using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
                     using var command = connection.CreateCommand();
-                    command.Transaction = transaction;
+                    using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                    command.Transaction = (SqlTransaction)transaction;
                     command.CommandText = @"
                         DECLARE @conversationId UNIQUEIDENTIFIER;
                         DECLARE @lastState VARCHAR(20);
@@ -157,11 +179,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to complete interaction for user {u} into the history database...", response.UserId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
-                command.Transaction = transaction;
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [ConversationId] = @conversationId, [Message] = @message, [State] = @state, [Intent] = @intent,
@@ -196,11 +218,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to change conversation for user {u} in the history database...", changeTopic.UserId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
                 using var command = connection.CreateCommand();
-                command.Transaction = transaction;
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     INSERT INTO [dbo].[History]
                         ([ConversationId], [ActivityId], [UserId], [Role], [State], [Intent], [Expiry])
@@ -261,7 +283,7 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to get the current conversation for user {u} from the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
@@ -301,7 +323,7 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
                     }
                 }
                 await reader.NextResultAsync();
-                if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
                 {
                     conversation.CustomInstructions = reader.GetString(0);
                 }
@@ -333,11 +355,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to upsert custom instructions for user {u} into the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
-                command.Transaction = transaction;
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     MERGE [dbo].[CustomInstructions] AS target
                     USING (SELECT @userId, @prompt) AS source ([UserId], [Prompt])
@@ -366,11 +388,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to delete custom instructions for user {u} in the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
-                command.Transaction = transaction;
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     DELETE FROM [dbo].[CustomInstructions]
                     WHERE [UserId] = @userId;
@@ -393,7 +415,7 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to get custom instructions for user {u} from the history database...", userId);
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
@@ -402,7 +424,7 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
                 using var reader = await command.ExecuteReaderAsync();
-                if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
                 {
                     instructions.Prompt = reader.GetString(0);
                 }
@@ -421,11 +443,11 @@ public class SqlServerMemoryStore(IConfig config, ILogger<SqlServerMemoryStore> 
             async () =>
             {
                 this.logger.LogDebug("attempting to verify or create the SQL resources...");
-                using var connection = new SqlConnection(config.SQL_SERVER_HISTORY_SERVICE_CONNSTRING);
+                using var connection = this.GetConnection();
                 await connection.OpenAsync();
-                using var transaction = connection.BeginTransaction(); // rollback is automatic during dispose
                 using var command = connection.CreateCommand();
-                command.Transaction = transaction;
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     IF NOT EXISTS (SELECT * FROM sys.tables t
                                     INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
