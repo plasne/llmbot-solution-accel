@@ -378,7 +378,7 @@ public class SqlServerMemoryStore(
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [State] = 'DELETED'
-                    WHERE Id IN (SELECT TOP (@count) Id FROM [dbo].[History] WHERE [Role] = 'USER' AND [UserId] = @userId ORDER BY Id DESC);
+                    WHERE Id IN (SELECT TOP (@count) Id FROM [dbo].[History] WHERE [UserId] = @userId ORDER BY Id DESC);
                 ";
                 command.Parameters.AddWithValue("@count", count);
                 command.Parameters.AddWithValue("@userId", userId);
@@ -407,7 +407,7 @@ public class SqlServerMemoryStore(
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [State] = 'DELETED'
-                    WHERE [Role] = 'USER' AND [UserId] = @userId [ActivityId] = @activityId;
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
                 command.Parameters.AddWithValue("@activityId", activityId);
                 command.Parameters.AddWithValue("@userId", userId);
