@@ -276,7 +276,7 @@ public class SqlServerMemoryStore(
         throw new HttpException(501, "not currently implemented");
     }
 
-    public async Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task<Conversation> GetLastConversationAsync(string userId, int? maxTokens, string? modelName, CancellationToken cancellationToken = default)
     {
         var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
         await this.ExecuteWithRetryOnTransient(
@@ -305,6 +305,7 @@ public class SqlServerMemoryStore(
                 var conversationIdOrdinal = reader.GetOrdinal("ConversationId");
                 var roleOrdinal = reader.GetOrdinal("Role");
                 var messageOrdinal = reader.GetOrdinal("Message");
+                int totalTokenCount = 0;
                 while (await reader.ReadAsync())
                 {
                     conversation.Id = reader.GetGuid(conversationIdOrdinal);
@@ -319,6 +320,11 @@ public class SqlServerMemoryStore(
                     }
                     if (!string.IsNullOrWhiteSpace(turn.Msg))
                     {
+                        if (modelName is not null && maxTokens is not null && IsMaxTokenLimitExceeded(modelName, maxTokens.Value, turn.Msg, ref totalTokenCount))
+                        {
+                            break;
+                        }
+
                         conversation.Turns.Add(turn);
                     }
                 }

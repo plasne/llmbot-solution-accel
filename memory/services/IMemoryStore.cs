@@ -8,7 +8,7 @@ namespace Memory;
 
 public interface IMemoryStore
 {
-    Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default);
+    Task<Conversation> GetLastConversationAsync(string userId, int? maxTokens, string? modelName, CancellationToken cancellationToken = default);
 
     Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
 

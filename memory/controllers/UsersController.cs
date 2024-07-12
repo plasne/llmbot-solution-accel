@@ -12,10 +12,12 @@ public class UsersController : ControllerBase
     [HttpGet("conversations/:last")]
     public async Task<ActionResult<Conversation>> GetLastConversationAsync(
         [FromRoute] string userId,
+        [FromQuery(Name = "max-tokens")] int? maxTokens,
+        [FromQuery(Name = "model-name")] string? modelName,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
-        var conversation = await store.GetLastConversationAsync(userId, cancellationToken);
+        var conversation = await store.GetLastConversationAsync(userId, maxTokens, modelName, cancellationToken);
         return Ok(conversation);
     }
 
