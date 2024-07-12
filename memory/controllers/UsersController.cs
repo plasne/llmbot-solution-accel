@@ -63,7 +63,7 @@ public class UsersController : ControllerBase
         CancellationToken cancellationToken,
         [FromQuery] int count = 1)
     {
-        await store.DeleteLastActivitiesAsync(userId, count, cancellationToken);
+        await store.DeleteActivitiesAsync(userId, count, cancellationToken);
         return Ok();
     }
 
@@ -106,7 +106,7 @@ public class UsersController : ControllerBase
 
         if (!string.IsNullOrEmpty(body.Comment))
         {
-            await store.CommentOnMessageAsync(userId, body.Comment, cancellationToken);
+            await store.CommentOnLastMessageAsync(userId, body.Comment, cancellationToken);
         }
 
         return Ok();
@@ -145,7 +145,7 @@ public class UsersController : ControllerBase
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
-        await store.ClearFeedbackAsync(userId, cancellationToken);
+        await store.ClearLastFeedbackAsync(userId, cancellationToken);
         return Ok();
     }
 

@@ -62,7 +62,7 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         return Task.CompletedTask;
     }
 
-    public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
+    public Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
@@ -72,7 +72,7 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
+    public Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
@@ -82,7 +82,7 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task DeleteLastActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
