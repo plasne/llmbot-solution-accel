@@ -246,34 +246,180 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default)
+    public Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Comment] = NULL, [Rating] = NULL
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                ";
+
+                command.Parameters.AddWithValue("@userId", userId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} feedback in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update feedback for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
     public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Comment] = NULL, [Rating] = NULL
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'ASSISTANT';
+                ";
+
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@activityId", activityId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} feedback in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update feedback for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
-    public Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
+    public Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Comment] = @comment
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                ";
+                command.Parameters.AddWithValue("@comment", comment);
+                command.Parameters.AddWithValue("@userId", userId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} comment in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update comment for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
     public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Comment] = @comment
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'ASSISTANT';
+                ";
+                command.Parameters.AddWithValue("@comment", comment);
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@activityId", activityId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} comment in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update comment for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
-    public Task DeleteLastActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [State] = 'DELETED'
+                    WHERE Id IN (SELECT TOP (@count) Id FROM [dbo].[History] WHERE [Role] = 'USER' AND [UserId] = @userId ORDER BY Id DESC);
+                ";
+                command.Parameters.AddWithValue("@count", count);
+                command.Parameters.AddWithValue("@userId", userId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully delete user {u} message in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "delete message for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
     public Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        return this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [State] = 'DELETED'
+                    WHERE [Role] = 'USER' AND [UserId] = @userId [ActivityId] = @activityId;
+                ";
+                command.Parameters.AddWithValue("@activityId", activityId);
+                command.Parameters.AddWithValue("@userId", userId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully delete user {u} message in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "delete message for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
     public async Task<Conversation> GetLastConversationAsync(string userId, int? maxTokens, string? modelName, CancellationToken cancellationToken = default)
@@ -345,9 +491,9 @@ public class SqlServerMemoryStore(
         return conversation;
     }
 
-    public async Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
+    public Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        await this.ExecuteWithRetryOnTransient(
+        return this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
@@ -374,9 +520,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public async Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
+    public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
-        await this.ExecuteWithRetryOnTransient(
+        return this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);

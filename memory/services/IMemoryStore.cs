@@ -14,7 +14,7 @@ public interface IMemoryStore
 
     Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default);
 
-    Task DeleteLastActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default);
+    Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default);
 
     Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default);
 
@@ -24,11 +24,11 @@ public interface IMemoryStore
 
     Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default);
 
-    Task CommentOnMessageAsync(string userId, string comment, CancellationToken cancellationToken = default);
+    Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default);
 
     Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default);
 
-    Task ClearFeedbackAsync(string userId, CancellationToken cancellationToken = default);
+    Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default);
 
     Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default);
 
