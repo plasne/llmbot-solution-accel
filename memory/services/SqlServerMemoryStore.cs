@@ -345,14 +345,63 @@ public class SqlServerMemoryStore(
         return conversation;
     }
 
-    public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
+    public async Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Rating] = @rating
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                ";
+                command.Parameters.AddWithValue("@rating", rating);
+                command.Parameters.AddWithValue("@userId", userId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} rating in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update rating for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
-    public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
+    public async Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
-        throw new HttpException(501, "not currently implemented");
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [Rating] = @rating
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'ASSISTANT';
+                ";
+                command.Parameters.AddWithValue("@rating", rating);
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@activityId", activityId);
+
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully update user {u} rating in the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "update rating for user {u} message raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
     }
 
     public async Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
