@@ -246,9 +246,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
+    public async Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
@@ -275,9 +275,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
+    public async Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
@@ -305,9 +305,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
+    public async Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
@@ -334,9 +334,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
+    public async Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
@@ -364,9 +364,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public async Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
@@ -377,7 +377,7 @@ public class SqlServerMemoryStore(
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [State] = 'DELETED'
+                    SET [State] = 'DELETED', [Message] = NULL
                     WHERE Id IN (SELECT TOP (@count) Id FROM [dbo].[History] WHERE [UserId] = @userId ORDER BY Id DESC);
                 ";
                 command.Parameters.AddWithValue("@count", count);
@@ -393,9 +393,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default)
+    public async Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
@@ -406,7 +406,7 @@ public class SqlServerMemoryStore(
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [State] = 'DELETED'
+                    SET [State] = 'DELETED', [Message] = NULL
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
                 command.Parameters.AddWithValue("@activityId", activityId);
@@ -491,9 +491,9 @@ public class SqlServerMemoryStore(
         return conversation;
     }
 
-    public Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
+    public async Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
@@ -520,9 +520,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
+    public async Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
     {
-        return this.ExecuteWithRetryOnTransient(
+        await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
