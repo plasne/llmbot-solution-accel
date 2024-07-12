@@ -20,7 +20,7 @@ public interface IMemoryStore
 
     Task ChangeConversationTopicAsync(Interaction changeTopic, Duration expiry, CancellationToken cancellationToken = default);
 
-    Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default);
+    Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default);
 
     Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default);
 

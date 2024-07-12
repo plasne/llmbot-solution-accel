@@ -101,7 +101,7 @@ public class UsersController : ControllerBase
 
         if (!string.IsNullOrEmpty(body.Rating))
         {
-            await store.RateMessageAsync(userId, body.Rating, cancellationToken);
+            await store.RateLastMessageAsync(userId, body.Rating, cancellationToken);
         }
 
         if (!string.IsNullOrEmpty(body.Comment))

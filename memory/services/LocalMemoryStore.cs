@@ -122,7 +122,7 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         return Task.FromResult(conversation);
     }
 
-    public Task RateMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
+    public Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
