@@ -1,6 +1,8 @@
 using System;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Shared;
 using Shared.Models.Memory;
+using SharpToken;
 
 namespace Memory;
 
@@ -149,5 +151,13 @@ public abstract class MemoryStoreBase
         {
             throw new HttpException(400, "PromptTokenCount, CompletionTokenCount, TimeToFirstResponse, TimeToLastResponse must not be set in a new interaction.");
         }
+    }
+
+    public bool IsMaxTokenLimitExceeded(string modelName, int maxTokens, string message, ref int totalTokenCount)
+    {
+        var encoding = GptEncoding.GetEncodingForModel(modelName);
+        var tokenCount = encoding.CountTokens(message);
+        totalTokenCount += tokenCount;
+        return totalTokenCount > maxTokens;
     }
 }

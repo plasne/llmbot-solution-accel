@@ -91,7 +91,7 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task<Conversation> GetLastConversationAsync(string userId, CancellationToken cancellationToken = default)
+    public Task<Conversation> GetLastConversationAsync(string userId, int? maxTokens, string? modelName, CancellationToken cancellationToken = default)
     {
         var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
 
@@ -104,9 +104,18 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         var filtered = list
             .Where(x => x.ConversationId == last.ConversationId)
             .Where(x => x.State == States.EDITED || x.State == States.STOPPED || x.State == States.UNMODIFIED);
+
+        int totalTokenCount = 0;
         foreach (var interaction in filtered)
         {
             conversation.Id = interaction.ConversationId;
+
+            if (maxTokens is not null && modelName is not null && interaction.Message is not null &&
+                IsMaxTokenLimitExceeded(modelName, maxTokens.Value, interaction.Message, ref totalTokenCount))
+            {
+                break;
+            }
+
             conversation.Turns.Add(new Turn { Role = interaction.Role, Msg = interaction.Message! });
         }
 
