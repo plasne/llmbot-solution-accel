@@ -53,7 +53,7 @@ public class ChatBot(
             return true;
         }
 
-        // compare the tenant
+        // ensure the tenant is whitelisted
         try
         {
             string tenantId = turnContext.Activity.ChannelData["tenant"]["id"].ToString();
@@ -62,11 +62,9 @@ public class ChatBot(
                 this.logger.LogDebug("the tenant {t} is authorized to use the bot.", tenantId);
                 return true;
             }
-            else
-            {
-                this.logger.LogWarning("the tenant {t} is not authorized to use the bot.", tenantId);
-                return false;
-            }
+
+            this.logger.LogWarning("the tenant {t} is not authorized to use the bot.", tenantId);
+            return false;
         }
         catch (Exception ex)
         {
