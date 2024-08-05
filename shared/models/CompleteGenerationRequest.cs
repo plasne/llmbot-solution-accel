@@ -28,6 +28,9 @@ public class CompleteGenerationRequest
     [JsonProperty("completion_token_count")]
     public int CompletionTokenCount { get; set; }
 
+    [JsonProperty("embedding_token_count")]
+    public int EmbeddingTokenCount { get; set; }
+
     [JsonProperty("time_to_first_response")]
     public int TimeToFirstResponse { get; set; }
 

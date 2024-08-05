@@ -326,6 +326,7 @@ public class ChatBot(
                 // add any token counts
                 completeRequest.PromptTokenCount += chatResponse.PromptTokens;
                 completeRequest.CompletionTokenCount += chatResponse.CompletionTokens;
+                completeRequest.EmbeddingTokenCount += chatResponse.EmbeddingTokens;
 
                 // handle the response
                 activityId = await this.HandleResponse(turnContext, activityId, chatResponse, summaries, completeRequest, cancellationToken);
