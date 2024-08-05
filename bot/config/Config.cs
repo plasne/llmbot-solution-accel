@@ -18,6 +18,7 @@ public class Config : IConfig
         this.MAX_RETRY_ATTEMPTS = this.config.Get<string>("MAX_RETRY_ATTEMPTS").AsInt(() => 3);
         this.SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.MAX_TIMEOUT_IN_SECONDS = this.config.Get<string>("MAX_TIMEOUT_IN_SECONDS").AsInt(() => 60);
+        this.VALID_TENANTS = this.config.Get<string>("VALID_TENANTS").AsArray(() => []);
     }
 
     public int PORT { get; }
@@ -38,6 +39,8 @@ public class Config : IConfig
 
     public int MAX_TIMEOUT_IN_SECONDS { get; }
 
+    public string[] VALID_TENANTS { get; }
+
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
@@ -49,6 +52,7 @@ public class Config : IConfig
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
         this.config.Require("MAX_TIMEOUT_IN_SECONDS", this.MAX_TIMEOUT_IN_SECONDS);
+        this.config.Optional("VALID_TENANTS", this.VALID_TENANTS);
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);
