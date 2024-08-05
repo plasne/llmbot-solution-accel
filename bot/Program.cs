@@ -12,6 +12,7 @@ using System;
 using Polly;
 using Polly.Extensions.Http;
 using Bot;
+using AdaptiveExpressions;
 
 DotEnv.Load();
 
