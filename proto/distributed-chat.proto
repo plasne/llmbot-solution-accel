@@ -34,4 +34,5 @@ message ChatResponse {
   repeated Citation citations = 4;
   int32 promptTokens = 5;
   int32 completionTokens = 6;
+  int32 embeddingTokens = 7;
 }
