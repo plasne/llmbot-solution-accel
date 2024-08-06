@@ -44,6 +44,35 @@ public class ChatBot(
 
     public const string StartTimeKey = "http-request-start-time";
 
+    private bool IsAuthorized(ITurnContext<IMessageActivity> turnContext)
+    {
+        // if no tenants are specified, then all are valid
+        if (this.config.VALID_TENANTS.Length == 0)
+        {
+            this.logger.LogDebug("no tenants are specified, all are authorized to use the bot.");
+            return true;
+        }
+
+        // ensure the tenant is whitelisted
+        try
+        {
+            string tenantId = turnContext.Activity.ChannelData["tenant"]["id"].ToString();
+            if (this.config.VALID_TENANTS.Contains(tenantId))
+            {
+                this.logger.LogDebug("the tenant {t} is authorized to use the bot.", tenantId);
+                return true;
+            }
+
+            this.logger.LogWarning("the tenant {t} is not authorized to use the bot.", tenantId);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            this.logger.LogError(ex, "the tenant could not be determined from the activity...");
+            return false;
+        }
+    }
+
     private async Task<string> Dispatch(
         string? activityId,
         bool useAdaptiveCard,
@@ -297,6 +326,7 @@ public class ChatBot(
                 // add any token counts
                 completeRequest.PromptTokenCount += chatResponse.PromptTokens;
                 completeRequest.CompletionTokenCount += chatResponse.CompletionTokens;
+                completeRequest.EmbeddingTokenCount += chatResponse.EmbeddingTokens;
 
                 // handle the response
                 activityId = await this.HandleResponse(turnContext, activityId, chatResponse, summaries, completeRequest, cancellationToken);
@@ -334,6 +364,12 @@ public class ChatBot(
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
+        // verify authorization
+        if (!this.IsAuthorized(turnContext))
+        {
+            throw new Exception("the activity was not authorized to use this bot.");
+        }
+
         // get the user
         var userId = turnContext.Activity.From.AadObjectId;
         if (string.IsNullOrEmpty(userId))
