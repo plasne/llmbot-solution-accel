@@ -24,7 +24,7 @@ message ChatRequest {
 message Citation {
   string id = 1;
   string title = 2;
-  string uri = 3;
+  repeated string uris = 3;
 }
 
 message ChatResponse {

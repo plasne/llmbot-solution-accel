@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
 using DistributedChat;
+using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
@@ -83,23 +84,21 @@ public class ChatBot(
         CancellationToken cancellationToken)
     {
         // add citations
-        if (citations is not null)
+        if (citations is not null && citations.Count > 0)
         {
+            StringBuilder sb = new(reply);
+            sb.AppendLine("");
+            sb.AppendLine("");
+            sb.AppendLine("Citations");
+
             foreach (var citation in citations)
             {
-                if (!string.IsNullOrEmpty(citation.Title) && !string.IsNullOrEmpty(citation.Uri))
+                foreach(var uri in citation.Uris)
                 {
-                    reply = reply.Replace($"[{citation.Id}]", $"[[{citation.Title}]]({citation.Uri})");
-                }
-                else if (!string.IsNullOrEmpty(citation.Title))
-                {
-                    reply = reply.Replace($"[{citation.Id}]", $"[{citation.Title}]");
-                }
-                else if (!string.IsNullOrEmpty(citation.Uri))
-                {
-                    reply = reply.Replace($"[{citation.Id}]", $"[{citation.Id}]({citation.Uri})");
+                    sb.AppendLine($"* [{citation.Id}] [{uri}]({uri})");
                 }
             }
+            reply = sb.ToString();
         }
 
         // build the activity
