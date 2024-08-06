@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using AdaptiveCards;
 using DistributedChat;
-using Google.Protobuf.Collections;
 using Grpc.Core;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Bot.Builder;
