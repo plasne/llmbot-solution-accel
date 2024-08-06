@@ -2,6 +2,7 @@ namespace Bot;
 
 public class UserAction
 {
-    public string? ChatId;
+    public string? ActivityId;
+    public string? Comment;
     public string? Command;
 }

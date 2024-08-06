@@ -72,7 +72,7 @@
                   "selectAction": {
                     "type": "Action.Submit",
                     "data": {
-                      "chatId": "${chatId}",
+                      "activityId": "${activityId}",
                       "command": "/rate up"
                     }
                   }
@@ -93,7 +93,7 @@
                   "selectAction": {
                     "type": "Action.Submit",
                     "data": {
-                      "chatId": "${chatId}",
+                      "activityId": "${activityId}",
                       "command": "/rate down"
                     }
                   }
@@ -135,7 +135,8 @@
                 {
                   "type": "Input.Text",
                   "placeholder": "Please provide your feedback...",
-                  "isMultiline": true
+                  "isMultiline": true,
+                  "id": "comment"
                 }
               ]
             },
@@ -148,7 +149,11 @@
                   "url": "data:image/svg+xml,%3C%3Fxml%20version%3D%221.0%22%20encoding%3D%22UTF-8%22%3F%3E%3Csvg%20id%3D%22Layer_1%22%20data-name%3D%22Layer%201%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%201615.07%201857.14%22%3E%3Cg%3E%3Cpolygon%20points%3D%2225.23%201831.92%20352.16%20928.58%2025.23%2025.23%201589.85%20928.58%2025.23%201831.92%22%20style%3D%22fill%3A%20%23fff%3B%20stroke-width%3A%20px%3B%22%2F%3E%3Cpath%20d%3D%22m0%2C1831.91c0-2.87.49-5.77%2C1.51-8.58l323.83-894.75L1.51%2C33.81C-2.09%2C23.85.91%2C12.69%2C9.03%2C5.89%2C17.16-.92%2C28.67-1.92%2C37.84%203.38l1564.62%2C903.36c7.81%2C4.51%2C12.61%2C12.83%2C12.61%2C21.85s-4.81%2C17.34-12.61%2C21.85L37.84%2C1853.76c-9.18%2C5.3-20.69%2C4.3-28.81-2.51C3.2%2C1846.37%2C0%2C1839.24%2C0%2C1831.91Zm1539.39-903.33L72.47%2C81.63l303.41%2C838.37c2.01%2C5.55%2C2.01%2C11.62%2C0%2C17.17L72.47%2C1775.51l1466.92-846.93Z%22%20style%3D%22fill%3A%20%231d1d1b%3B%20stroke-width%3A%200px%3B%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22m326.94%2C928.59c0-13.93%2C11.3-25.23%2C25.23-25.23h1237.68c13.93%2C0%2C25.23%2C11.29%2C25.23%2C25.23s-11.29%2C25.23-25.23%2C25.23H352.16c-13.93%2C0-25.23-11.29-25.23-25.23Z%22%20style%3D%22fill%3A%20%231d1d1b%3B%20stroke-width%3A%200px%3B%22%2F%3E%3C%2Fsvg%3E",
                   "selectAction": {
                     "type": "Action.Submit",
-                    "tooltip": "Submit"
+                    "tooltip": "Submit",
+                    "data": {
+                      "activityId": "${activityId}",
+                      "command": "/rate-comment"
+                    }
                   },
                   "width": "20px",
                   "height": "20px"
