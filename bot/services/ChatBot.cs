@@ -217,6 +217,11 @@ public class ChatBot(
                 break;
             case Intent.InDomain:
                 completeRequest.Intent = Intents.IN_DOMAIN;
+                if (summaries.Length == 0)
+                {
+                    status = this.config.FINAL_STATUS;
+                    summaries.ResetTo("I'm sorry, I don't have a response for that. If you aren't sure what I can do type `/help`.");
+                }
                 break;
             case Intent.Greeting:
                 completeRequest.Intent = Intents.GREETING;
