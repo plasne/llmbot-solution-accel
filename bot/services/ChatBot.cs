@@ -182,8 +182,9 @@ public class ChatBot(
         var content = await res.Content.ReadAsStringAsync(cancellationToken);
         if (!res.IsSuccessStatusCode)
         {
-            throw new Exception($"the attempt to start generation resulted in HTTP {res.StatusCode} - {content}.");
+            this.logger.LogError("the attempt to start generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
         }
+        res.EnsureSuccessStatusCode();
         var payload = JsonConvert.DeserializeObject<StartGenerationResponse>(content)
             ?? throw new Exception("no conversation ID was received from the memory service.");
         return payload.ConversationId;
@@ -198,8 +199,9 @@ public class ChatBot(
         if (!res.IsSuccessStatusCode)
         {
             var content = await res.Content.ReadAsStringAsync(cancellationToken);
-            throw new Exception($"the attempt to complete generation resulted in HTTP {res.StatusCode} - {content}.");
+            this.logger.LogError("the attempt to start generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
         }
+        res.EnsureSuccessStatusCode();
     }
 
     private async Task<string> HandleResponse(
