@@ -199,7 +199,7 @@ public class ChatBot(
         if (!res.IsSuccessStatusCode)
         {
             var content = await res.Content.ReadAsStringAsync(cancellationToken);
-            this.logger.LogError("the attempt to start generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
+            this.logger.LogError("the attempt to complete generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
         }
         res.EnsureSuccessStatusCode();
     }
