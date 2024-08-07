@@ -1,8 +1,10 @@
+using ChangeFeed;
 using NetBricks;
+using System.Linq;
 
 namespace Bot;
 
-public class Config : IConfig
+public class Config : IConfig, IEventHubChangeFeedConfig
 {
     private readonly NetBricks.IConfig config;
 
@@ -19,6 +21,19 @@ public class Config : IConfig
         this.SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.MAX_TIMEOUT_IN_SECONDS = this.config.Get<string>("MAX_TIMEOUT_IN_SECONDS").AsInt(() => 60);
         this.VALID_TENANTS = this.config.Get<string>("VALID_TENANTS").AsArray(() => []);
+        this.CHANGEFEED_CONNSTRING = this.config.GetSecret<string>("CHANGEFEED_CONNSTRING").Result;
+        var groups = this.config.Get<string>("CHANGEFEED_CONSUMER_GROUPS");
+        if (groups is not null)
+        {
+            this.CHANGEFEED_CONSUMER_GROUPS = groups.Split(',')
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .ToArray();
+        }
+        else
+        {
+            this.CHANGEFEED_CONSUMER_GROUPS = [];
+        }
     }
 
     public int PORT { get; }
@@ -41,6 +56,10 @@ public class Config : IConfig
 
     public string[] VALID_TENANTS { get; }
 
+    public string CHANGEFEED_CONNSTRING { get; }
+
+    public string[] CHANGEFEED_CONSUMER_GROUPS { get; }
+
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
@@ -56,5 +75,7 @@ public class Config : IConfig
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);
+        this.config.Optional("CHANGEFEED_CONNSTRING", this.CHANGEFEED_CONNSTRING);
+        this.config.Optional("CHANGEFEED_CONSUMER_GROUPS", this.CHANGEFEED_CONSUMER_GROUPS);
     }
 }

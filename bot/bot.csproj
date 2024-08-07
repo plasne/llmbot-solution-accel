@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\changefeed\change-feed.csproj" />
     <ProjectReference Include="..\shared\shared.csproj" />
   </ItemGroup>
 

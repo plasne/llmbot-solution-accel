@@ -12,6 +12,7 @@ public interface IConfig
     int SECONDS_BETWEEN_RETRIES { get; }
     int MAX_TIMEOUT_IN_SECONDS { get; }
     string[] VALID_TENANTS { get; }
-
+    string CHANGEFEED_CONNSTRING { get; }
+    string[] CHANGEFEED_CONSUMER_GROUPS { get; }
     void Validate();
 }

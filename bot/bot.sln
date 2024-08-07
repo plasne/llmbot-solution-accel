@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "bot", "bot.csproj", "{51A01
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "shared", "..\shared\shared.csproj", "{ECF425D4-E63F-4E33-9BD7-3232EA659928}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "change-feed", "..\changefeed\change-feed.csproj", "{7B34B7BF-BAFA-47C6-A53D-651601E16D90}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{ECF425D4-E63F-4E33-9BD7-3232EA659928}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECF425D4-E63F-4E33-9BD7-3232EA659928}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ECF425D4-E63F-4E33-9BD7-3232EA659928}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B34B7BF-BAFA-47C6-A53D-651601E16D90}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B34B7BF-BAFA-47C6-A53D-651601E16D90}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B34B7BF-BAFA-47C6-A53D-651601E16D90}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B34B7BF-BAFA-47C6-A53D-651601E16D90}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

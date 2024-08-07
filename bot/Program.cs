@@ -12,7 +12,7 @@ using System;
 using Polly;
 using Polly.Extensions.Http;
 using Bot;
-using AdaptiveExpressions;
+using ChangeFeed;
 
 DotEnv.Load();
 
@@ -63,6 +63,8 @@ builder.Services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>
 
 // create the bot as transient
 builder.Services.AddTransient<IBot, ChatBot>();
+
+builder.Services.AddEventHubChangeFeed<Bot.IConfig>();
 
 // add commands
 builder.Services.AddTransient<ICommands, HelpCommand>();
