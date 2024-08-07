@@ -52,14 +52,10 @@ public class FeedbackCommands(IConfig config, ILogger<FeedbackCommands> logger, 
         switch (action.Command)
         {
             case "/rate up":
-#pragma warning disable CS8604 // Possible null reference argument.
-                await RateAsync(userId, action.ActivityId, "up", turnContext, cancellationToken);
-#pragma warning restore CS8604 // Possible null reference argument.
+                await RateAsync(userId, action.ActivityId!, "up", turnContext, cancellationToken);
                 return true;
             case "/rate down":
-#pragma warning disable CS8604 // Possible null reference argument.
-                await RateAsync(userId, action.ActivityId, "down", turnContext, cancellationToken);
-#pragma warning restore CS8604 // Possible null reference argument.
+                await RateAsync(userId, action.ActivityId!, "down", turnContext, cancellationToken);
                 return true;
             case "/rate-comment":
                 await RateCommentAsync(userId, action, turnContext, cancellationToken);
