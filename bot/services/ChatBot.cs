@@ -88,11 +88,11 @@ public class ChatBot(
             StringBuilder sb = new(reply);
             sb.AppendLine("");
             sb.AppendLine("");
-            sb.AppendLine("Citations");
+            sb.AppendLine(citations.Count > 1 ? "Sources" : "Source");
 
             foreach (var citation in citations)
             {
-                foreach(var uri in citation.Uris)
+                foreach (var uri in citation.Uris)
                 {
                     sb.AppendLine($"* [{citation.Id}] [{uri}]({uri})");
                 }
