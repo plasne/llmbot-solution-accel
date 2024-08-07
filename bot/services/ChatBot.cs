@@ -214,14 +214,14 @@ public class ChatBot(
         switch (chatResponse.Intent)
         {
             case Intent.Unknown:
-                break;
-            case Intent.InDomain:
-                completeRequest.Intent = Intents.IN_DOMAIN;
-                if (summaries.Length == 0)
+                if (status == "No documents found.")
                 {
                     status = this.config.FINAL_STATUS;
                     summaries.ResetTo("I'm sorry, I don't have a response for that. If you aren't sure what I can do type `/help`.");
                 }
+                break;
+            case Intent.InDomain:
+                completeRequest.Intent = Intents.IN_DOMAIN;
                 break;
             case Intent.Greeting:
                 completeRequest.Intent = Intents.GREETING;
