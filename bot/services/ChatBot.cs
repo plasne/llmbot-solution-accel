@@ -263,7 +263,7 @@ public class ChatBot(
     private async Task ProcessNextRequest(ITurnContext<IMessageActivity> turnContext, string userId, CancellationToken cancellationToken)
     {
         // send the "connection" message
-        var activityId = await Dispatch(null, true, "Connecting to assistant...", string.Empty, null, turnContext, cancellationToken);
+        var activityId = await Dispatch(activityId: null, useAdaptiveCard: true, status:  "Connecting to assistant...", reply: string.Empty, citations: null, turnContext, cancellationToken);
 
         // create the completed request (can be modifided as the conversation progresses)
         var completeRequest = new CompleteGenerationRequest
@@ -337,16 +337,29 @@ public class ChatBot(
             completeRequest.Message = completeRequest.State != States.EMPTY
                 ? summaries.ToString()
                 : null;
+            if (string.IsNullOrEmpty(completeRequest.Message))
+            {
+                completeRequest.Message = "I'm sorry, I don't have a response for that. If you aren't sure what I can do type `/help`.";
+                await Dispatch(
+                    activityId: activityId,
+                    useAdaptiveCard: true,
+                    status: "Generated.",
+                    reply: completeRequest.Message,
+                    citations: null,
+                    turnContext,
+                    cancellationToken);
+            }
+
             await this.CompleteGenerationAsync(httpClient, userId, completeRequest, cancellationToken);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
         {
             await Dispatch(
-                activityId,
-                false,
-                null,
-                "The assistant is already generating a response for you, please wait for that to complete or stop the generation.",
-                null,
+                activityId: activityId,
+                useAdaptiveCard: false,
+                status: null,
+                reply: "The assistant is already generating a response for you, please wait for that to complete or stop the generation.",
+                citations: null,
                 turnContext,
                 cancellationToken);
             return;
