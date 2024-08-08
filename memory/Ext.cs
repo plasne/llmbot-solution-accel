@@ -33,9 +33,9 @@ public static class Ext
 
     public static string Decode(this string activityId)
     {
-        if (int.TryParse(activityId, out var asInt))
+        if (long.TryParse(activityId, out var asLong))
         {
-            return asInt.ToString();
+            return asLong.ToString();
         }
         else if (activityId.TryDecodeBase64String(out var asDecoded))
         {
