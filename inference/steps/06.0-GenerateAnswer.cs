@@ -17,14 +17,12 @@ using SharpToken;
 namespace Inference;
 
 public partial class GenerateAnswer(
-    IConfig config,
     IWorkflowContext context,
     KernelFactory kernelFactory,
     IMemory memory,
     ILogger<GenerateAnswer> logger)
     : BaseStep<IntentAndData, Answer>(logger)
 {
-    private readonly IConfig config = config;
     private readonly IWorkflowContext context = context;
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
@@ -43,9 +41,7 @@ public partial class GenerateAnswer(
         }
 
         // get or set the prompt template
-        string promptFile = !string.IsNullOrEmpty(this.context.Parameters?.CHAT_PROMPT_FILE)
-            ? this.context.Parameters.CHAT_PROMPT_FILE
-            : this.config.CHAT_PROMPT_FILE;
+        string promptFile = this.context.Config.CHAT_PROMPT_FILE;
         this.LogDebug($"using prompt file: {promptFile}...");
         string template = await this.memory.GetOrSet($"prompt:{promptFile}", null, () =>
         {
@@ -53,9 +49,7 @@ public partial class GenerateAnswer(
         });
 
         // get or set the temperature
-        double temperature = this.context.Parameters?.CHAT_TEMPERATURE is not null
-            ? (double)this.context.Parameters.CHAT_TEMPERATURE
-            : (double)this.config.CHAT_TEMPERATURE;
+        double temperature = (double)this.context.Config.CHAT_TEMPERATURE;
         this.LogDebug($"using temperature: {temperature:0.0}...");
 
         // build the function
@@ -84,7 +78,7 @@ public partial class GenerateAnswer(
         var settings = new OpenAIPromptExecutionSettings
         {
             Temperature = temperature,
-            Seed = this.config.CHAT_SEED,
+            Seed = this.context.Config.CHAT_SEED,
         };
         var args = new KernelArguments(settings)
             {
@@ -99,10 +93,19 @@ public partial class GenerateAnswer(
 
         // stream each fragment
         var buffer = new StringBuilder();
+        var citations = new Dictionary<string, Context>();
         await foreach (var fragment in response)
         {
+            if (buffer.Length == 0 && fragment.ToString() == "NULL")
+                break;
             buffer.Append(fragment.ToString());
-            await this.context.Stream("Generating answer...", fragment.ToString());
+            var citationIds = new HashSet<string>(MatchRef().Matches(buffer.ToString()).Select(m => m.Value));
+            input.Data?.Context?.ForEach(x =>
+            {
+                if (citationIds.Contains($"[{x.Id}]"))
+                    citations.TryAdd(x.Id, x);
+            });
+            await this.context.Stream("Generating answer...", fragment.ToString(), citations: citations.Values.ToList());
         }
         var elapsedSeconds = (DateTime.UtcNow - startTime).TotalSeconds;
 
@@ -110,29 +113,22 @@ public partial class GenerateAnswer(
         if (args.TryGetValue("internaluse:prompt-token-count", out var promptTokenCountObj) && promptTokenCountObj is int promptTokenCount)
         {
             this.Usage.PromptTokenCount = promptTokenCount;
-            DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.config.LLM_MODEL_NAME);
+            DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.context.Config.LLM_MODEL_NAME);
         }
 
         // record completion token count using sharpToken
-        var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
+        var encoding = GptEncoding.GetEncoding(this.context.Config.LLM_ENCODING_MODEL);
         this.Usage.CompletionTokenCount = encoding.CountTokens(buffer.ToString());
-        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
+        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.context.Config.LLM_MODEL_NAME);
 
         // record tokens per second
         var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
-        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME);
-
-        // emit citations in order of relevance
-        var citationIds = new HashSet<string>(MatchRef().Matches(buffer.ToString()).Select(m => m.Value));
-        List<Context> citations = [];
-        input.Data?.Context?.ForEach(x =>
-        {
-            if (citationIds.Contains($"[{x.Id}]")) citations.Add(x);
-        });
+        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.context.Config.LLM_MODEL_NAME);
 
         // send response
-        await this.context.Stream("Generated.", citations: citations, promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
-        return new Answer { Text = buffer.ToString(), Context = citations };
+        await this.context.Stream("Generated.", promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
+        this.Continue = buffer.Length > 0 && (!this.context.Config.EXIT_WHEN_NO_CITATIONS || citations.Count > 0);
+        return new Answer { Text = buffer.ToString(), Context = citations.Values.ToList() };
     }
 
     [GeneratedRegex(@"\[ref\d+\]")]

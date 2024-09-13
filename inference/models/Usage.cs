@@ -4,6 +4,9 @@ namespace Inference;
 
 public class Usage
 {
+    [JsonProperty("embedding_token_count", Required = Required.Always)]
+    public int EmbeddingTokenCount { get; set; }
+
     [JsonProperty("prompt_token_count", Required = Required.Always)]
     public int PromptTokenCount { get; set; }
 

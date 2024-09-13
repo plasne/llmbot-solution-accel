@@ -11,9 +11,13 @@ using Polly.Extensions.Http;
 using Polly;
 using Inference;
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Hosting;
 
-DotEnv.Load();
+// load environment variables
+var ENV_FILES = NetBricks.Config.GetOnce("ENV_FILES").AsArray(() => ["local.env"]);
+DotEnv.Load(new DotEnvOptions(envFilePaths: ENV_FILES, overwriteExistingVars: false));
 
+// create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
 
 // add config
@@ -79,10 +83,13 @@ builder.Services.AddSingleton<IServiceContext, ServiceContext>();
 builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<PrimaryWorkflow>();
 builder.Services.AddTransient<InDomainOnlyWorkflow>();
+builder.Services.AddTransient<PickDocumentsWorkflow>();
 builder.Services.AddTransient<DetermineIntent>();
 builder.Services.AddTransient<InDomainOnlyIntent>();
 builder.Services.AddTransient<ApplyIntent>();
 builder.Services.AddTransient<GetDocuments>();
+builder.Services.AddTransient<PickDocuments>();
+builder.Services.AddTransient<SortDocuments>();
 builder.Services.AddTransient<SelectGroundingData>();
 builder.Services.AddTransient<GenerateAnswer>();
 
@@ -94,6 +101,7 @@ builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();
 
 // add other services
 builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
 builder.Services.AddControllers().AddNewtonsoftJson();
 
 // listen (disable TLS)
@@ -119,6 +127,8 @@ app.UseSwaggerUI();
 app.UseRouting();
 app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapGrpcService<ChatService>();
+app.MapGrpcReflectionService();
+
 app.MapControllers();
 
 // run

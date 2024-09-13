@@ -11,6 +11,7 @@ public interface IConfig
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
     int MAX_TIMEOUT_IN_SECONDS { get; }
+    int MAX_PAYLOAD_SIZE { get; }
     string[] VALID_TENANTS { get; }
 
     void Validate();

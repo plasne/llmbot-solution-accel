@@ -14,7 +14,18 @@ Content-Type: application/json
   "user_query": "How many players can play Fury of Dracula 4th edition?"
 }
 
-### run the primary workflow
+### run the pick-docs workflow
+POST http://localhost:7030/api/workflows/pick-docs HTTP/1.1
+Content-Type: application/json
+
+{
+  "user_query": "Describe the night phase in Fury of Dracula?",
+  "context": [
+    "http://fury-of-dracula-4th-edition-rules.pdf"
+  ]
+}
+
+### always out-of-domain
 POST http://localhost:7030/api/workflows/primary HTTP/1.1
 Content-Type: application/json
 X-INTENT-PROMPT-FILE: ./templates/intent-prompt-always-out-of-domain.txt

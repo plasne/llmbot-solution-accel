@@ -46,7 +46,7 @@ Examine the provided JSON documents diligently, extracting information relevant 
 - Every claim statement you generated must have at least one citation.**
 
 ## Retrieved Documents
-{{context}}
+{{{context}}}
 </message>
 
 {{#each history}}

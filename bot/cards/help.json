@@ -8,7 +8,7 @@
     "body": [
         {
             "type": "TextBlock",
-            "text": "Greetings, I am a helpful chat bot that can answer many types of questions. You can also use any of my helpful commands, such as...",
+            "text": "Greetings! I'm your helpful chat assistant, here to answer any questions you have about the Plex Smart Manufacturing Platform. Just ask away, or try one of my handy commands to get started, such as..",
             "wrap": true
         },
         {

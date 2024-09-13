@@ -14,11 +14,11 @@ namespace Inference;
     "Major Code Smell",
     "S107:Methods should not have too many parameters",
     Justification = "Required for dependency injection")]
-public class PrimaryWorkflow(
+public class PickDocumentsWorkflow(
     IWorkflowContext context,
     DetermineIntent determineIntent,
     ApplyIntent applyIntent,
-    GetDocuments getDocuments,
+    PickDocuments pickDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer,
@@ -28,7 +28,7 @@ public class PrimaryWorkflow(
     private readonly IWorkflowContext context = context;
     private readonly DetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly GetDocuments getDocuments = getDocuments;
+    private readonly PickDocuments pickDocuments = pickDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;
@@ -53,15 +53,15 @@ public class PrimaryWorkflow(
             if (!this.applyIntent.Continue)
                 return response;
 
-            // STEP 3: get documents
-            response.Steps.Add(this.getDocuments.StepResponse);
-            var getDocumentsOutput = await this.getDocuments.Execute(determineIntentOutput, cancellationToken);
-            if (!this.getDocuments.Continue)
+            // STEP 3: pick documents
+            response.Steps.Add(this.pickDocuments.StepResponse);
+            var pickDocumentsOutput = await this.pickDocuments.Execute(determineIntentOutput, cancellationToken);
+            if (!this.pickDocuments.Continue)
                 return response;
 
             // STEP 4: sort documents
             response.Steps.Add(this.sortDocuments.StepResponse);
-            var sortDocumentsOutput = await this.sortDocuments.Execute(getDocumentsOutput, cancellationToken);
+            var sortDocumentsOutput = await this.sortDocuments.Execute(pickDocumentsOutput, cancellationToken);
             if (!this.sortDocuments.Continue)
                 return response;
 

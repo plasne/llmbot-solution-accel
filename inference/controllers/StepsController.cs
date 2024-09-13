@@ -23,6 +23,18 @@ public class StepsController() : ControllerBase
         return Ok(intent);
     }
 
+    [HttpPost("in-domain-only-intent")]
+    public async Task<ActionResult<DeterminedIntent>> InDomainOnlyIntent(
+        [FromServices] IServiceProvider serviceProvider,
+        [FromBody] WorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var inDomainOnlyIntent = scope.ServiceProvider.GetRequiredService<InDomainOnlyIntent>();
+        var inDomainIntent = await inDomainOnlyIntent.Execute(request, cancellationToken);
+        return Ok(inDomainIntent);
+    }
+
     [HttpPost("get-documents")]
     public async Task<ActionResult<List<Doc>>> GetDocuments(
         [FromServices] IServiceProvider serviceProvider,
@@ -33,6 +45,30 @@ public class StepsController() : ControllerBase
         var getDocuments = scope.ServiceProvider.GetRequiredService<GetDocuments>();
         var docs = await getDocuments.Execute(intent, cancellationToken);
         return Ok(docs);
+    }
+
+    [HttpPost("pick-documents")]
+    public async Task<ActionResult<List<Doc>>> PickDocuments(
+        [FromServices] IServiceProvider serviceProvider,
+        [FromBody] DeterminedIntent intent,
+        CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var pickDocuments = scope.ServiceProvider.GetRequiredService<PickDocuments>();
+        var pickedDocs = await pickDocuments.Execute(intent, cancellationToken);
+        return Ok(pickedDocs);
+    }
+
+    [HttpPost("sort-documents")]
+    public async Task<ActionResult<List<Doc>>> SortDocuments(
+        [FromServices] IServiceProvider serviceProvider,
+        [FromBody] List<Doc> docs,
+        CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var sortDocuments = scope.ServiceProvider.GetRequiredService<SortDocuments>();
+        var sortedDocs = await sortDocuments.Execute(docs, cancellationToken);
+        return Ok(sortedDocs);
     }
 
     [HttpPost("select-grounding-data")]

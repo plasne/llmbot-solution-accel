@@ -14,14 +14,12 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 namespace Inference;
 
 public class DetermineIntent(
-    IConfig config,
     IWorkflowContext context,
     KernelFactory kernelFactory,
     IMemory memory,
     ILogger<DetermineIntent> logger)
     : BaseStep<WorkflowRequest, DeterminedIntent>(logger)
 {
-    private readonly IConfig config = config;
     private readonly IWorkflowContext context = context;
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
@@ -43,9 +41,7 @@ public class DetermineIntent(
         await this.context.Stream("Determining intent...");
 
         // get or set the prompt template
-        string promptFile = !string.IsNullOrEmpty(this.context.Parameters?.INTENT_PROMPT_FILE)
-            ? this.context.Parameters.INTENT_PROMPT_FILE
-            : this.config.INTENT_PROMPT_FILE;
+        string promptFile = this.context.Config.INTENT_PROMPT_FILE;
         this.LogDebug($"using prompt file: {promptFile}...");
         string template = await this.memory.GetOrSet($"prompt:{promptFile}", null, () =>
         {
@@ -53,9 +49,7 @@ public class DetermineIntent(
         });
 
         // get or set the temperature
-        double temperature = this.context.Parameters?.INTENT_TEMPERATURE is not null
-            ? (double)this.context.Parameters.INTENT_TEMPERATURE
-            : (double)this.config.INTENT_TEMPERATURE;
+        double temperature = (double)this.context.Config.INTENT_TEMPERATURE;
         this.LogDebug($"using temperature: {temperature:0.0}...");
 
         // build the function
@@ -79,13 +73,17 @@ public class DetermineIntent(
         var settings = new OpenAIPromptExecutionSettings
         {
             Temperature = temperature,
-            Seed = this.config.INTENT_SEED,
+            Seed = this.context.Config.INTENT_SEED,
         };
+
+        // prevent the model from predicting another TOPIC_CHANGE
+        bool includeTopicChange = this.context.IsForInference ? !(input.PreviousTopicChange ?? false) : true;
         var args = new KernelArguments(settings)
-        {
-            { "history", history },
-            { "query", input.UserQuery },
-        };
+            {
+                { "includeTopicChange", includeTopicChange },
+                { "history", history },
+                { "query", input.UserQuery },
+            };
         var response = await kernel.InvokeAsync(
             func,
             args,
@@ -99,15 +97,15 @@ public class DetermineIntent(
             if (promptFilterResults is not null)
             {
                 this.Usage.PromptTokenCount = promptFilterResults.PromptTokens;
-                DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.config.LLM_MODEL_NAME);
+                DiagnosticService.RecordPromptTokenCount(this.Usage.PromptTokenCount, this.context.Config.LLM_MODEL_NAME);
                 this.Usage.CompletionTokenCount = promptFilterResults.CompletionTokens;
-                DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.config.LLM_MODEL_NAME);
+                DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.context.Config.LLM_MODEL_NAME);
             }
         }
 
         // record tokens per second
         var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
-        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.config.LLM_MODEL_NAME);
+        DiagnosticService.RecordTokensPerSecond(tokensPerSecond, this.context.Config.LLM_MODEL_NAME);
 
         // deserialize the response
         // NOTE: this could maybe be a retry (transient fault)
@@ -115,7 +113,9 @@ public class DetermineIntent(
             ?? throw new HttpException(500, "Intent could not be deserialized.");
 
         // if in debug mode, log the intent
+#pragma warning disable CA2254 // The logging message template should not vary between calls
         this.logger.LogDebug(response.ToString());
+#pragma warning restore CA2254 // Restore the warning after this line
 
         // send token counts
         await this.context.Stream(promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);

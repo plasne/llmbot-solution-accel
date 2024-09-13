@@ -5,6 +5,10 @@ namespace Inference;
 
 public class Doc
 {
+    [JsonPropertyName("@search.rerankerScore")]
+    [JsonProperty("@search.rerankerScore", NullValueHandling = NullValueHandling.Ignore)]
+    public double RerankSearchScore { get; set; }
+
     [JsonPropertyName("@search.score")]
     [JsonProperty("@search.score")]
     public double SearchScore { get; set; }
@@ -17,7 +21,11 @@ public class Doc
     [JsonProperty("content", NullValueHandling = NullValueHandling.Ignore)]
     public string? Content { get; set; }
 
-    [JsonPropertyName("url")]
-    [JsonProperty("url", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Url { get; set; }
+    [JsonPropertyName("urls")]
+    [JsonProperty("urls", NullValueHandling = NullValueHandling.Ignore)]
+    public string[]? Urls { get; set; }
+
+    [JsonPropertyName("ground_truth_urls")]
+    [JsonProperty("ground_truth_urls", NullValueHandling = NullValueHandling.Ignore)]
+    public string[]? GroundTruthUrls { get; set; }
 }

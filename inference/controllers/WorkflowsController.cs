@@ -13,7 +13,7 @@ namespace Inference;
 public class WorkflowsController() : ControllerBase
 {
     private async Task<ActionResult<WorkflowResponse>> RunWorkflow(
-        IConfig config,
+        IWorkflowContext context,
         IWorkflow workflow,
         ILogger<WorkflowsController> logger,
         string? runId,
@@ -33,19 +33,21 @@ public class WorkflowsController() : ControllerBase
         var response = await workflow.Execute(request, cancellationToken);
 
         // if requested, add some response headers
-        if (config.EMIT_USAGE_AS_RESPONSE_HEADERS)
+        if (context.Config.EMIT_USAGE_AS_RESPONSE_HEADERS)
         {
-            int promptTokenCount = 0, completionTokenCount = 0;
+            int promptTokenCount = 0, completionTokenCount = 0, embeddingTokenCount = 0;
             response.Steps.ForEach(step =>
             {
                 promptTokenCount += step.Usage.PromptTokenCount;
                 completionTokenCount += step.Usage.CompletionTokenCount;
+                embeddingTokenCount += step.Usage.EmbeddingTokenCount;
             });
             this.Response.Headers.Append("x-metric-inf_prompt_token_count", promptTokenCount.ToString());
             this.Response.Headers.Append("x-metric-inf_completion_token_count", completionTokenCount.ToString());
-            if (config.COST_PER_PROMPT_TOKEN > 0 && config.COST_PER_COMPLETION_TOKEN > 0)
+            if (context.Config.COST_PER_PROMPT_TOKEN > 0 && context.Config.COST_PER_COMPLETION_TOKEN > 0 && context.Config.COST_PER_EMBEDDING_TOKEN > 0)
             {
-                var cost = (promptTokenCount * config.COST_PER_PROMPT_TOKEN) + (completionTokenCount * config.COST_PER_COMPLETION_TOKEN);
+                var cost = (promptTokenCount * context.Config.COST_PER_PROMPT_TOKEN) + (completionTokenCount * context.Config.COST_PER_COMPLETION_TOKEN) +
+                  (embeddingTokenCount * context.Config.COST_PER_EMBEDDING_TOKEN);
                 this.Response.Headers.Append("x-metric-inf_cost", cost.ToString());
             }
         }
@@ -65,9 +67,10 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = this.Request.Headers.ToParameters();
+        context.Config = new WorkflowConfig(config, this.Request.Headers.ToParameters());
+        context.WorkflowRequest = request;
         var workflow = scope.ServiceProvider.GetRequiredService<PrimaryWorkflow>();
-        return await this.RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
+        return await this.RunWorkflow(context, workflow, logger, runId, request, cancellationToken);
     }
 
     [HttpPost("in-domain-only")]
@@ -82,8 +85,27 @@ public class WorkflowsController() : ControllerBase
         using var scope = serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
         context.IsForEvaluation = true;
-        context.Parameters = this.Request.Headers.ToParameters();
+        context.Config = new WorkflowConfig(config, this.Request.Headers.ToParameters());
+        context.WorkflowRequest = request;
         var workflow = scope.ServiceProvider.GetRequiredService<InDomainOnlyWorkflow>();
-        return await this.RunWorkflow(config, workflow, logger, runId, request, cancellationToken);
+        return await this.RunWorkflow(context, workflow, logger, runId, request, cancellationToken);
+    }
+
+    [HttpPost("pick-docs")]
+    public async Task<ActionResult<WorkflowResponse>> RunPickDocumentsWorkflow(
+    [FromServices] IConfig config,
+    [FromServices] IServiceProvider serviceProvider,
+    [FromServices] ILogger<WorkflowsController> logger,
+    [FromHeader(Name = "x-run-id")] string? runId,
+    [FromBody] WorkflowRequest request,
+    CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<IWorkflowContext>();
+        context.IsForEvaluation = true;
+        context.Config = new WorkflowConfig(config, this.Request.Headers.ToParameters());
+        context.WorkflowRequest = request;
+        var workflow = scope.ServiceProvider.GetRequiredService<PickDocumentsWorkflow>();
+        return await this.RunWorkflow(context, workflow, logger, runId, request, cancellationToken);
     }
 }

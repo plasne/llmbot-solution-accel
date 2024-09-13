@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Shared.Models.Memory;
+using Citation = Shared.Models.Memory.Citation;
 
 namespace Bot;
 
@@ -26,6 +27,7 @@ public class ChatBot(
     ICardProvider cardProvider,
     IHttpClientFactory httpClientFactory,
     BotChannel channel,
+    StopUserMessageMemory stopUserMessageMemory,
     ILogger<ChatBot> logger)
     : ActivityHandler
 {
@@ -34,6 +36,7 @@ public class ChatBot(
     private readonly ICardProvider cardProvider = cardProvider;
     private readonly IHttpClientFactory httpClientFactory = httpClientFactory;
     private readonly BotChannel channel = channel;
+    private readonly StopUserMessageMemory stopUserMessageMemory = stopUserMessageMemory;
     private readonly ILogger<ChatBot> logger = logger;
     private readonly DateTime started = httpContextAccessor.HttpContext is not null
         && httpContextAccessor.HttpContext.Items.TryGetValue(StartTimeKey, out var requestStartTime)
@@ -42,33 +45,35 @@ public class ChatBot(
         : DateTime.UtcNow;
     private readonly Queue<string> requests = new();
 
+    private bool previousTopicChange = false;
+
     public const string StartTimeKey = "http-request-start-time";
 
-    private bool IsAuthorized(ITurnContext<IMessageActivity> turnContext)
+    private bool IsAuthorized(Func<string> getTenantId)
     {
         // if no tenants are specified, then all are valid
-        if (this.config.VALID_TENANTS.Length == 0)
+        if (config.VALID_TENANTS.Length == 0)
         {
-            this.logger.LogDebug("no tenants are specified, all are authorized to use the bot.");
+            logger.LogDebug("no tenants are specified, all are authorized to use the bot.");
             return true;
         }
 
         // ensure the tenant is whitelisted
         try
         {
-            string tenantId = turnContext.Activity.ChannelData["tenant"]["id"].ToString();
-            if (this.config.VALID_TENANTS.Contains(tenantId))
+            string tenantId = getTenantId();
+            if (config.VALID_TENANTS.Contains(tenantId))
             {
-                this.logger.LogDebug("the tenant {t} is authorized to use the bot.", tenantId);
+                logger.LogDebug("the tenant {t} is authorized to use the bot.", tenantId);
                 return true;
             }
 
-            this.logger.LogWarning("the tenant {t} is not authorized to use the bot.", tenantId);
+            logger.LogWarning("the tenant {t} is not authorized to use the bot.", tenantId);
             return false;
         }
         catch (Exception ex)
         {
-            this.logger.LogError(ex, "the tenant could not be determined from the activity...");
+            logger.LogError(ex, "the tenant could not be determined from the activity...");
             return false;
         }
     }
@@ -78,40 +83,49 @@ public class ChatBot(
         bool useAdaptiveCard,
         string? status,
         string reply,
-        List<Citation>? citations,
+        List<DistributedChat.Citation>? citations,
         ITurnContext<IMessageActivity> turnContext,
         CancellationToken cancellationToken)
     {
-        // add citations
-        if (citations is not null && citations.Count > 0)
-        {
-            StringBuilder sb = new(reply);
-            sb.AppendLine("");
-            sb.AppendLine("");
-            sb.AppendLine(citations.Count > 1 ? "Sources" : "Source");
-
-            foreach (var citation in citations)
-            {
-                foreach (var uri in citation.Uris)
-                {
-                    sb.AppendLine($"* [{citation.Id}] [{uri}]({uri})");
-                }
-            }
-            reply = sb.ToString();
-        }
-
         // build the activity
         IMessageActivity activity;
         if (useAdaptiveCard)
         {
-            // build the adaptive card
+            // load the template
             var template = await cardProvider.GetTemplate("response");
-            var isGenerated = status == this.config.FINAL_STATUS;
-            var data = new { activityId, status, reply, showFeedback = isGenerated, showStop = !isGenerated };
+            var isGenerated = status == config.FINAL_STATUS;
+            Func<string, string> Expand = (msg) =>
+            {
+                var data = new
+                {
+                    activityId,
+                    status,
+                    reply = msg,
+                    citations = citations?
+                        .SelectMany(x => x.Uris.Select(uri => new Citation { Ref = x.Id, Uri = uri }))
+                        .ToList() ?? [],
+                    showFeedback = isGenerated,
+                    showStop = !isGenerated,
+                    showDelete = isGenerated,
+                    showUpVoteSelected = false,
+                    showDownVoteSelected = false
+                };
+                return template.Expand(data);
+            };
+
+            // build the adaptive card
+            string content = Expand(reply);
+            if (content.Length > this.config.MAX_PAYLOAD_SIZE)
+            {
+                var truncated = reply.Truncate(content.Length, this.config.MAX_PAYLOAD_SIZE);
+                content = Expand(truncated);
+            }
+
+            // add adaptive card as attachment
             var attachment = new Attachment()
             {
                 ContentType = AdaptiveCard.ContentType,
-                Content = JsonConvert.DeserializeObject(template.Expand(data)),
+                Content = JsonConvert.DeserializeObject(content),
             };
             activity = MessageFactory.Attachment(attachment);
         }
@@ -155,7 +169,7 @@ public class ChatBot(
         }
 
         // try each command until you find one that works
-        var commands = this.serviceProvider.GetServices<ICommands>();
+        var commands = serviceProvider.GetServices<ICommands>();
         foreach (var command in commands)
         {
             var handled = await command.Try(turnContext, cancellationToken);
@@ -174,13 +188,13 @@ public class ChatBot(
     private async Task<Guid> StartGenerationAsync(HttpClient httpClient, string userId, StartGenerationRequest req, CancellationToken cancellationToken)
     {
         var res = await httpClient.PostAsync(
-            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns",
+            $"{config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns",
             req.ToJsonContent(),
             cancellationToken);
         var content = await res.Content.ReadAsStringAsync(cancellationToken);
         if (!res.IsSuccessStatusCode)
         {
-            this.logger.LogError("the attempt to start generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
+            logger.LogError("the attempt to start generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
         }
         res.EnsureSuccessStatusCode();
         var payload = JsonConvert.DeserializeObject<StartGenerationResponse>(content)
@@ -188,16 +202,19 @@ public class ChatBot(
         return payload.ConversationId;
     }
 
-    private async Task CompleteGenerationAsync(HttpClient httpClient, string userId, CompleteGenerationRequest req, CancellationToken cancellationToken)
+    private async Task CompleteGenerationAsync(HttpClient httpClient, string userId, CompleteGenerationRequest req, List<DistributedChat.Citation>? citations, CancellationToken cancellationToken)
     {
+        req.Citations = citations?
+            .SelectMany(x => x.Uris.Select(uri => new Citation { Ref = x.Id, Uri = uri }))
+            .ToList() ?? [];
         var res = await httpClient.PutAsync(
-            $"{this.config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns/:last",
+            $"{config.MEMORY_URL}/api/users/{userId}/conversations/:last/turns/:last",
             req.ToJsonContent(),
             cancellationToken);
         if (!res.IsSuccessStatusCode)
         {
             var content = await res.Content.ReadAsStringAsync(cancellationToken);
-            this.logger.LogError("the attempt to complete generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
+            logger.LogError("the attempt to complete generation resulted in HTTP {status} - {content}.", res.StatusCode, content);
         }
         res.EnsureSuccessStatusCode();
     }
@@ -206,6 +223,7 @@ public class ChatBot(
         ITurnContext<IMessageActivity> turnContext,
         string activityId,
         ChatResponse chatResponse,
+        List<DistributedChat.Citation> citations,
         StringBuilder summaries,
         CompleteGenerationRequest completeRequest,
         CancellationToken cancellationToken)
@@ -222,40 +240,39 @@ public class ChatBot(
                 break;
             case Intent.Greeting:
                 completeRequest.Intent = Intents.GREETING;
-                status = this.config.FINAL_STATUS;
+                status = config.FINAL_STATUS;
                 summaries.ResetTo("Hello and welcome! If you aren't sure what I can do type `/help`.");
                 break;
             case Intent.OutOfDomain:
                 completeRequest.Intent = Intents.OUT_OF_DOMAIN;
-                status = this.config.FINAL_STATUS;
-                summaries.ResetTo("I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.");
                 break;
             case Intent.Goodbye:
                 completeRequest.Intent = Intents.GOODBYE;
-                status = this.config.FINAL_STATUS;
+                status = config.FINAL_STATUS;
                 summaries.ResetTo("Goodbye!");
                 break;
             case Intent.TopicChange:
                 completeRequest.ConversationId = Guid.NewGuid();
                 completeRequest.Intent = Intents.TOPIC_CHANGE;
                 completeRequest.State = States.EMPTY;
+                previousTopicChange = true;
                 if (!string.IsNullOrEmpty(chatResponse.Msg))
                 {
-                    this.requests.Enqueue(chatResponse.Msg);
+                    requests.Enqueue(chatResponse.Msg);
                 }
-                status = this.config.FINAL_STATUS;
+                status = config.FINAL_STATUS;
                 useAdaptiveCard = false;
                 summaries.ResetTo("Let's start a new conversation.");
                 break;
         }
 
         // dispatch the response
-        activityId = await Dispatch(
+        activityId = await this.Dispatch(
             activityId,
             useAdaptiveCard,
             status,
             summaries.ToString(),
-            chatResponse.Citations?.ToList(),
+            citations,
             turnContext,
             cancellationToken);
 
@@ -265,7 +282,7 @@ public class ChatBot(
     private async Task ProcessNextRequest(ITurnContext<IMessageActivity> turnContext, string userId, CancellationToken cancellationToken)
     {
         // send the "connection" message
-        var activityId = await Dispatch(activityId: null, useAdaptiveCard: true, status:  "Connecting to assistant...", reply: string.Empty, citations: null, turnContext, cancellationToken);
+        var activityId = await this.Dispatch(activityId: null, useAdaptiveCard: true, status: "Connecting to assistant...", reply: string.Empty, citations: null, turnContext, cancellationToken);
 
         // create the completed request (can be modifided as the conversation progresses)
         var completeRequest = new CompleteGenerationRequest
@@ -277,38 +294,44 @@ public class ChatBot(
         };
 
         // process next message
-        using var httpClient = this.httpClientFactory.CreateClient("retry");
+        using var httpClient = httpClientFactory.CreateClient("retry");
         StringBuilder summaries = new();
-        var citations = new Dictionary<string, Citation>();
+        var citations = new Dictionary<string, DistributedChat.Citation>();
+
+        using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         try
         {
+            // derive a cancellation token here        
+            stopUserMessageMemory.TryAdd(activityId, cts);
+
             // start the generation
-            var request = this.requests.Dequeue();
-            completeRequest.ConversationId = await StartGenerationAsync(
+            var request = requests.Dequeue();
+            completeRequest.ConversationId = await this.StartGenerationAsync(
                 httpClient,
                 userId,
                 new StartGenerationRequest { RequestActivityId = turnContext.Activity.Id, Query = request, ResponseActivityId = activityId },
-                cancellationToken);
+                cts.Token);
 
             // create the request
             var chatRequest = new ChatRequest
             {
                 UserId = userId,
-                MinCharsToStream = this.config.CHARACTERS_PER_UPDATE,
+                MinCharsToStream = config.CHARACTERS_PER_UPDATE,
+                PreviousTopicChange = previousTopicChange,
             };
 
             // send the request
-            using var streamingCall = this.channel.Client.Chat(chatRequest, cancellationToken: cancellationToken);
+            using var streamingCall = channel.Client.Chat(chatRequest, cancellationToken: cts.Token);
 
             // start receiving the async responses
-            await foreach (var chatResponse in streamingCall.ResponseStream.ReadAllAsync(cancellationToken))
+            await foreach (var chatResponse in streamingCall.ResponseStream.ReadAllAsync(cts.Token))
             {
                 // append the summary with any message
                 if (!string.IsNullOrEmpty(chatResponse.Msg))
                 {
                     if (completeRequest.TimeToFirstResponse == 0)
                     {
-                        completeRequest.TimeToFirstResponse = (int)(DateTime.UtcNow - this.started).TotalMilliseconds;
+                        completeRequest.TimeToFirstResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
                         DiagnosticService.RecordTimeToFirstResponse(completeRequest.TimeToFirstResponse);
                     }
                     summaries.Append(chatResponse.Msg);
@@ -329,34 +352,43 @@ public class ChatBot(
                 completeRequest.EmbeddingTokenCount += chatResponse.EmbeddingTokens;
 
                 // handle the response
-                activityId = await this.HandleResponse(turnContext, activityId, chatResponse, summaries, completeRequest, cancellationToken);
+                activityId = await this.HandleResponse(
+                    turnContext,
+                    activityId,
+                    chatResponse,
+                    citations.Values.ToList(),
+                    summaries,
+                    completeRequest,
+                    cts.Token);
             }
-            completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - this.started).TotalMilliseconds;
+            completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
             DiagnosticService.RecordTimeToLastResponse(completeRequest.TimeToLastResponse);
             DiagnosticService.RecordTimePerOutputToken((completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
 
-            // write the generated message
-            completeRequest.Message = completeRequest.State != States.EMPTY
-                ? summaries.ToString()
-                : null;
-            if (string.IsNullOrEmpty(completeRequest.Message))
+            // if it is not supposed to be empty, interrorgate the message
+            if (completeRequest.State != States.EMPTY)
             {
-                completeRequest.Message = "I'm sorry, I don't have a response for that. If you aren't sure what I can do type `/help`.";
-                await Dispatch(
-                    activityId: activityId,
-                    useAdaptiveCard: true,
-                    status: "Generated.",
-                    reply: completeRequest.Message,
-                    citations: null,
-                    turnContext,
-                    cancellationToken);
+                completeRequest.Message = summaries.ToString();
+                if (string.IsNullOrEmpty(completeRequest.Message))
+                {
+                    completeRequest.Message = "I'm sorry, I can't help with that. If you aren't sure what I can do type `/help`.";
+                    await this.Dispatch(
+                        activityId: activityId,
+                        useAdaptiveCard: true,
+                        status: this.config.FINAL_STATUS,
+                        reply: completeRequest.Message,
+                        citations: null,
+                        turnContext,
+                        cts.Token);
+                }
             }
 
-            await this.CompleteGenerationAsync(httpClient, userId, completeRequest, cancellationToken);
+            // complete the conversation
+            await this.CompleteGenerationAsync(httpClient, userId, completeRequest, citations.Values.ToList(), cts.Token);
         }
         catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Locked)
         {
-            await Dispatch(
+            await this.Dispatch(
                 activityId: activityId,
                 useAdaptiveCard: false,
                 status: null,
@@ -366,33 +398,43 @@ public class ChatBot(
                 cancellationToken);
             return;
         }
+        catch (Exception e) when (e is OperationCanceledException || e is TaskCanceledException)
+        {
+            completeRequest.Message = summaries.ToString();
+            completeRequest.State = States.STOPPED;
+
+            await this.Dispatch(
+                  activityId: activityId,
+                  useAdaptiveCard: !string.IsNullOrEmpty(completeRequest.Message),
+                  status: string.IsNullOrEmpty(completeRequest.Message) ? null : "Generated.",
+                  reply: string.IsNullOrEmpty(completeRequest.Message) ? "The assistant has stopped generating a response based on your request." : completeRequest.Message,
+                  citations: string.IsNullOrEmpty(completeRequest.Message) ? null : citations.Select(x => x.Value).ToList(),
+                  turnContext,
+                  cancellationToken);
+            await this.CompleteGenerationAsync(httpClient, userId, completeRequest, citations.Values.ToList(), cancellationToken);
+        }
         catch (Exception)
         {
             completeRequest.State = States.FAILED;
             completeRequest.Message = summaries.ToString();
-            await this.CompleteGenerationAsync(httpClient, userId, completeRequest, cancellationToken);
+            await this.CompleteGenerationAsync(httpClient, userId, completeRequest, citations.Values.ToList(), cancellationToken);
             throw;
+        }
+        finally
+        {
+            stopUserMessageMemory.TryRemove(activityId, shouldCancel: false);
         }
     }
 
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
         // verify authorization
-        if (!this.IsAuthorized(turnContext))
-        {
-            throw new Exception("the activity was not authorized to use this bot.");
-        }
-
         // get the user
-        var userId = turnContext.Activity.From.AadObjectId;
-        if (string.IsNullOrEmpty(userId))
-        {
-            throw new Exception("no user identity was found in the activity from the user.");
-        }
-        this.logger.LogDebug("OnMessageActivityAsync received a message from user {u}.", userId);
+        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        logger.LogDebug("OnMessageActivityAsync received a message from user {u}.", userId);
 
         // see if this is a command
-        if (await TryAsCommand(turnContext, cancellationToken))
+        if (await this.TryAsCommand(turnContext, cancellationToken))
         {
             return;
         }
@@ -405,21 +447,67 @@ public class ChatBot(
         }
 
         // enqueue the request, process it, and then process any request that come out of that
-        this.requests.Enqueue(text);
-        while (this.requests.Count > 0)
+        requests.Enqueue(text);
+        while (requests.Count > 0)
         {
             await this.ProcessNextRequest(turnContext, userId, cancellationToken);
         }
+
     }
 
-    protected override Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
+    protected override async Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        logger.LogDebug("OnMessageUpdateActivityAsync received a message from user {u}.", userId);
+
+        UserMessageRequest request = new()
+        {
+            ActivityId = turnContext.Activity.Id,
+            Message = turnContext.Activity.Text,
+        };
+        using var httpClient = this.httpClientFactory.CreateClient("retry");
+        var res = await httpClient.PutAsync(
+            $"{config.MEMORY_URL}/api/users/{userId}/activities/{turnContext.Activity.Id}",
+            request.ToJsonContent(),
+            cancellationToken);
+        if (!res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadAsStringAsync(cancellationToken);
+            throw new Exception($"the attempt to update message resulted in HTTP {res.StatusCode} - {content}.");
+        }
     }
 
-    protected override Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
+    protected override async Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        logger.LogDebug("OnMessageDeleteActivityAsync received a message from user {u}.", userId);
+
+        using var httpClient = httpClientFactory.CreateClient("retry");
+        var res = await httpClient.DeleteAsync(
+            $"{config.MEMORY_URL}/api/users/{userId}/activities/{turnContext.Activity.Id.ToBase64()}",
+            cancellationToken);
+        if (!res.IsSuccessStatusCode)
+        {
+            var content = await res.Content.ReadAsStringAsync(cancellationToken);
+            throw new Exception($"the attempt to delete message resulted in HTTP {res.StatusCode} - {content}.");
+        }
+    }
+
+    private string ValdiateAndGetUserId(IActivity activity)
+    {
+        // verify authorization
+        if (!this.IsAuthorized(() => activity.ChannelData["tenant"]["id"].ToString()))
+        {
+            throw new Exception("the activity was not authorized to use this bot.");
+        }
+
+        var userId = activity.From.AadObjectId;
+        if (string.IsNullOrEmpty(userId))
+        {
+            throw new Exception("no user identity was found in the activity from the user.");
+        }
+
+        return userId;
     }
 
     protected override async Task OnMembersAddedAsync(IList<ChannelAccount> membersAdded, ITurnContext<IConversationUpdateActivity> turnContext, CancellationToken cancellationToken)

@@ -5,7 +5,7 @@ using Shared.Models.Memory;
 
 namespace Inference;
 
-public class WorkflowContext(IServiceContext context) : IWorkflowContext
+public class WorkflowContext(IConfig config, IServiceContext context) : IWorkflowContext
 {
     private readonly int llmEndpointIndex = context.GetLLMEndpointIndex();
     private bool isForInference;
@@ -36,9 +36,11 @@ public class WorkflowContext(IServiceContext context) : IWorkflowContext
         get => this.llmEndpointIndex;
     }
 
-    public WorkflowRequestParameters? Parameters { get; set; }
+    public IConfig Config { get; set; } = config;
 
-    public event Func<string?, string?, Intents, List<Context>?, int, int, Task>? OnStream;
+    public WorkflowRequest? WorkflowRequest { get; set; }
+
+    public event Func<string?, string?, Intents, List<Context>?, int, int, int, Task>? OnStream;
 
     public Task Stream(
         string? status = null,
@@ -46,10 +48,11 @@ public class WorkflowContext(IServiceContext context) : IWorkflowContext
         Intents intent = Intents.UNKNOWN,
         List<Context>? citations = null,
         int promptTokens = 0,
-        int completionTokens = 0)
+        int completionTokens = 0,
+        int embeddingTokens = 0)
     {
         return this.OnStream is not null
-            ? this.OnStream(status, message, intent, citations, promptTokens, completionTokens)
+            ? this.OnStream(status, message, intent, citations, promptTokens, completionTokens, embeddingTokens)
             : Task.CompletedTask;
     }
 }

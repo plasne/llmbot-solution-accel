@@ -26,6 +26,14 @@ To run the solution locally, you need to do the following:
 dotnet run
 ```
 
+## Building a container
+
+You can build a container by going up a level in the folder structure and running the following:
+
+```bash
+docker build -t repo.azurecr.io/memory:2.5.0 -f memory.Dockerfile --platform linux/amd64 .
+```
+
 ## TODO
 
 - test all cases for LocalMemoryStore.

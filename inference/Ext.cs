@@ -36,9 +36,9 @@ public static class Ext
             Id = source.Id,
             Title = source.Title,
         };
-        if (!string.IsNullOrEmpty(source.Uri))
+        if (source.Uris is not null)
         {
-            target.Uri = source.Uri;
+            target.Uris.AddRange(source.Uris);
         }
         return target;
     }
@@ -62,6 +62,18 @@ public static class Ext
         return long.TryParse(str, out long val)
             ? val
             : dflt();
+    }
+
+    public static SearchMode AsSearchMode(this string str, Func<SearchMode> dflt)
+    {
+        if (string.IsNullOrWhiteSpace(str))
+        {
+            return dflt();
+        }
+
+        return Enum.TryParse(str, true, out SearchMode searchMode)
+            ? searchMode
+            : throw new ArgumentException($"Unknown SearchMode: {str}");
     }
 
     public static List<LlmConnectionDetails> AsLlmConnectionDetails(this string str, Func<List<LlmConnectionDetails>> dflt)

@@ -1,6 +1,8 @@
 {
+    "@search.rerankerScore": SemanticSearch.RerankerScore,
     "@search.score": Score,
-    "title": Dcoument.title,
+    "title": Document.title,
     "content": Document.content,
-    "url": Document.urls[0]
+    "urls": Document.urls,
+    "ground_truth_urls": Document.ground_truth_urls,
 }
