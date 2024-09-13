@@ -42,6 +42,11 @@ public static class Extensions
             {
                 tracing.AddAspNetCoreInstrumentation();
                 tracing.AddHttpClientInstrumentation();
+                tracing.AddSqlClientInstrumentation(options =>
+                {
+                    options.SetDbStatementForText = false;
+                    options.SetDbStatementForStoredProcedure = false;
+                });
 
                 tracing.AddSource(sourceName);
 

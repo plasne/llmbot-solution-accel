@@ -15,6 +15,8 @@ public class Interaction
 
     public string? Message { get; set; }
 
+    public string? Citations { get; set; }
+
     public Intents Intent { get; set; }
 
     public States State { get; set; }
@@ -26,6 +28,8 @@ public class Interaction
     public int PromptTokenCount { get; set; }
 
     public int CompletionTokenCount { get; set; }
+
+    public int EmbeddingTokenCount { get; set; }
 
     public int TimeToFirstResponse { get; set; }
 

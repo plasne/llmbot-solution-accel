@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using Iso8601DurationHelper;
 using Microsoft.Extensions.Logging;
 using NetBricks;
 using Polly;
+using Shared.Models;
 using Shared;
 using Shared.Models.Memory;
 
@@ -115,17 +117,19 @@ public class SqlServerMemoryStore(
                     command.CommandText = @"
                         DECLARE @conversationId UNIQUEIDENTIFIER;
                         DECLARE @lastState VARCHAR(20);
+                        DECLARE @created DATETIME;
 
                         SELECT TOP 1
                             @conversationId = [ConversationId],
-                            @lastState = [State]
+                            @lastState = [State],
+                            @created = [Created]
                         FROM [dbo].[History]
                         WHERE [UserId] = @req_userId
                         ORDER BY [Id] DESC;
 
                         SET @conversationId = ISNULL(@conversationId, NEWID());
 
-                        IF @lastState = 'GENERATING'
+                        IF @lastState = 'GENERATING' AND @created >= DATEADD(MINUTE, -15, GETDATE())
                             THROW 50100, 'already generating a response', 1
 
                         INSERT INTO [dbo].[History]
@@ -186,8 +190,9 @@ public class SqlServerMemoryStore(
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [ConversationId] = @conversationId, [Message] = @message, [State] = @state, [Intent] = @intent,
-                        [PromptTokenCount] = @promptTokenCount, [CompletionTokenCount] = @completionTokenCount,
+                    SET [ConversationId] = @conversationId, [Message] = @message, [Citations] = @citations,
+                        [State] = @state, [Intent] = @intent, [PromptTokenCount] = @promptTokenCount,
+                        [CompletionTokenCount] = @completionTokenCount, [EmbeddingTokenCount] = @embeddingTokenCount,
                         [TimeToFirstResponse] = @timeToFirstResponse, [TimeToLastResponse] = @timeToLastResponse
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
@@ -195,10 +200,12 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@userId", response.UserId);
                 command.Parameters.AddWithValue("@activityId", response.ActivityId);
                 command.Parameters.AddWithValue("@message", response.Message ?? "");
+                command.Parameters.AddWithValue("@citations", response.Citations ?? "");
                 command.Parameters.AddWithValue("@state", response.State.ToString().ToUpper());
                 command.Parameters.AddWithValue("@intent", response.Intent.ToString().ToUpper());
                 command.Parameters.AddWithValue("@promptTokenCount", response.PromptTokenCount);
                 command.Parameters.AddWithValue("@completionTokenCount", response.CompletionTokenCount);
+                command.Parameters.AddWithValue("@embeddingTokenCount", response.EmbeddingTokenCount);
                 command.Parameters.AddWithValue("@timeToFirstResponse", response.TimeToFirstResponse);
                 command.Parameters.AddWithValue("@timeToLastResponse", response.TimeToLastResponse);
                 await command.ExecuteNonQueryAsync();
@@ -241,13 +248,14 @@ public class SqlServerMemoryStore(
                 this.logger.LogInformation("successfully changed conversation for user {u} in the history database.", changeTopic.UserId);
             }, (ex, _) =>
             {
-                this.logger.LogError(ex, "verifying or creating the History table raised the following SQL transient exception...");
+                this.logger.LogError(ex, "verifying or creating the history table raised the following SQL transient exception...");
                 return Task.CompletedTask;
             });
     }
 
     public async Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
+        int affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -260,12 +268,11 @@ public class SqlServerMemoryStore(
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [Comment] = NULL, [Rating] = NULL
-                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId)
+                    AND [State] != 'DELETED';
                 ";
-
                 command.Parameters.AddWithValue("@userId", userId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} feedback in the history database.", userId);
             }, (ex, _) =>
@@ -273,6 +280,11 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update feedback for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+
+        if (affectedRows == 0)
+        {
+            throw new InteractionNotFoundException(userId);
+        }
     }
 
     public async Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
@@ -307,6 +319,7 @@ public class SqlServerMemoryStore(
 
     public async Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
+        int affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -319,19 +332,24 @@ public class SqlServerMemoryStore(
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [Comment] = @comment
-                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId)
+                    AND [State] != 'DELETED';
                 ";
                 command.Parameters.AddWithValue("@comment", comment);
                 command.Parameters.AddWithValue("@userId", userId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
-                this.logger.LogInformation("successfully update user {u} comment in the history database.", userId);
+                this.logger.LogInformation("successfully updated user {u} comment in the history database.", userId);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "update comment for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+
+        if (affectedRows == 0)
+        {
+            throw new InteractionNotFoundException(userId);
+        }
     }
 
     public async Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
@@ -364,8 +382,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public async Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<DeletedUserMessage>> DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
+        List<DeletedUserMessage> deletedUserMessages = new();
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -377,20 +396,32 @@ public class SqlServerMemoryStore(
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [State] = 'DELETED', [Message] = NULL
+                    SET [State] = 'DELETED', [Message] = NULL, [Citations] = NULL, [Rating] = NULL, [Comment] = NULL
+                    OUTPUT inserted.ActivityId, inserted.Role 
                     WHERE Id IN (SELECT TOP (@count) Id FROM [dbo].[History] WHERE [UserId] = @userId ORDER BY Id DESC);
                 ";
                 command.Parameters.AddWithValue("@count", count);
                 command.Parameters.AddWithValue("@userId", userId);
 
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync())
+                {
+                    var activityId = reader.GetString(0);
+                    var role = reader.GetString(1).AsEnum(() => Roles.UNKNOWN);
+                    deletedUserMessages.Add(new DeletedUserMessage { ActivityId = activityId, Role = role });
+                }
+                await reader.CloseAsync();
+
                 await transaction.CommitAsync(cancellationToken);
+
                 this.logger.LogInformation("successfully delete user {u} message in the history database.", userId);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "delete message for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+
+        return deletedUserMessages;
     }
 
     public async Task DeleteActivityAsync(string userId, string activityId, CancellationToken cancellationToken = default)
@@ -406,7 +437,7 @@ public class SqlServerMemoryStore(
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
-                    SET [State] = 'DELETED', [Message] = NULL
+                    SET [State] = 'DELETED', [Message] = NULL, [Citations] = NULL, [Rating] = NULL, [Comment] = NULL
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
                 command.Parameters.AddWithValue("@activityId", activityId);
@@ -441,6 +472,7 @@ public class SqlServerMemoryStore(
                         WHERE [UserId] = @userId
                         ORDER BY [Id] DESC)
                     AND [Expiry] > GETDATE()
+                    AND [State] != 'DELETED'
                     ORDER BY [Id] ASC;
 
                     SELECT [Prompt] FROM [dbo].[CustomInstructions]
@@ -493,6 +525,7 @@ public class SqlServerMemoryStore(
 
     public async Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
+        var affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -505,12 +538,12 @@ public class SqlServerMemoryStore(
                 command.CommandText = @"
                     UPDATE [dbo].[History]
                     SET [Rating] = @rating
-                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId);
+                    WHERE Id = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId)
+                    AND [State] != 'DELETED';
                 ";
                 command.Parameters.AddWithValue("@rating", rating);
                 command.Parameters.AddWithValue("@userId", userId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} rating in the history database.", userId);
             }, (ex, _) =>
@@ -518,6 +551,10 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update rating for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+        if (affectedRows == 0)
+        {
+            throw new InteractionNotFoundException(userId);
+        }
     }
 
     public async Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
@@ -548,6 +585,72 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update rating for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
+    }
+
+    public async Task<Interaction> GetInteractionAsync(string userId, string? activityId, CancellationToken cancellationToken = default)
+    {
+        Interaction interaction = new Interaction();
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to get interaction for user {u} from the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+
+                if (string.IsNullOrEmpty(activityId))
+                {
+                    command.CommandText = @"
+                    SELECT [ActivityId], [Message], [Citations], [Rating], [Comment]
+                    FROM [dbo].[History]
+                    WHERE [Id] = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId)
+                    AND [State] != 'DELETED';
+                ";
+                    command.Parameters.AddWithValue("@userId", userId);
+                }
+                else
+                {
+                    command.CommandText = @"
+                    SELECT [ActivityId], [Message], [Citations], [Rating], [Comment]
+                    FROM [dbo].[History]
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId;
+                ";
+                    command.Parameters.AddWithValue("@userId", userId);
+                    command.Parameters.AddWithValue("@activityId", activityId);
+                }
+
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    if (!await reader.IsDBNullAsync(0))
+                    {
+                        interaction.ActivityId = reader.GetString(0);
+                    }
+                    if (!await reader.IsDBNullAsync(1))
+                    {
+                        interaction.Message = reader.GetString(1);
+                    }
+                    if (!await reader.IsDBNullAsync(2))
+                    {
+                        interaction.Citations = reader.GetString(2);
+                    }
+                    if (!await reader.IsDBNullAsync(3))
+                    {
+                        interaction.Rating = reader.GetString(3);
+                    }
+                    if (!await reader.IsDBNullAsync(4))
+                    {
+                        interaction.Comment = reader.GetString(4);
+                    }
+                }
+                this.logger.LogInformation("successfully obtained interaction for user {u} from the history database.", userId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "getting interaction for user {u} raised the following SQL transient exception...", userId);
+
+                return Task.CompletedTask;
+            });
+        return interaction;
     }
 
     public async Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
@@ -662,6 +765,7 @@ public class SqlServerMemoryStore(
                             [UserId] VARCHAR(50) NOT NULL,
                             [Role] VARCHAR(20) NOT NULL,
                             [Message] NVARCHAR(MAX) NULL,
+                            [Citations] NVARCHAR(MAX) NULL,
                             [Intent] VARCHAR(20) NULL,
                             [State] VARCHAR(20) NOT NULL,
                             [Rating] VARCHAR(10) NULL,
@@ -670,6 +774,7 @@ public class SqlServerMemoryStore(
                             [Expiry] DATETIME NOT NULL,
                             [PromptTokenCount] INT,
                             [CompletionTokenCount] INT,
+                            [EmbeddingTokenCount] INT,
                             [TimeToFirstResponse] INT,
                             [TimeToLastResponse] INT
                         );
@@ -717,6 +822,38 @@ public class SqlServerMemoryStore(
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "verifying or creating the CustomInstructions table raised the following SQL transient exception...");
+                return Task.CompletedTask;
+            });
+    }
+
+    public async Task UpdateUserMessage(Interaction response, CancellationToken cancellationToken = default)
+    {
+        base.ValidateInteractionForUserMessage(response);
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update message for user {u} into the history database...", response.UserId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync();
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [State] = 'EDITED', [Message] = @message
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'USER';
+                ";
+
+                command.Parameters.AddWithValue("@userId", response.UserId);
+                command.Parameters.AddWithValue("@activityId", response.ActivityId);
+                command.Parameters.AddWithValue("@message", response.Message ?? "");
+
+                await command.ExecuteNonQueryAsync();
+                await transaction.CommitAsync();
+                this.logger.LogInformation("successfully updated message for user {u} into the history database.", response.UserId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "updating interaction for user message {u} raised the following SQL transient exception...", response.UserId);
                 return Task.CompletedTask;
             });
     }

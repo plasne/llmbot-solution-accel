@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Iso8601DurationHelper;
+using Shared.Models;
 using Shared;
 using Shared.Models.Memory;
 
@@ -72,17 +73,17 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
-    {
-        throw new HttpException(501, "not currently implemented");
-    }
-
     public Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
 
-    public Task DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
+    public Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
+    {
+        throw new HttpException(501, "not currently implemented");
+    }
+
+    public Task<IEnumerable<DeletedUserMessage>> DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
     }
@@ -132,6 +133,11 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
         throw new HttpException(501, "not currently implemented");
     }
 
+    public Task<Interaction> GetInteractionAsync(string userId, string? activityId, CancellationToken cancellationToken = default)
+    {
+        throw new HttpException(501, "not currently implemented");
+    }
+
     public Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
@@ -145,5 +151,10 @@ public class LocalMemoryStore() : MemoryStoreBase, IMemoryStore
     public Task<CustomInstructions> GetCustomInstructionsAsync(string userId, CancellationToken cancellationToken = default)
     {
         throw new HttpException(501, "not currently implemented");
+    }
+
+    public Task UpdateUserMessage(Interaction response, CancellationToken cancellationToken = default)
+    {
+        throw new NotImplementedException();
     }
 }

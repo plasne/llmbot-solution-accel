@@ -8,8 +8,11 @@ using Shared;
 using System;
 using Memory;
 
-DotEnv.Load();
+// load environment variables
+var ENV_FILES = NetBricks.Config.GetOnce("ENV_FILES").AsArray(() => ["local.env"]);
+DotEnv.Load(new DotEnvOptions(envFilePaths: ENV_FILES, overwriteExistingVars: false));
 
+// create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
 
 // add config
