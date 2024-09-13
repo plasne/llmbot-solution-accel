@@ -36,6 +36,7 @@ docker build -t repo.azurecr.io/memory:2.5.0 -f memory.Dockerfile --platform lin
 
 ## TODO
 
+- implement LocalMemoryStore.
 - test all cases for LocalMemoryStore.
 - clean up some of the swagger definition that doesn't look right (ex. enums).
 - implement retention in SqlServerMaintenanceService.
