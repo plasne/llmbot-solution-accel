@@ -110,9 +110,9 @@ public class SqlServerMemoryStore(
                 {
                     this.logger.LogDebug("attempting to insert interaction for user {u} into the history database...", request.UserId);
                     using var connection = this.GetConnection();
-                    await connection.OpenAsync();
+                    await connection.OpenAsync(cancellationToken);
                     using var command = connection.CreateCommand();
-                    using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                    using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                     command.Transaction = (SqlTransaction)transaction;
                     command.CommandText = @"
                         DECLARE @conversationId UNIQUEIDENTIFIER;
@@ -150,14 +150,14 @@ public class SqlServerMemoryStore(
                     command.Parameters.AddWithValue("@req_state", request.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@res_state", response.State.ToString().ToUpper());
                     command.Parameters.AddWithValue("@expiry", DateTime.UtcNow + expiry);
-                    using (var reader = await command.ExecuteReaderAsync())
+                    using (var reader = await command.ExecuteReaderAsync(cancellationToken))
                     {
-                        await reader.ReadAsync();
+                        await reader.ReadAsync(cancellationToken);
                         conversationId = reader.GetGuid(0);
                         request.ConversationId = conversationId;
                         response.ConversationId = conversationId;
                     }
-                    await transaction.CommitAsync();
+                    await transaction.CommitAsync(cancellationToken);
                     this.logger.LogInformation("successfully inserted interaction for user {u} into the history database.", request.UserId);
                 }, (ex, _) =>
                 {
@@ -184,9 +184,9 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to complete interaction for user {u} into the history database...", response.UserId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
@@ -208,8 +208,8 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@embeddingTokenCount", response.EmbeddingTokenCount);
                 command.Parameters.AddWithValue("@timeToFirstResponse", response.TimeToFirstResponse);
                 command.Parameters.AddWithValue("@timeToLastResponse", response.TimeToLastResponse);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully completed interaction for user {u} into the history database.", response.UserId);
             }, (ex, _) =>
             {
@@ -226,9 +226,9 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to change conversation for user {u} in the history database...", changeTopic.UserId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     INSERT INTO [dbo].[History]
@@ -243,8 +243,8 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@state", changeTopic.State.ToString().ToUpper());
                 command.Parameters.AddWithValue("@intent", changeTopic.Intent.ToString().ToUpper());
                 command.Parameters.AddWithValue("@expiry", DateTime.UtcNow + expiry);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully changed conversation for user {u} in the history database.", changeTopic.UserId);
             }, (ex, _) =>
             {
@@ -261,7 +261,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -294,7 +294,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} feedback in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -325,7 +325,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -359,7 +359,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} comment in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -390,7 +390,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -431,7 +431,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to delete user {u} message in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -461,7 +461,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to get the current conversation for user {u} from the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
                     SELECT [ConversationId], [Role], [Message]
@@ -479,12 +479,12 @@ public class SqlServerMemoryStore(
                     WHERE [UserId] = @userId;
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
-                using var reader = await command.ExecuteReaderAsync();
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
                 var conversationIdOrdinal = reader.GetOrdinal("ConversationId");
                 var roleOrdinal = reader.GetOrdinal("Role");
                 var messageOrdinal = reader.GetOrdinal("Message");
                 int totalTokenCount = 0;
-                while (await reader.ReadAsync())
+                while (await reader.ReadAsync(cancellationToken))
                 {
                     conversation.Id = reader.GetGuid(conversationIdOrdinal);
                     var turn = new Turn
@@ -506,8 +506,8 @@ public class SqlServerMemoryStore(
                         conversation.Turns.Add(turn);
                     }
                 }
-                await reader.NextResultAsync();
-                if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
+                await reader.NextResultAsync(cancellationToken);
+                if (await reader.ReadAsync(cancellationToken) && !await reader.IsDBNullAsync(0, cancellationToken))
                 {
                     conversation.CustomInstructions = reader.GetString(0);
                 }
@@ -531,7 +531,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -564,7 +564,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update user {u} rating in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
@@ -595,7 +595,7 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to get interaction for user {u} from the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
 
                 if (string.IsNullOrEmpty(activityId))
@@ -619,26 +619,26 @@ public class SqlServerMemoryStore(
                     command.Parameters.AddWithValue("@activityId", activityId);
                 }
 
-                using var reader = await command.ExecuteReaderAsync();
-                if (await reader.ReadAsync())
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                if (await reader.ReadAsync(cancellationToken))
                 {
-                    if (!await reader.IsDBNullAsync(0))
+                    if (!await reader.IsDBNullAsync(0, cancellationToken))
                     {
                         interaction.ActivityId = reader.GetString(0);
                     }
-                    if (!await reader.IsDBNullAsync(1))
+                    if (!await reader.IsDBNullAsync(1, cancellationToken))
                     {
                         interaction.Message = reader.GetString(1);
                     }
-                    if (!await reader.IsDBNullAsync(2))
+                    if (!await reader.IsDBNullAsync(2, cancellationToken))
                     {
                         interaction.Citations = reader.GetString(2);
                     }
-                    if (!await reader.IsDBNullAsync(3))
+                    if (!await reader.IsDBNullAsync(3, cancellationToken))
                     {
                         interaction.Rating = reader.GetString(3);
                     }
-                    if (!await reader.IsDBNullAsync(4))
+                    if (!await reader.IsDBNullAsync(4, cancellationToken))
                     {
                         interaction.Comment = reader.GetString(4);
                     }
@@ -660,9 +660,9 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to upsert custom instructions for user {u} into the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     MERGE [dbo].[CustomInstructions] AS target
@@ -676,8 +676,8 @@ public class SqlServerMemoryStore(
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
                 command.Parameters.AddWithValue("@prompt", instructions.Prompt);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully upserted custom instructions for user {u} into the history database.", userId);
             }, (ex, _) =>
             {
@@ -693,21 +693,46 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to delete custom instructions for user {u} in the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     DELETE FROM [dbo].[CustomInstructions]
                     WHERE [UserId] = @userId;
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully deleted custom instructions for user {u} in the history database.", userId);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "deleting custom instructions for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+    }
+
+    public async Task DeleteExpiredAsync(CancellationToken cancellationToken = default)
+    {
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to delete every expired record in the history database...");
+                using var connection = this.GetConnection();
+                await connection.OpenAsync(cancellationToken);
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    DELETE FROM [dbo].[History]
+                    WHERE [Expiry] < GetDate();
+                ";
+                var count = await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully deleted {x} expired record(s) from the history database.", count);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "deleting every expired record raised the following SQL transient exception...");
                 return Task.CompletedTask;
             });
     }
@@ -720,15 +745,15 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to get custom instructions for user {u} from the history database...", userId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
                 command.CommandText = @"
                     SELECT [Prompt] FROM [dbo].[CustomInstructions]
                     WHERE [UserId] = @userId;
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
-                using var reader = await command.ExecuteReaderAsync();
-                if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0))
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                if (await reader.ReadAsync() && !await reader.IsDBNullAsync(0, cancellationToken))
                 {
                     instructions.Prompt = reader.GetString(0);
                 }
@@ -741,21 +766,21 @@ public class SqlServerMemoryStore(
         return instructions;
     }
 
-    public async Task ProvisionAsync()
+    public async Task ProvisionAsync(CancellationToken cancellationToken = default)
     {
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
                 this.logger.LogDebug("attempting to verify or create the SQL resources...");
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     IF NOT EXISTS (SELECT * FROM sys.tables t
-                                    INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
-                                    WHERE t.name = 'History' AND s.name = 'dbo')
+                        INNER JOIN sys.schemas s ON t.schema_id = s.schema_id
+                        WHERE t.name = 'History' AND s.name = 'dbo')
                     BEGIN
                         CREATE TABLE [dbo].[History]
                         (
@@ -816,8 +841,8 @@ public class SqlServerMemoryStore(
                         ON [dbo].[CustomInstructions] ([UserId]);
                     END
                 ";
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully verified or created the SQL resources.");
             }, (ex, _) =>
             {
@@ -834,9 +859,9 @@ public class SqlServerMemoryStore(
             {
                 this.logger.LogDebug("attempting to update message for user {u} into the history database...", response.UserId);
                 using var connection = this.GetConnection();
-                await connection.OpenAsync();
+                await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(); // rollback is automatic during dispose
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
                 command.Transaction = (SqlTransaction)transaction;
                 command.CommandText = @"
                     UPDATE [dbo].[History]
@@ -848,8 +873,8 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@activityId", response.ActivityId);
                 command.Parameters.AddWithValue("@message", response.Message ?? "");
 
-                await command.ExecuteNonQueryAsync();
-                await transaction.CommitAsync();
+                await command.ExecuteNonQueryAsync(cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully updated message for user {u} into the history database.", response.UserId);
             }, (ex, _) =>
             {
