@@ -31,7 +31,7 @@ public class SqlServerMaintenanceService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (this.config.RUN_RETENTION_EVERY_X_HOURS == 0)
+        if (this.config.RUN_RETENTION_EVERY_X_HOURS <= 0)
         {
             this.logger.LogInformation("retention is disabled.");
             return;
@@ -39,8 +39,7 @@ public class SqlServerMaintenanceService : BackgroundService
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            //await Task.Delay(TimeSpan.FromHours(this.config.RUN_RETENTION_EVERY_X_HOURS), stoppingToken);
-            await Task.Delay(TimeSpan.FromSeconds(40), stoppingToken);
+            await Task.Delay(TimeSpan.FromHours(this.config.RUN_RETENTION_EVERY_X_HOURS), stoppingToken);
             try
             {
                 await this.sqlServerMemoryStore.DeleteExpiredAsync(stoppingToken);

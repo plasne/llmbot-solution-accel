@@ -18,6 +18,10 @@ The settings available are:
 
 - __SQL_SERVER_HISTORY_SERVICE_CONNSTRING__ [STRING, REQUIRED]: The SQL server connection string. Rather than provide a string, you can provide a Key Vault URL to a secret.
 
+- __DEFAULT_RETENTION__ [DURATION, DEFAULT: "PT3M" (3 months)]: The default retention period for conversation turns.
+
+- __RUN_RETENTION_EVERY_X_HOURS__ [int, DEFAULT: 8]: The number of hours between each job to clean up records beyond their expiry date.
+
 ## Running locally
 
 To run the solution locally, you need to do the following:
