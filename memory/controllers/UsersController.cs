@@ -24,12 +24,6 @@ public class UsersController : ControllerBase
             return BadRequest($"User ID cannot be null or empty.");
         }
         var conversation = await store.GetLastConversationAsync(userId, maxTokens, modelName, cancellationToken);
-
-        if (conversation?.Id == Guid.Empty)
-        {
-            return NotFound($"Conversation for user ID '{userId}' not found.");
-        }
-
         return Ok(conversation);
     }
 
@@ -65,7 +59,7 @@ public class UsersController : ControllerBase
         [FromBody] UserMessageRequest body,
         CancellationToken cancellationToken)
     {
-        await store.UpdateUserMessage(body.ToInteraction(userId), cancellationToken);
+        await store.UpdateUserMessageAsync(body.ToInteraction(userId), cancellationToken);
         return Ok();
     }
 
@@ -122,21 +116,14 @@ public class UsersController : ControllerBase
             return BadRequest("you must supply at least one of rating or comment.");
         }
 
-        try
+        if (!string.IsNullOrEmpty(body.Rating))
         {
-            if (!string.IsNullOrEmpty(body.Rating))
-            {
-                await store.RateLastMessageAsync(userId, body.Rating, cancellationToken);
-            }
-
-            if (!string.IsNullOrEmpty(body.Comment))
-            {
-                await store.CommentOnLastMessageAsync(userId, body.Comment, cancellationToken);
-            }
+            await store.RateLastMessageAsync(userId, body.Rating, cancellationToken);
         }
-        catch (InteractionNotFoundException)
+
+        if (!string.IsNullOrEmpty(body.Comment))
         {
-            return NotFound($"Last Interaction for user ID '{userId}' not found.");
+            await store.CommentOnLastMessageAsync(userId, body.Comment, cancellationToken);
         }
 
         return Ok();
@@ -180,7 +167,7 @@ public class UsersController : ControllerBase
             return this.BadRequest("userId cannot be null or empty.");
         }
 
-        var interaction = await store.GetInteractionAsync(userId, activityId: null, cancellationToken);
+        var interaction = await store.GetLastInteractionAsync(userId, cancellationToken);
         if (string.IsNullOrEmpty(interaction?.ActivityId))
         {
             return NotFound($"Last Interaction for user ID '{userId}' not found.");
@@ -226,14 +213,7 @@ public class UsersController : ControllerBase
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            await store.ClearLastFeedbackAsync(userId, cancellationToken);
-        }
-        catch (InteractionNotFoundException)
-        {
-            return NotFound($"Last Interaction for user ID '{userId}' not found.");
-        }
+        await store.ClearLastFeedbackAsync(userId, cancellationToken);
         return Ok();
     }
 

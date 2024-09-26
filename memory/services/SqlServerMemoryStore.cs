@@ -11,6 +11,7 @@ using Polly;
 using Shared.Models;
 using Shared;
 using Shared.Models.Memory;
+using System.Diagnostics;
 
 namespace Memory;
 
@@ -208,7 +209,11 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@embeddingTokenCount", response.EmbeddingTokenCount);
                 command.Parameters.AddWithValue("@timeToFirstResponse", response.TimeToFirstResponse);
                 command.Parameters.AddWithValue("@timeToLastResponse", response.TimeToLastResponse);
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the specified interaction for user ID '{response.UserId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully completed interaction for user {u} into the history database.", response.UserId);
             }, (ex, _) =>
@@ -255,7 +260,6 @@ public class SqlServerMemoryStore(
 
     public async Task ClearLastFeedbackAsync(string userId, CancellationToken cancellationToken = default)
     {
-        int affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -272,7 +276,11 @@ public class SqlServerMemoryStore(
                     AND [State] != 'DELETED';
                 ";
                 command.Parameters.AddWithValue("@userId", userId);
-                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the last interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} feedback in the history database.", userId);
             }, (ex, _) =>
@@ -280,11 +288,6 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update feedback for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
-
-        if (affectedRows == 0)
-        {
-            throw new InteractionNotFoundException(userId);
-        }
     }
 
     public async Task ClearFeedbackAsync(string userId, string activityId, CancellationToken cancellationToken = default)
@@ -303,11 +306,13 @@ public class SqlServerMemoryStore(
                     SET [Comment] = NULL, [Rating] = NULL
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'ASSISTANT';
                 ";
-
                 command.Parameters.AddWithValue("@userId", userId);
                 command.Parameters.AddWithValue("@activityId", activityId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the specified interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} feedback in the history database.", userId);
             }, (ex, _) =>
@@ -319,7 +324,6 @@ public class SqlServerMemoryStore(
 
     public async Task CommentOnLastMessageAsync(string userId, string comment, CancellationToken cancellationToken = default)
     {
-        int affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -337,7 +341,11 @@ public class SqlServerMemoryStore(
                 ";
                 command.Parameters.AddWithValue("@comment", comment);
                 command.Parameters.AddWithValue("@userId", userId);
-                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the last interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully updated user {u} comment in the history database.", userId);
             }, (ex, _) =>
@@ -345,11 +353,6 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update comment for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
-
-        if (affectedRows == 0)
-        {
-            throw new InteractionNotFoundException(userId);
-        }
     }
 
     public async Task CommentOnMessageAsync(string userId, string activityId, string comment, CancellationToken cancellationToken = default)
@@ -371,8 +374,11 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@comment", comment);
                 command.Parameters.AddWithValue("@userId", userId);
                 command.Parameters.AddWithValue("@activityId", activityId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the specified interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} comment in the history database.", userId);
             }, (ex, _) =>
@@ -414,7 +420,7 @@ public class SqlServerMemoryStore(
 
                 await transaction.CommitAsync(cancellationToken);
 
-                this.logger.LogInformation("successfully delete user {u} message in the history database.", userId);
+                this.logger.LogInformation("successfully deleted user {u} message in the history database.", userId);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "delete message for user {u} message raised the following SQL transient exception...", userId);
@@ -442,8 +448,11 @@ public class SqlServerMemoryStore(
                 ";
                 command.Parameters.AddWithValue("@activityId", activityId);
                 command.Parameters.AddWithValue("@userId", userId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the specified interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully delete user {u} message in the history database.", userId);
             }, (ex, _) =>
@@ -456,6 +465,7 @@ public class SqlServerMemoryStore(
     public async Task<Conversation> GetLastConversationAsync(string userId, int? maxTokens, string? modelName, CancellationToken cancellationToken = default)
     {
         var conversation = new Conversation { Id = Guid.Empty, Turns = [] };
+        var turns = new Stack<Turn>();
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -473,7 +483,7 @@ public class SqlServerMemoryStore(
                         ORDER BY [Id] DESC)
                     AND [Expiry] > GETDATE()
                     AND [State] != 'DELETED'
-                    ORDER BY [Id] ASC;
+                    ORDER BY [Id] DESC;
 
                     SELECT [Prompt] FROM [dbo].[CustomInstructions]
                     WHERE [UserId] = @userId;
@@ -503,9 +513,10 @@ public class SqlServerMemoryStore(
                             break;
                         }
 
-                        conversation.Turns.Add(turn);
+                        turns.Push(turn);
                     }
                 }
+                conversation.Turns = turns.ToArray();
                 await reader.NextResultAsync(cancellationToken);
                 if (await reader.ReadAsync(cancellationToken) && !await reader.IsDBNullAsync(0, cancellationToken))
                 {
@@ -525,7 +536,6 @@ public class SqlServerMemoryStore(
 
     public async Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default)
     {
-        var affectedRows = 0;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -543,7 +553,11 @@ public class SqlServerMemoryStore(
                 ";
                 command.Parameters.AddWithValue("@rating", rating);
                 command.Parameters.AddWithValue("@userId", userId);
-                affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the last interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} rating in the history database.", userId);
             }, (ex, _) =>
@@ -551,10 +565,6 @@ public class SqlServerMemoryStore(
                 this.logger.LogError(ex, "update rating for user {u} message raised the following SQL transient exception...", userId);
                 return Task.CompletedTask;
             });
-        if (affectedRows == 0)
-        {
-            throw new InteractionNotFoundException(userId);
-        }
     }
 
     public async Task RateMessageAsync(string userId, string activityId, string rating, CancellationToken cancellationToken = default)
@@ -576,8 +586,11 @@ public class SqlServerMemoryStore(
                 command.Parameters.AddWithValue("@rating", rating);
                 command.Parameters.AddWithValue("@userId", userId);
                 command.Parameters.AddWithValue("@activityId", activityId);
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the last interaction for user ID '{userId}' was not found.");
+                }
                 await transaction.CommitAsync(cancellationToken);
                 this.logger.LogInformation("successfully update user {u} rating in the history database.", userId);
             }, (ex, _) =>
@@ -587,9 +600,9 @@ public class SqlServerMemoryStore(
             });
     }
 
-    public async Task<Interaction> GetInteractionAsync(string userId, string? activityId, CancellationToken cancellationToken = default)
+    public async Task<Interaction> GetLastInteractionAsync(string userId, CancellationToken cancellationToken = default)
     {
-        Interaction interaction = new Interaction();
+        Interaction? interaction = null;
         await this.ExecuteWithRetryOnTransient(
             async () =>
             {
@@ -598,59 +611,61 @@ public class SqlServerMemoryStore(
                 await connection.OpenAsync(cancellationToken);
                 using var command = connection.CreateCommand();
 
-                if (string.IsNullOrEmpty(activityId))
-                {
-                    command.CommandText = @"
+                command.CommandText = @"
                     SELECT [ActivityId], [Message], [Citations], [Rating], [Comment]
                     FROM [dbo].[History]
                     WHERE [Id] = (SELECT MAX(Id) FROM [dbo].[History] WHERE [Role] = 'ASSISTANT' AND [UserId] = @userId)
                     AND [State] != 'DELETED';
                 ";
-                    command.Parameters.AddWithValue("@userId", userId);
-                }
-                else
+                command.Parameters.AddWithValue("@userId", userId);
+
+                using var reader = await command.ExecuteReaderAsync(cancellationToken);
+                if (!await reader.ReadAsync(cancellationToken))
                 {
-                    command.CommandText = @"
+                    throw new HttpException(404, $"the last interaction for user ID '{userId}' was not found.");
+                }
+                this.logger.LogInformation("successfully obtained interaction for user {u} from the history database.", userId);
+                interaction = await Interaction.FromReader(reader);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "getting interaction for user {u} raised the following SQL transient exception...", userId);
+                return Task.CompletedTask;
+            });
+        return interaction!;
+    }
+
+    public async Task<Interaction> GetInteractionAsync(string userId, string activityId, CancellationToken cancellationToken = default)
+    {
+        Interaction? interaction = null;
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to get interaction for user {u} from the history database...", userId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync(cancellationToken);
+                using var command = connection.CreateCommand();
+
+                command.CommandText = @"
                     SELECT [ActivityId], [Message], [Citations], [Rating], [Comment]
                     FROM [dbo].[History]
                     WHERE [UserId] = @userId AND [ActivityId] = @activityId;
                 ";
-                    command.Parameters.AddWithValue("@userId", userId);
-                    command.Parameters.AddWithValue("@activityId", activityId);
-                }
+                command.Parameters.AddWithValue("@userId", userId);
+                command.Parameters.AddWithValue("@activityId", activityId);
 
                 using var reader = await command.ExecuteReaderAsync(cancellationToken);
-                if (await reader.ReadAsync(cancellationToken))
+                if (!await reader.ReadAsync(cancellationToken))
                 {
-                    if (!await reader.IsDBNullAsync(0, cancellationToken))
-                    {
-                        interaction.ActivityId = reader.GetString(0);
-                    }
-                    if (!await reader.IsDBNullAsync(1, cancellationToken))
-                    {
-                        interaction.Message = reader.GetString(1);
-                    }
-                    if (!await reader.IsDBNullAsync(2, cancellationToken))
-                    {
-                        interaction.Citations = reader.GetString(2);
-                    }
-                    if (!await reader.IsDBNullAsync(3, cancellationToken))
-                    {
-                        interaction.Rating = reader.GetString(3);
-                    }
-                    if (!await reader.IsDBNullAsync(4, cancellationToken))
-                    {
-                        interaction.Comment = reader.GetString(4);
-                    }
+                    throw new HttpException(404, $"the specified interaction for user ID '{userId}' was not found.");
                 }
                 this.logger.LogInformation("successfully obtained interaction for user {u} from the history database.", userId);
+                interaction = await Interaction.FromReader(reader);
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "getting interaction for user {u} raised the following SQL transient exception...", userId);
-
                 return Task.CompletedTask;
             });
-        return interaction;
+        return interaction!;
     }
 
     public async Task SetCustomInstructionsAsync(string userId, CustomInstructions instructions, CancellationToken cancellationToken = default)
@@ -766,6 +781,40 @@ public class SqlServerMemoryStore(
         return instructions;
     }
 
+    public async Task UpdateUserMessageAsync(Interaction response, CancellationToken cancellationToken = default)
+    {
+        base.ValidateInteractionForUserMessage(response);
+        await this.ExecuteWithRetryOnTransient(
+            async () =>
+            {
+                this.logger.LogDebug("attempting to update message for user {u} into the history database...", response.UserId);
+                using var connection = this.GetConnection();
+                await connection.OpenAsync(cancellationToken);
+                using var command = connection.CreateCommand();
+                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
+                command.Transaction = (SqlTransaction)transaction;
+                command.CommandText = @"
+                    UPDATE [dbo].[History]
+                    SET [State] = 'EDITED', [Message] = @message
+                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'USER';
+                ";
+                command.Parameters.AddWithValue("@userId", response.UserId);
+                command.Parameters.AddWithValue("@activityId", response.ActivityId);
+                command.Parameters.AddWithValue("@message", response.Message ?? "");
+                var affectedRows = await command.ExecuteNonQueryAsync(cancellationToken);
+                if (affectedRows == 0)
+                {
+                    throw new HttpException(404, $"the specified interaction for user ID '{response.UserId}' was not found.");
+                }
+                await transaction.CommitAsync(cancellationToken);
+                this.logger.LogInformation("successfully updated message for user {u} into the history database.", response.UserId);
+            }, (ex, _) =>
+            {
+                this.logger.LogError(ex, "updating interaction for user message {u} raised the following SQL transient exception...", response.UserId);
+                return Task.CompletedTask;
+            });
+    }
+
     public async Task ProvisionAsync(CancellationToken cancellationToken = default)
     {
         await this.ExecuteWithRetryOnTransient(
@@ -847,38 +896,6 @@ public class SqlServerMemoryStore(
             }, (ex, _) =>
             {
                 this.logger.LogError(ex, "verifying or creating the CustomInstructions table raised the following SQL transient exception...");
-                return Task.CompletedTask;
-            });
-    }
-
-    public async Task UpdateUserMessage(Interaction response, CancellationToken cancellationToken = default)
-    {
-        base.ValidateInteractionForUserMessage(response);
-        await this.ExecuteWithRetryOnTransient(
-            async () =>
-            {
-                this.logger.LogDebug("attempting to update message for user {u} into the history database...", response.UserId);
-                using var connection = this.GetConnection();
-                await connection.OpenAsync(cancellationToken);
-                using var command = connection.CreateCommand();
-                using var transaction = await connection.BeginTransactionAsync(cancellationToken); // rollback is automatic during dispose
-                command.Transaction = (SqlTransaction)transaction;
-                command.CommandText = @"
-                    UPDATE [dbo].[History]
-                    SET [State] = 'EDITED', [Message] = @message
-                    WHERE [UserId] = @userId AND [ActivityId] = @activityId AND [Role] = 'USER';
-                ";
-
-                command.Parameters.AddWithValue("@userId", response.UserId);
-                command.Parameters.AddWithValue("@activityId", response.ActivityId);
-                command.Parameters.AddWithValue("@message", response.Message ?? "");
-
-                await command.ExecuteNonQueryAsync(cancellationToken);
-                await transaction.CommitAsync(cancellationToken);
-                this.logger.LogInformation("successfully updated message for user {u} into the history database.", response.UserId);
-            }, (ex, _) =>
-            {
-                this.logger.LogError(ex, "updating interaction for user message {u} raised the following SQL transient exception...", response.UserId);
                 return Task.CompletedTask;
             });
     }

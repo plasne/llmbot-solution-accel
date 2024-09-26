@@ -14,13 +14,15 @@ public interface IMemoryStore
 
     Task RateLastMessageAsync(string userId, string rating, CancellationToken cancellationToken = default);
 
-    Task<Interaction> GetInteractionAsync(string userId, string? activityId, CancellationToken cancellationToken = default);
+    Task<Interaction> GetLastInteractionAsync(string userId, CancellationToken cancellationToken = default);
+
+    Task<Interaction> GetInteractionAsync(string userId, string activityId, CancellationToken cancellationToken = default);
 
     Task<Guid> StartGenerationAsync(Interaction request, Interaction response, Duration expiry, CancellationToken cancellationToken = default);
 
     Task CompleteGenerationAsync(Interaction response, CancellationToken cancellationToken = default);
 
-    Task UpdateUserMessage(Interaction response, CancellationToken cancellationToken = default);
+    Task UpdateUserMessageAsync(Interaction response, CancellationToken cancellationToken = default);
 
     Task<IEnumerable<DeletedUserMessage>> DeleteActivitiesAsync(string userId, int count = 1, CancellationToken cancellationToken = default);
 

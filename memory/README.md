@@ -16,9 +16,9 @@ The settings available are:
 
 - __SQL_SERVER_SECONDS_BETWEEN_RETRIES__ [STRING, OPTIONAL, DEFAULT: 2]: The number of seconds to wait between each retry attempt.
 
-- __SQL_SERVER_HISTORY_SERVICE_CONNSTRING__ [STRING, REQUIRED]: The SQL server connection string. Rather than provide a string, you can provide a Key Vault URL to a secret.
+- __SQL_SERVER_HISTORY_SERVICE_CONNSTRING__ [STRING, OPTIONAL]: The SQL server connection string. Rather than provide a string, you can provide a Key Vault URL to a secret.
 
-- __DEFAULT_RETENTION__ [DURATION, DEFAULT: "PT3M" (3 months)]: The default retention period for conversation turns.
+- __DEFAULT_RETENTION__ [DURATION, DEFAULT: "P3M" (3 months)]: The default retention period (in ISO 8601 format) for conversation turns.
 
 - __RUN_RETENTION_EVERY_X_HOURS__ [int, DEFAULT: 8]: The number of hours between each job to clean up records beyond their expiry date.
 
