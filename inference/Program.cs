@@ -94,7 +94,17 @@ builder.Services.AddTransient<SelectGroundingData>();
 builder.Services.AddTransient<GenerateAnswer>();
 
 // add supporting services
-builder.Services.AddTransient<SearchService>();
+if (!string.IsNullOrEmpty(config.SEARCH_INDEX))
+{
+    Console.WriteLine("ADDING SERVICE: AzureAISearchService");
+    builder.Services.AddTransient<ISearchService, AzureAISearchService>();
+}
+else
+{
+    Console.WriteLine("ADDING SERVICE: HardcodedBicycleSearchService");
+    builder.Services.AddTransient<ISearchService, HardcodedBicycleSearchService>();
+}
+
 
 // add filters
 builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();

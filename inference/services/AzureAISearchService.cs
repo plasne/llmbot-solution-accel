@@ -13,7 +13,7 @@ using AzureSearchMode = Azure.Search.Documents.Models.SearchMode;
 
 namespace Inference;
 
-public class SearchService
+public class AzureAISearchService : ISearchService
 {
     private readonly IConfig config;
     private readonly SearchClient searchClient;
@@ -21,7 +21,7 @@ public class SearchService
     private readonly KernelFactory kernelFactory;
     private readonly IMemory memory;
 
-    public SearchService(IConfig config, IWorkflowContext context, KernelFactory kernelFactory, IMemory memory)
+    public AzureAISearchService(IConfig config, IWorkflowContext context, KernelFactory kernelFactory, IMemory memory)
     {
         this.config = config;
 
@@ -110,9 +110,7 @@ public class SearchService
         return new JsonataQuery(template);
     }
 
-    public async Task<List<Doc>> GetDocumentsAsync(
-       string text,
-       CancellationToken cancellationToken = default)
+    public async Task<IList<Doc>> GetDocumentsAsync(string text, CancellationToken cancellationToken = default)
     {
         var options = new SearchOptions
         {
@@ -136,9 +134,7 @@ public class SearchService
             : await this.SearchAsyncWithTransform(text, options, transformQuery, true, cts.Token);
     }
 
-    public async Task<List<Doc>> SearchAsync(
-        string text,
-        CancellationToken cancellationToken = default)
+    public async Task<IList<Doc>> SearchAsync(string text, CancellationToken cancellationToken = default)
     {
         // define the search options
         var options = new SearchOptions()

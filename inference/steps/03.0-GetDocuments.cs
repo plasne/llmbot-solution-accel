@@ -8,7 +8,7 @@ using SharpToken;
 
 namespace Inference;
 
-public class GetDocuments(IConfig config, IWorkflowContext context, SearchService searchService, ILogger<GetDocuments> logger)
+public class GetDocuments(IConfig config, IWorkflowContext context, ISearchService searchService, ILogger<GetDocuments> logger)
     : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {
     private readonly IConfig config = config;

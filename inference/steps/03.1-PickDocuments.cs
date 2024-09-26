@@ -8,7 +8,7 @@ using SharpToken;
 
 namespace Inference;
 
-public class PickDocuments(IWorkflowContext context, SearchService searchService, ILogger<GetDocuments> logger)
+public class PickDocuments(IWorkflowContext context, ISearchService searchService, ILogger<GetDocuments> logger)
     : BaseStep<DeterminedIntent, List<Doc>>(logger)
 {
     private readonly IWorkflowContext context = context;
@@ -41,7 +41,7 @@ public class PickDocuments(IWorkflowContext context, SearchService searchService
         List<string> parts = [];
         foreach (var uri in uris)
         {
-            parts.Add($"ground_truth_urls:\"{uri}\"");
+            parts.Add($"{this.context.Config.PICK_DOCS_URL_FIELD}:\"{uri}\"");
         }
         var query = string.Join(" OR ", parts);
 

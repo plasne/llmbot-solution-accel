@@ -66,6 +66,9 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     [JsonProperty(nameof(SEARCH_TRANSFORM_FILE), NullValueHandling = NullValueHandling.Ignore)]
     public string SEARCH_TRANSFORM_FILE => this.sysConfig.SEARCH_TRANSFORM_FILE;
 
+    [JsonProperty(nameof(PICK_DOCS_URL_FIELD), NullValueHandling = NullValueHandling.Ignore)]
+    public string PICK_DOCS_URL_FIELD => this.sysConfig.PICK_DOCS_URL_FIELD;
+
     [JsonProperty(nameof(MAX_CONCURRENT_SEARCHES), NullValueHandling = NullValueHandling.Ignore)]
     public int MAX_CONCURRENT_SEARCHES => this.parameters?.MAX_CONCURRENT_SEARCHES ?? this.sysConfig.MAX_CONCURRENT_SEARCHES;
 

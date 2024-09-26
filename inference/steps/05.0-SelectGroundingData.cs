@@ -99,7 +99,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
             Text = chunk,
             Id = "ref" + index,
             Title = doc.Title ?? doc.Urls?[0] ?? $"Document {index}",
-            Uris = doc.GroundTruthUrls,
+            Uris = doc.Urls,
         };
     }
 }

@@ -29,6 +29,7 @@ public class Config : IConfig
         this.SEARCH_VECTOR_FIELDS = config.Get<string>("SEARCH_VECTOR_FIELDS").AsArray(() => ["contentVector"]);
         this.SEARCH_SELECT_FIELDS = config.Get<string>("SEARCH_SELECT_FIELDS").AsArray(() => ["title", "content", "urls"]);
         this.SEARCH_TRANSFORM_FILE = this.config.Get<string>("SEARCH_TRANSFORM_FILE");
+        this.PICK_DOCS_URL_FIELD = config.Get<string>("PICK_DOCS_URL_FIELD").AsString(() => "url");
         this.MAX_CONCURRENT_SEARCHES = config.Get<string>("MAX_CONCURRENT_SEARCHES").AsInt(() => 3);
         this.MAX_SEARCH_QUERIES_PER_INTENT = config.Get<string>("MAX_SEARCH_QUERIES_PER_INTENT").AsInt(() => 3);
         this.MIN_RELEVANCE_SEARCH_SCORE = config.Get<string>("MIN_RELEVANCE_SEARCH_SCORE").AsDecimal(() => 0.0m);
@@ -92,6 +93,8 @@ public class Config : IConfig
 
     public string SEARCH_TRANSFORM_FILE { get; }
 
+    public string PICK_DOCS_URL_FIELD { get; }
+
     public int MAX_CONCURRENT_SEARCHES { get; }
 
     public int MAX_SEARCH_QUERIES_PER_INTENT { get; }
@@ -149,28 +152,33 @@ public class Config : IConfig
         this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
 
-        this.config.Require("LLM_CONNECTION_STRINGS", this.LLM_CONNECTION_STRINGS.Count > 0
-            ? $"({this.LLM_CONNECTION_STRINGS.Count} set)"
-            : string.Empty);
-        this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
-        this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
-        this.config.Require("LLM_ENCODING_MODEL", this.LLM_ENCODING_MODEL);
+        this.config.Optional("LLM_CONNECTION_STRINGS", $"({this.LLM_CONNECTION_STRINGS.Count} set)");
+        if (this.LLM_CONNECTION_STRINGS.Count > 0)
+        {
+            this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
+            this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
+            this.config.Require("LLM_ENCODING_MODEL", this.LLM_ENCODING_MODEL);
+        }
 
-        this.config.Require("SEARCH_INDEX", this.SEARCH_INDEX);
-        this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
-        this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
-        this.config.Require("SEARCH_MODE", this.SEARCH_MODE.ToString());
+        this.config.Optional("SEARCH_INDEX", this.SEARCH_INDEX);
+        if (!string.IsNullOrEmpty(this.SEARCH_INDEX))
+        {
+            this.config.Require("SEARCH_ENDPOINT_URI", this.SEARCH_ENDPOINT_URI);
+            this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
+            this.config.Require("SEARCH_MODE", this.SEARCH_MODE.ToString());
+            this.config.Require("PICK_DOCS_URL_FIELD", this.PICK_DOCS_URL_FIELD);
+        }
 
         // vectorization settings
-        if (this.SEARCH_MODE is SearchMode.Vector
-            or SearchMode.Hybrid
-            or SearchMode.HybridWithSemanticRerank)
+        if (this.LLM_CONNECTION_STRINGS.Count > 0 &&
+            this.SEARCH_MODE is SearchMode.Vector or SearchMode.Hybrid or SearchMode.HybridWithSemanticRerank)
         {
             this.config.Require("EMBEDDING_CONNECTION_STRINGS", this.EMBEDDING_CONNECTION_STRINGS.Count > 0
                 ? $"({this.EMBEDDING_CONNECTION_STRINGS.Count} set)"
                 : string.Empty);
             this.config.Require("EMBEDDING_MODEL_NAME", this.EMBEDDING_MODEL_NAME);
             this.EMBEDDING_ENCODING_MODEL = Model.GetEncodingNameForModel(this.EMBEDDING_MODEL_NAME);
+            this.config.Require("EMBEDDING_ENCODING_MODEL", this.EMBEDDING_ENCODING_MODEL);
 
             this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
             this.config.Require("SEARCH_VECTOR_EXHAUST_KNN", value: this.SEARCH_VECTOR_EXHAUST_KNN);
@@ -178,8 +186,8 @@ public class Config : IConfig
         }
 
         // rerank settings
-        if (this.SEARCH_MODE is SearchMode.KeywordWithSemanticRerank
-            or SearchMode.HybridWithSemanticRerank)
+        if (this.LLM_CONNECTION_STRINGS.Count > 0 &&
+            this.SEARCH_MODE is SearchMode.KeywordWithSemanticRerank or SearchMode.HybridWithSemanticRerank)
         {
             this.config.Require("MIN_RELEVANCE_RERANK_SCORE", ((double)this.MIN_RELEVANCE_RERANK_SCORE).ToString());
             this.config.Require("SEARCH_SEMANTIC_RERANK_CONFIG", this.SEARCH_SEMANTIC_RERANK_CONFIG);

@@ -24,6 +24,7 @@ public interface IConfig
     bool SEARCH_VECTOR_EXHAUST_KNN { get; }
     string[] SEARCH_SELECT_FIELDS { get; }
     string SEARCH_TRANSFORM_FILE { get; }
+    string PICK_DOCS_URL_FIELD { get; }
     int MAX_CONCURRENT_SEARCHES { get; }
     int MAX_SEARCH_QUERIES_PER_INTENT { get; }
     decimal MIN_RELEVANCE_SEARCH_SCORE { get; }

@@ -24,8 +24,4 @@ public class Doc
     [JsonPropertyName("urls")]
     [JsonProperty("urls", NullValueHandling = NullValueHandling.Ignore)]
     public string[]? Urls { get; set; }
-
-    [JsonPropertyName("ground_truth_urls")]
-    [JsonProperty("ground_truth_urls", NullValueHandling = NullValueHandling.Ignore)]
-    public string[]? GroundTruthUrls { get; set; }
 }
