@@ -1,20 +1,63 @@
+using System.Collections.Generic;
+
 namespace Inference;
 
-public class ServiceContext(IConfig config) : IServiceContext
+public class ServiceContext : IServiceContext
 {
-    private readonly object lockEndpointIndex = new();
-    private readonly int numOfLLMEndpoints = config.LLM_CONNECTION_STRINGS.Count;
-    private int llmEndpointIndex = -1;
-    public int GetLLMEndpointIndex()
+    public ServiceContext(IConfig config)
     {
-        lock (lockEndpointIndex)
+        this.combinations = new();
+        if (config.SEARCH_MODE is SearchMode.Vector
+            or SearchMode.Hybrid
+            or SearchMode.HybridWithSemanticRerank)
         {
-            llmEndpointIndex++;
-            if (llmEndpointIndex >= numOfLLMEndpoints)
+            foreach (var embed in config.EMBEDDING_CONNECTION_STRINGS)
             {
-                llmEndpointIndex = 0;
+                foreach (var llm in config.LLM_CONNECTION_STRINGS)
+                {
+                    this.combinations.Add(new KernelIndex
+                    {
+                        EmbeddingConnectionDetails = embed,
+                        LlmConnectionDetails = llm
+                    });
+                }
             }
-            return llmEndpointIndex;
+        }
+        else
+        {
+            foreach (var llm in config.LLM_CONNECTION_STRINGS)
+            {
+                this.combinations.Add(new KernelIndex
+                {
+                    LlmConnectionDetails = llm
+                });
+            }
+        }
+    }
+
+    private readonly object padlock = new();
+    private List<KernelIndex> combinations { get; set; }
+    private int index = -1;
+
+    public KernelIndex KernelIndex
+    {
+        get
+        {
+            lock (padlock)
+            {
+                index++;
+                if (index >= this.combinations.Count)
+                {
+                    index = 0;
+                }
+                var combo = combinations[index];
+                return new KernelIndex
+                {
+                    Index = index,
+                    EmbeddingConnectionDetails = combo.EmbeddingConnectionDetails,
+                    LlmConnectionDetails = combo.LlmConnectionDetails
+                };
+            }
         }
     }
 }

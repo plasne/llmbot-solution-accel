@@ -23,29 +23,23 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
 
     [JsonProperty(nameof(LLM_CONNECTION_STRINGS), NullValueHandling = NullValueHandling.Ignore)]
     [JsonConverter(typeof(JsonMaskConverter))]
-    public List<LlmConnectionDetails> LLM_CONNECTION_STRINGS => this.sysConfig.LLM_CONNECTION_STRINGS;
-
-    [JsonProperty(nameof(EMBEDDING_ENCODING_NAME), NullValueHandling = NullValueHandling.Ignore)]
-    public string EMBEDDING_ENCODING_NAME => this.sysConfig.EMBEDDING_ENCODING_NAME;
-
-    [JsonProperty(nameof(EMBEDDING_MODEL_NAME), NullValueHandling = NullValueHandling.Ignore)]
-    public string EMBEDDING_MODEL_NAME => this.sysConfig.EMBEDDING_MODEL_NAME;
-
-    [JsonProperty(nameof(EMBEDDING_DEPLOYMENT_NAME), NullValueHandling = NullValueHandling.Ignore)]
-    public string EMBEDDING_DEPLOYMENT_NAME => this.sysConfig.EMBEDDING_DEPLOYMENT_NAME;
-
-    [JsonProperty(nameof(EMBEDDING_ENDPOINT_URI), NullValueHandling = NullValueHandling.Ignore)]
-    public string EMBEDDING_ENDPOINT_URI => this.sysConfig.EMBEDDING_ENDPOINT_URI;
-
-    [JsonProperty(nameof(EMBEDDING_API_KEY), NullValueHandling = NullValueHandling.Ignore)]
-    [JsonConverter(typeof(JsonMaskConverter))]
-    public string EMBEDDING_API_KEY => this.sysConfig.EMBEDDING_API_KEY;
+    public List<ModelConnectionDetails> LLM_CONNECTION_STRINGS => this.sysConfig.LLM_CONNECTION_STRINGS;
 
     [JsonProperty(nameof(LLM_MODEL_NAME), NullValueHandling = NullValueHandling.Ignore)]
     public string LLM_MODEL_NAME => this.sysConfig.LLM_MODEL_NAME;
 
     [JsonProperty(nameof(LLM_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
     public string LLM_ENCODING_MODEL { get => this.sysConfig.LLM_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
+
+    [JsonProperty(nameof(EMBEDDING_CONNECTION_STRINGS), NullValueHandling = NullValueHandling.Ignore)]
+    [JsonConverter(typeof(JsonMaskConverter))]
+    public List<ModelConnectionDetails> EMBEDDING_CONNECTION_STRINGS => this.sysConfig.EMBEDDING_CONNECTION_STRINGS;
+
+    [JsonProperty(nameof(EMBEDDING_MODEL_NAME), NullValueHandling = NullValueHandling.Ignore)]
+    public string EMBEDDING_MODEL_NAME => this.sysConfig.EMBEDDING_MODEL_NAME;
+
+    [JsonProperty(nameof(EMBEDDING_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
+    public string EMBEDDING_ENCODING_MODEL { get => this.sysConfig.EMBEDDING_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
 
     [JsonProperty(nameof(SEARCH_INDEX), NullValueHandling = NullValueHandling.Ignore)]
     public string SEARCH_INDEX => this.sysConfig.SEARCH_INDEX;

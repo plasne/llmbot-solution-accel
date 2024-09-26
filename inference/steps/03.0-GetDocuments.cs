@@ -55,7 +55,7 @@ public class GetDocuments(IConfig config, IWorkflowContext context, SearchServic
                     or SearchMode.Hybrid
                     or SearchMode.HybridWithSemanticRerank)
                 {
-                    var encoding = GptEncoding.GetEncoding(context.Config.EMBEDDING_ENCODING_NAME);
+                    var encoding = GptEncoding.GetEncoding(context.Config.EMBEDDING_ENCODING_MODEL);
                     var count = encoding.CountTokens(query);
                     Interlocked.Add(ref totalEmbeddingTokenCount, count);
                     DiagnosticService.RecordEmbeddingTokenCount(count, context.Config.EMBEDDING_MODEL_NAME);

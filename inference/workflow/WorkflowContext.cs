@@ -7,7 +7,7 @@ namespace Inference;
 
 public class WorkflowContext(IConfig config, IServiceContext context) : IWorkflowContext
 {
-    private readonly int llmEndpointIndex = context.GetLLMEndpointIndex();
+    public readonly KernelIndex kernelIndex = context.KernelIndex;
     private bool isForInference;
     private bool isForEvaluation;
 
@@ -31,9 +31,9 @@ public class WorkflowContext(IConfig config, IServiceContext context) : IWorkflo
         }
     }
 
-    public int LLMEndpointIndex
+    public KernelIndex KernelIndex
     {
-        get => this.llmEndpointIndex;
+        get => this.kernelIndex;
     }
 
     public IConfig Config { get; set; } = config;

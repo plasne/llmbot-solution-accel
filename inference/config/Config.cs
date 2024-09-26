@@ -14,15 +14,13 @@ public class Config : IConfig
         this.GRPC_PORT = config.Get<string>("GRPC_PORT").AsInt(() => 7020);
         this.WEB_PORT = config.Get<string>("WEB_PORT").AsInt(() => 7030);
         this.OPEN_TELEMETRY_CONNECTION_STRING = config.GetSecret<string>("OPEN_TELEMETRY_CONNECTION_STRING").Result;
-        this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsLlmConnectionDetails(() => []);
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
-        this.EMBEDDING_MODEL_NAME = config.Get<string>("EMBEDDING_MODEL_NAME");
-        this.EMBEDDING_ENCODING_NAME = config.Get<string>("EMBEDDING_ENCODING_NAME");
-        this.EMBEDDING_DEPLOYMENT_NAME = config.Get<string>("EMBEDDING_DEPLOYMENT_NAME");
-        this.EMBEDDING_ENDPOINT_URI = config.Get<string>("EMBEDDING_ENDPOINT_URI");
-        this.EMBEDDING_API_KEY = config.GetSecret<string>("EMBEDDING_API_KEY").Result;
+        this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
         this.LLM_ENCODING_MODEL = "TBD";
+        this.EMBEDDING_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
+        this.EMBEDDING_MODEL_NAME = config.Get<string>("EMBEDDING_MODEL_NAME");
+        this.EMBEDDING_ENCODING_MODEL = "TBD";
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
@@ -64,21 +62,19 @@ public class Config : IConfig
 
     public string OPEN_TELEMETRY_CONNECTION_STRING { get; }
 
-    public List<LlmConnectionDetails> LLM_CONNECTION_STRINGS { get; }
-
     public MemoryTerm MEMORY_TERM { get; }
 
-    public string EMBEDDING_ENCODING_NAME { get; set; }
-    public string EMBEDDING_MODEL_NAME { get; }
-    public string EMBEDDING_DEPLOYMENT_NAME { get; }
-
-    public string EMBEDDING_ENDPOINT_URI { get; }
-
-    public string EMBEDDING_API_KEY { get; }
+    public List<ModelConnectionDetails> LLM_CONNECTION_STRINGS { get; }
 
     public string LLM_MODEL_NAME { get; }
 
     public string LLM_ENCODING_MODEL { get; set; }
+
+    public List<ModelConnectionDetails> EMBEDDING_CONNECTION_STRINGS { get; }
+
+    public string EMBEDDING_MODEL_NAME { get; }
+
+    public string EMBEDDING_ENCODING_MODEL { get; set; }
 
     public string SEARCH_INDEX { get; }
 
@@ -135,6 +131,7 @@ public class Config : IConfig
     public decimal COST_PER_PROMPT_TOKEN { get; }
 
     public decimal COST_PER_COMPLETION_TOKEN { get; }
+
     public decimal COST_PER_EMBEDDING_TOKEN { get; }
 
     public int SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT { get; }
@@ -150,11 +147,11 @@ public class Config : IConfig
         this.config.Require("GRPC_PORT", this.GRPC_PORT);
         this.config.Require("WEB_PORT", this.WEB_PORT);
         this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
+        this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
+
         this.config.Require("LLM_CONNECTION_STRINGS", this.LLM_CONNECTION_STRINGS.Count > 0
             ? $"({this.LLM_CONNECTION_STRINGS.Count} set)"
             : string.Empty);
-        this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
-
         this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
         this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
         this.config.Require("LLM_ENCODING_MODEL", this.LLM_ENCODING_MODEL);
@@ -164,22 +161,23 @@ public class Config : IConfig
         this.config.Require("SEARCH_API_KEY", this.SEARCH_API_KEY, hideValue: true);
         this.config.Require("SEARCH_MODE", this.SEARCH_MODE.ToString());
 
-        // note: search modes with vectorization
+        // vectorization settings
         if (this.SEARCH_MODE is SearchMode.Vector
             or SearchMode.Hybrid
             or SearchMode.HybridWithSemanticRerank)
         {
+            this.config.Require("EMBEDDING_CONNECTION_STRINGS", this.EMBEDDING_CONNECTION_STRINGS.Count > 0
+                ? $"({this.EMBEDDING_CONNECTION_STRINGS.Count} set)"
+                : string.Empty);
             this.config.Require("EMBEDDING_MODEL_NAME", this.EMBEDDING_MODEL_NAME);
-            this.EMBEDDING_ENCODING_NAME = Model.GetEncodingNameForModel(this.EMBEDDING_MODEL_NAME);
-            this.config.Require("EMBEDDING_DEPLOYMENT_NAME", this.EMBEDDING_DEPLOYMENT_NAME);
-            this.config.Require("EMBEDDING_ENDPOINT_URI", this.EMBEDDING_ENDPOINT_URI);
-            this.config.Require("EMBEDDING_API_KEY", this.EMBEDDING_API_KEY, hideValue: true);
+            this.EMBEDDING_ENCODING_MODEL = Model.GetEncodingNameForModel(this.EMBEDDING_MODEL_NAME);
+
             this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
             this.config.Require("SEARCH_VECTOR_EXHAUST_KNN", value: this.SEARCH_VECTOR_EXHAUST_KNN);
             this.config.Require("SEARCH_KNN", this.SEARCH_KNN);
         }
 
-        // note: rerank search modes
+        // rerank settings
         if (this.SEARCH_MODE is SearchMode.KeywordWithSemanticRerank
             or SearchMode.HybridWithSemanticRerank)
         {

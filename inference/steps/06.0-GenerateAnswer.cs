@@ -54,8 +54,8 @@ public partial class GenerateAnswer(
 
         // build the function
         var kernel = this.context.IsForInference
-            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
-            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.LLMEndpointIndex, cancellationToken);
+            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.KernelIndex, cancellationToken)
+            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.KernelIndex, cancellationToken);
         var func = kernel.CreateFunctionFromPrompt(
             new PromptTemplateConfig
             {

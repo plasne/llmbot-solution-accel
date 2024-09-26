@@ -9,7 +9,7 @@ public interface IWorkflowContext
 {
     public bool IsForInference { get; set; }
     public bool IsForEvaluation { get; set; }
-    public int LLMEndpointIndex { get; }
+    public KernelIndex KernelIndex { get; }
     public IConfig Config { get; set; }
     public WorkflowRequest? WorkflowRequest { get; set; }
 

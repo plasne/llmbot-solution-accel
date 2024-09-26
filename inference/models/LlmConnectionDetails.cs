@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 
 namespace Inference;
 
-public class LlmConnectionDetails
+public class ModelConnectionDetails
 {
     [JsonProperty(nameof(DeploymentName), Required = Required.Always)]
     public required string DeploymentName { get; set; }

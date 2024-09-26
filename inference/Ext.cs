@@ -76,11 +76,11 @@ public static class Ext
             : throw new ArgumentException($"Unknown SearchMode: {str}");
     }
 
-    public static List<LlmConnectionDetails> AsLlmConnectionDetails(this string str, Func<List<LlmConnectionDetails>> dflt)
+    public static List<ModelConnectionDetails> AsModelConnectionDetails(this string str, Func<List<ModelConnectionDetails>> dflt)
     {
         try
         {
-            var list = new List<LlmConnectionDetails>();
+            var list = new List<ModelConnectionDetails>();
             var connectionStrings = str.Split(";;");
             foreach (var connectionString in connectionStrings)
             {
@@ -88,7 +88,7 @@ public static class Ext
                     .Split(';')
                     .Select(part => part.Split('='))
                     .ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-                var details = new LlmConnectionDetails
+                var details = new ModelConnectionDetails
                 {
                     DeploymentName = parts["DeploymentName"],
                     Endpoint = parts["Endpoint"],

@@ -24,27 +24,22 @@ public class KernelFactory(
     private readonly Dictionary<int, Kernel> kernelsForEvaluation = [];
     private readonly Dictionary<int, Kernel> kernelsForInference = [];
 
-    private Kernel
-    CreateKernel(HttpClient httpClient, int index)
+    private Kernel CreateKernel(HttpClient httpClient, ModelConnectionDetails? embedding, ModelConnectionDetails llm)
     {
         var kernelBuilder = Kernel.CreateBuilder();
-        var details = this.config.LLM_CONNECTION_STRINGS[index];
 
         kernelBuilder
             .AddAzureOpenAIChatCompletion(
-                details.DeploymentName,
-                details.Endpoint,
-                details.ApiKey,
+                llm.DeploymentName,
+                llm.Endpoint,
+                llm.ApiKey,
                 httpClient: httpClient);
-
-        if (this.config.SEARCH_MODE is SearchMode.Vector
-            or SearchMode.Hybrid
-            or SearchMode.HybridWithSemanticRerank)
+        if (embedding is not null)
         {
             kernelBuilder.AddAzureOpenAITextEmbeddingGeneration(
-                config.EMBEDDING_DEPLOYMENT_NAME,
-                config.EMBEDDING_ENDPOINT_URI,
-                config.EMBEDDING_API_KEY,
+                embedding.DeploymentName,
+                embedding.Endpoint,
+                embedding.ApiKey,
                 httpClient: httpClient);
         }
 
@@ -63,18 +58,18 @@ public class KernelFactory(
         return kernel;
     }
 
-    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(int index, CancellationToken cancellationToken = default)
+    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(KernelIndex kernelIndex, CancellationToken cancellationToken = default)
     {
-        if (this.kernelsForInference.TryGetValue(index, out var kernel))
+        if (this.kernelsForInference.TryGetValue(kernelIndex.Index, out var kernel))
             return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForInference.TryGetValue(index, out kernel))
+            if (this.kernelsForInference.TryGetValue(kernelIndex.Index, out kernel))
                 return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-with-retry");
-            kernel = this.CreateKernel(httpClient, index);
-            this.kernelsForInference.Add(index, kernel);
+            kernel = this.CreateKernel(httpClient, kernelIndex.EmbeddingConnectionDetails, kernelIndex.LlmConnectionDetails);
+            this.kernelsForInference.Add(kernelIndex.Index, kernel);
             return kernel;
         }
         finally
@@ -83,18 +78,18 @@ public class KernelFactory(
         }
     }
 
-    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(int index, CancellationToken cancellationToken = default)
+    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(KernelIndex kernelIndex, CancellationToken cancellationToken = default)
     {
-        if (this.kernelsForEvaluation.TryGetValue(index, out var kernel))
+        if (this.kernelsForEvaluation.TryGetValue(kernelIndex.Index, out var kernel))
             return kernel;
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForEvaluation.TryGetValue(index, out kernel))
+            if (this.kernelsForEvaluation.TryGetValue(kernelIndex.Index, out kernel))
                 return kernel;
             var httpClient = this.httpClientFactory.CreateClient("openai-without-retry");
-            kernel = this.CreateKernel(httpClient, index);
-            this.kernelsForEvaluation.Add(index, kernel);
+            kernel = this.CreateKernel(httpClient, kernelIndex.EmbeddingConnectionDetails, kernelIndex.LlmConnectionDetails);
+            this.kernelsForEvaluation.Add(kernelIndex.Index, kernel);
             return kernel;
         }
         finally

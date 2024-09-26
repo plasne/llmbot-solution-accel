@@ -157,8 +157,8 @@ public class SearchService
         {
             // create the vector query
             var kernel = this.context.IsForInference
-                ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.LLMEndpointIndex, cancellationToken)
-                : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.LLMEndpointIndex, cancellationToken);
+                ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.KernelIndex, cancellationToken)
+                : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.KernelIndex, cancellationToken);
             var embedding = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
             ReadOnlyMemory<float> vector = await embedding.GenerateEmbeddingAsync(text, kernel, cancellationToken);
             VectorizedQuery vectorQuery = new(vector)
