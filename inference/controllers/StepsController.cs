@@ -54,7 +54,7 @@ public class StepsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var pickDocuments = scope.ServiceProvider.GetRequiredService<PickDocuments>();
+        var pickDocuments = scope.ServiceProvider.GetRequiredService<PickDocumentsFromAzureAISearch>();
         var pickedDocs = await pickDocuments.Execute(intent, cancellationToken);
         return Ok(pickedDocs);
     }

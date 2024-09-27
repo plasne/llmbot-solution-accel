@@ -27,47 +27,12 @@ public abstract class BaseStep<TInput, TOutput> : IStep<TInput, TOutput>
 
     public WorkflowStepResponse<TInput, TOutput> StepResponse { get; }
 
-    protected void LogDebug(string message, params object?[] args)
+    protected void LogDebug(string message)
     {
 #pragma warning disable CA2254 // The logging message template should not vary between calls
-        this.logger.LogDebug(message, args);
+        this.logger.LogDebug(message);
 #pragma warning restore CA2254 // Restore the warning after this line
-        this.Logs.Add(new LogEntry("DEBUG", args is not null && args.Length > 0 ? ToMessage(message, args) : message));
-    }
-
-    private static string ToMessage(string message, object?[] args)
-    {
-        StringBuilder sb = new();
-        int messageIndexPtr = 0;
-
-        int argCounter = 0;
-        while (messageIndexPtr < message.Length)
-        {
-            int startIndex = message.IndexOf('{', messageIndexPtr);
-            if (startIndex < 0)
-            {
-                if (messageIndexPtr < message.Length)
-                {
-                    sb.Append(message.AsSpan(messageIndexPtr));
-                }
-                break;
-            }
-
-            sb.Append(message.AsSpan(messageIndexPtr, startIndex - messageIndexPtr));
-            sb.Append('{');
-            messageIndexPtr = startIndex + 1;
-            sb.Append(argCounter);
-            argCounter++;
-            int endIndex = message.IndexOf('}', messageIndexPtr);
-            if (endIndex < 0)
-            {
-                // not sure why we are missing an enclosing }, return message as-is which is better than an exception since this is doing logging.
-                return message;
-            }
-            sb.Append('}');
-            messageIndexPtr = endIndex + 1;
-        }
-        return argCounter == args.Length ? string.Format(sb.ToString(), args) : message;
+        this.Logs.Add(new LogEntry("DEBUG", message));
     }
 
     protected void LogInformation(string message)

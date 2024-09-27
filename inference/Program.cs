@@ -88,7 +88,7 @@ builder.Services.AddTransient<DetermineIntent>();
 builder.Services.AddTransient<InDomainOnlyIntent>();
 builder.Services.AddTransient<ApplyIntent>();
 builder.Services.AddTransient<GetDocuments>();
-builder.Services.AddTransient<PickDocuments>();
+builder.Services.AddTransient<PickDocumentsFromAzureAISearch>();
 builder.Services.AddTransient<SortDocuments>();
 builder.Services.AddTransient<SelectGroundingData>();
 builder.Services.AddTransient<GenerateAnswer>();

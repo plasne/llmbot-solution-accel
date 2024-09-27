@@ -18,7 +18,7 @@ public class PrimaryWorkflow(
     IWorkflowContext context,
     DetermineIntent determineIntent,
     ApplyIntent applyIntent,
-    GetDocuments getDocuments,
+    IGetDocuments getDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer,
@@ -28,7 +28,7 @@ public class PrimaryWorkflow(
     private readonly IWorkflowContext context = context;
     private readonly DetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly GetDocuments getDocuments = getDocuments;
+    private readonly IGetDocuments getDocuments = getDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;

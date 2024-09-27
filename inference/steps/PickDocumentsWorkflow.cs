@@ -18,7 +18,7 @@ public class PickDocumentsWorkflow(
     IWorkflowContext context,
     DetermineIntent determineIntent,
     ApplyIntent applyIntent,
-    PickDocuments pickDocuments,
+    PickDocumentsFromAzureAISearch pickDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer,
@@ -28,7 +28,7 @@ public class PickDocumentsWorkflow(
     private readonly IWorkflowContext context = context;
     private readonly DetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly PickDocuments pickDocuments = pickDocuments;
+    private readonly PickDocumentsFromAzureAISearch pickDocuments = pickDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;

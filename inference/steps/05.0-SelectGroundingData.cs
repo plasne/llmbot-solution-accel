@@ -33,9 +33,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
         int contextWindowLimit = context.Config.SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT - lengthOfUserQuery;
         if (contextWindowLimit < 1)
         {
-            this.LogDebug("the user query consumed the entire context window, discarded {discard_context_count} context, {discard_history_count} history",
-              contextCount,
-              historyCount);
+            this.LogDebug($"the user query consumed the entire context window, discarded {contextCount} context, {historyCount} history");
             return Task.FromResult(output);
         }
 
@@ -55,9 +53,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
                         int tokenCount = encoding.CountTokens(context.Text);
                         if (currentTokenCount + tokenCount > contextWindowLimit)
                         {
-
-                            this.LogDebug("context window reached at context index {context_index}, discarded {discard_context_count} context, {discard_history_count} history, current context window: {current_context_window}",
-                              output.Context.Count, input.Docs?.Count ?? 0 - contextCount, input.History?.Count ?? 0 - historyCount, currentTokenCount);
+                            this.LogDebug($"context window reached at context index {output.Context.Count}, discarded {input.Docs?.Count ?? 0 - contextCount} context, {input.History?.Count ?? 0 - historyCount} history, current context window: {currentTokenCount}");
                             return Task.FromResult(output);
                         }
 
@@ -77,8 +73,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
                     int tokenCount = encoding.CountTokens($"{currentHistory.Role}: {currentHistory.Msg}");
                     if (currentTokenCount + tokenCount > contextWindowLimit)
                     {
-                        this.LogDebug("context window reached at history index {context_index}, discarded {discard_context_count} context, {discard_history_count} history, current context window: {current_context_window}",
-                          output.History.Count, input.Docs?.Count ?? 0 - contextCount, input.History?.Count ?? 0 - historyCount, currentTokenCount);
+                        this.LogDebug($"context window reached at history index {output.History.Count}, discarded {input.Docs?.Count ?? 0 - contextCount} context, {input.History?.Count ?? 0 - historyCount} history, current context window: {currentTokenCount}");
                         return Task.FromResult(output);
                     }
                     output.History.Add(currentHistory);
