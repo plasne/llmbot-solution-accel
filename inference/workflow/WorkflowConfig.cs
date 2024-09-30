@@ -121,18 +121,6 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     [JsonProperty(nameof(MAX_TIMEOUT_IN_SECONDS), NullValueHandling = NullValueHandling.Ignore)]
     public int MAX_TIMEOUT_IN_SECONDS => this.sysConfig.MAX_TIMEOUT_IN_SECONDS;
 
-    [JsonProperty(nameof(EMIT_USAGE_AS_RESPONSE_HEADERS), NullValueHandling = NullValueHandling.Ignore)]
-    public bool EMIT_USAGE_AS_RESPONSE_HEADERS => this.sysConfig.EMIT_USAGE_AS_RESPONSE_HEADERS;
-
-    [JsonProperty(nameof(COST_PER_PROMPT_TOKEN), NullValueHandling = NullValueHandling.Ignore)]
-    public decimal COST_PER_PROMPT_TOKEN => this.sysConfig.COST_PER_PROMPT_TOKEN;
-
-    [JsonProperty(nameof(COST_PER_COMPLETION_TOKEN), NullValueHandling = NullValueHandling.Ignore)]
-    public decimal COST_PER_COMPLETION_TOKEN => this.sysConfig.COST_PER_COMPLETION_TOKEN;
-
-    [JsonProperty(nameof(COST_PER_EMBEDDING_TOKEN), NullValueHandling = NullValueHandling.Ignore)]
-    public decimal COST_PER_EMBEDDING_TOKEN => this.sysConfig.COST_PER_EMBEDDING_TOKEN;
-
     [JsonProperty(nameof(SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT), NullValueHandling = NullValueHandling.Ignore)]
     public int SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT => this.sysConfig.SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT;
 

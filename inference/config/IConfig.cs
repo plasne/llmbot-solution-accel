@@ -41,10 +41,6 @@ public interface IConfig
     int MAX_RETRY_ATTEMPTS { get; }
     int SECONDS_BETWEEN_RETRIES { get; }
     int MAX_TIMEOUT_IN_SECONDS { get; }
-    bool EMIT_USAGE_AS_RESPONSE_HEADERS { get; }
-    decimal COST_PER_PROMPT_TOKEN { get; }
-    decimal COST_PER_COMPLETION_TOKEN { get; }
-    decimal COST_PER_EMBEDDING_TOKEN { get; }
     int SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT { get; }
     bool EXIT_WHEN_OUT_OF_DOMAIN { get; }
     bool EXIT_WHEN_NO_DOCUMENTS { get; }

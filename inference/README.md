@@ -14,63 +14,11 @@ __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The f
 
 - __WEB_PORT__ [INTEGER, DEFAULT: 7030]: The port the web server will listen on. This is used by developers for local testing and by evaluation.
 
-- __MEMORY_TERM__ [STRING, DEFAULT: "Long"]: If long, once a prompt file is cached, it remains cached. If short, the prompt file is only cached for one execution.
-
 - __OPEN_TELEMETRY_CONNECTION_STRING__ [STRING, OPTIONAL]: The connection string for the OpenTelemetry exporter (AppInsights). Rather than provide a string, you can provide a Key Vault URL to a secret.
 
-- __LLM_CONNECTION_STRINGS__ [ARRAY, REQUIRED]: A list of connection strings separated by ";;". Each connection string will have parts (DeploymentName, Endpoint, and ApiKey) that should be separated by a ";". Rather than provide a string, you can provide a Key Vault URL to a secret.
-
-- __EMBEDDING_MODEL_NAME__ [STRING, REQUIRED]: The model name for embedding. This must be a model name that can be understood by SharpToken. This is used to calculate the number of tokens.
-
-- __EMBEDDING_DEPLOYMENT_NAME__ [STRING, REQUIRED]: The deployment name for the embedding service (strings are embedded into vectors before performing similarity searches).
-
-- __EMBEDDING_ENDPOINT_URI__ [STRING, REQUIRED]: The endpoint URI for the embedding service.
-
-- __EMBEDDING_API_KEY__ [STRING, REQUIRED]: The API key for the embedding service.
-
-- __LLM_MODEL_NAME__ [STRING, REQUIRED]: The model name for the LLM. This must be a model name that can be understood by SharpToken. This is used to calculate the number of tokens.
-
-- __SEARCH_INDEX__ [STRING, REQUIRED]: The index to search for similarity searches.
-
-- __SEARCH_ENDPOINT_URI__ [STRING, REQUIRED]: The endpoint URI for the search service.
-
-- __SEARCH_API_KEY__ [STRING, REQUIRED]: The API key for the search service.
-
-- __SEARCH_MODE__ [STRING, DEFAULT: "HybridWithSemanticRerank"]: The mode for the search service. This can be Keyword, Vector, Hybrid, KeywordWithSemanticRerank, or HybridWithSemanticRerank.
-
-- __SEARCH_SELECT_FIELDS__ [ARRAY, DEFAULT: ["title", "content", "urls"]]: The fields to select from the search results.
-
-- __SEARCH_TOP__ [INTEGER, DEFAULT: 10]: The top scoring results to return from the search service per query.
-
-- __SEARCH_KNN__ [INTEGER,  DEFAULT: 10]: This is the knn to use for both approximate nearest neighbors (knn) and exhaustive knn (eknn).
-
-- __SEARCH_VECTOR_FIELDS__ [ARRAY, DEFAULT: "contentVector"]: The vector fields used for similarity searches.
-
-- __SEARCH_VECTOR_EXHAUST_KNN__ [BOOLEAN, DEFAULT: false]: If true, vector mode will perform a brute-force similarity search that scans the entire vector space using the exhaustive k-nearest neighbors (eKNN) algorithm. Otherwise, it will use the __approx.__ knn HNSW filter at query time.
-
-- __SEARCH_SEMANTIC_RERANK_CONFIG__ [STRING, Default: "default"]: The name of the semantic configuration for the search service. When using the `KeywordWithSemanticRerank` or `HybridWithSemanticRerank` Search Mode, this configuration will be used to rerank the search results if the rerank feature is enabled on the deployed search service. If you are unsure if a custom semantic configuration exists, visit the service. Please note that this will throw a 400 `Azure.RequestFailedException` and fail all requests if semantic configuration cannot be found. <u> NOTE: Provisioning a semantic config with name that matches the default name on the application (i.e. `default`) is recommended in order to reduce the need to update the application configuration when the semantic config is updated. The semantic ranker can take up to 50 results. </u>
-
-- __SEARCH_TRANSFORM_FILE__ [STRING, REQUIRED]: The file used to transform search results. The documents in the index may not conform to the Doc file, this is a Jsonata template that will transform the results into the correct format.
-
-- __MAX_CONCURRENT_SEARCHES__ [INTEGER, DEFAULT: 3]: The maximum number of concurrent searches.
+- __MEMORY_TERM__ [STRING, DEFAULT: "Long"]: If long, once a prompt file is cached, it remains cached. If short, the prompt file is only cached for one execution.
 
 - __MAX_SEARCH_QUERIES_PER_INTENT__ [INTEGER, DEFAULT: 3]: The maximum number of search queries per intent.
-
-- __MIN_RELEVANCE_SEARCH_SCORE__ [DECIMAL, DEFAULT: 0.0]: The minimum relevance search score. This is compared against the relevance search scores returned from Azure AI search results and is used to filter out irrelevant search results. Azure AI Search calculates the returned search score results differently based on the type of query. For example, a full text query may return a score of 76.57179, while a semantic query may return a score of 0.71832.
-
-- __MIN_RELEVANCE_RERANK_SCORE__ [DECIMAL, DEFAULT: 2]: The minimum relevance reranker score. This is compared against the relevance reranker scores returned from Azure AI search results when semantic rerank feature is enabled, a semantic config is provisioned on the service and it's name is provided as a value to __SEARCH_SEMANTIC_RERANK_CONFIG__.
-
-- __INTENT_PROMPT_FILE__ [STRING, DEFAULT: "./templates/intent-prompt.txt"]: The file used to prompt the LLM for intent.
-
-- __CHAT_PROMPT_FILE__ [STRING, DEFAULT: "./templates/chat-prompt.txt"]: The file used to prompt the LLM for an answer.
-
-- __INTENT_TEMPERATURE__ [DECIMAL, DEFAULT: 0.0]: The temperature used when prompting the LLM for intent.
-
-- __CHAT_TEMPERATURE__ [DECIMAL, DEFAULT: 0.3]: The temperature used when prompting the LLM for an answer.
-
-- __INTENT_SEED__ [INTEGER, OPTIONAL]: The seed used when prompting the LLM for intent. You can also just provide a value as SEED.
-
-- __CHAT_SEED__ [INTEGER, OPTIONAL]: The seed used when prompting the LLM for an answer. You can also just provide a value as SEED.
 
 - __MEMORY_URL__ [STRING, DEFAULT: "http://localhost:7010"]: The URL for the memory service.
 
@@ -80,14 +28,6 @@ __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The f
 
 - __MAX_TIMEOUT_IN_SECONDS__ [INTEGER, DEFAULT: 60]: The maximum number of seconds to wait for a response.
 
-- __EMIT_USAGE_AS_RESPONSE_HEADERS__ [BOOLEAN, DEFAULT: false]: If true, the usage of the LLM will be emitted as response headers. This can be used in conjunction with Evaluator.
-
-- __COST_PER_PROMPT_TOKEN__ [DECIMAL, DEFAULT: 0.0]: The cost per token when prompting the LLM for intent. This only matters when emitting usage.
-
-- __COST_PER_COMPLETION_TOKEN__ [DECIMAL, DEFAULT: 0.0]: The cost per token when prompting the LLM for an answer. This only matters when emitting usage.
-
-- __COST_PER_EMBEDDING_TOKEN__ [DECIMAL, DEFAULT: 0.0]: The cost per token when embedding a query for searching via vectors. This only matters when emitting usage.
-
 - __SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT__ [INTEGER, DEFAULT: 14000]: The context window token limit to apply during grounding step for selecting context and history that fits into the limit.
 
 - __EXIT_WHEN_OUT_OF_DOMAIN__ [BOOLEAN, DEFAULT: true]: If true, the service will exit when the DetermineIntent step returns an OUT_OF_DOMAIN intent.
@@ -95,6 +35,58 @@ __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The f
 - __EXIT_WHEN_NO_DOCUMENTS__ [BOOLEAN, DEFAULT: true]: If true, the service will exit when the GetDocuments step finds no documents.
 
 - __EXIT_WHEN_NO_CITATIONS__ [BOOLEAN, DEFAULT: false]: If true, the service will exit when the GenerateAnswer step cites no documents.
+
+- __LLM_CONNECTION_STRINGS__ [ARRAY, OPTIONAL]: A list of connection strings separated by ";;". Each connection string will have parts (DeploymentName, Endpoint, and ApiKey) that should be separated by a ";". Rather than provide a string, you can provide a Key Vault URL to a secret. If not provided, the intent will always be IN_DOMAIN and answers will only include citations. If provided, the following are required:
+
+  - __LLM_MODEL_NAME__ [STRING, REQUIRED]: The model name for the LLM. This must be a model name that can be understood by SharpToken. This is used to calculate the number of tokens.
+
+  - __INTENT_PROMPT_FILE__ [STRING, DEFAULT: "./templates/intent-prompt.txt"]: The file used to prompt the LLM for intent.
+
+  - __CHAT_PROMPT_FILE__ [STRING, DEFAULT: "./templates/chat-prompt.txt"]: The file used to prompt the LLM for an answer.
+
+  - __INTENT_TEMPERATURE__ [DECIMAL, DEFAULT: 0.0]: The temperature used when prompting the LLM for intent.
+
+  - __CHAT_TEMPERATURE__ [DECIMAL, DEFAULT: 0.3]: The temperature used when prompting the LLM for an answer.
+
+  - __INTENT_SEED__ [INTEGER, OPTIONAL]: The seed used when prompting the LLM for intent. You can also just provide a value as SEED.
+
+  - __CHAT_SEED__ [INTEGER, OPTIONAL]: The seed used when prompting the LLM for an answer. You can also just provide a value as SEED.
+
+- __SEARCH_ENDPOINT_URI__ [STRING, OPTIONAL]: The endpoint URI for the search service. If not provided, the internal bicycle shop data is used. If provided, the following are required:
+
+  - __SEARCH_INDEX__ [STRING, REQUIRED]: The index to search for similarity searches.
+
+  - __SEARCH_API_KEY__ [STRING, REQUIRED]: The API key for the search service.
+
+  - __SEARCH_MODE__ [STRING, DEFAULT: "HybridWithSemanticRerank"]: The mode for the search service. This can be Keyword, Vector, Hybrid, KeywordWithSemanticRerank, or HybridWithSemanticRerank. If SEARCH_MODE is set to Vector, Hybrid, or HybridWithSemanticRerank, the following are required:
+
+    - __EMBEDDING_CONNECTION_STRINGS__ [ARRAY, OPTIONAL]: A list of connection strings separated by ";;". Each connection string will have parts (DeploymentName, Endpoint, and ApiKey) that should be separated by a ";". Rather than provide a string, you can provide a Key Vault URL to a secret.
+
+    - __EMBEDDING_MODEL_NAME__ [STRING, REQUIRED]: The model name for embedding. This must be a model name that can be understood by SharpToken. This is used to calculate the number of tokens.
+
+    - __SEARCH_VECTOR_FIELDS__ [ARRAY, DEFAULT: "contentVector"]: The vector fields used for similarity searches.
+
+    - __SEARCH_VECTOR_EXHAUST_KNN__ [BOOLEAN, DEFAULT: false]: If true, vector mode will perform a brute-force similarity search that scans the entire vector space using the exhaustive k-nearest neighbors (eKNN) algorithm. Otherwise, it will use the approximate knn HNSW filter at query time.
+
+    - __SEARCH_KNN__ [INTEGER,  DEFAULT: 10]: This is the knn to use for both approximate nearest neighbors (knn) and exhaustive knn (eknn).
+
+    If SEARCH_MODE is set to KeywordWithSemanticRerank or HybridWithSemanticRerank, the following are required:
+
+    - __MIN_RELEVANCE_RERANK_SCORE__ [DECIMAL, DEFAULT: 2]: The minimum relevance reranker score. This is compared against the relevance reranker scores returned from Azure AI search results when semantic rerank feature is enabled, a semantic config is provisioned on the service and it's name is provided as a value to __SEARCH_SEMANTIC_RERANK_CONFIG__.
+
+    - __SEARCH_SEMANTIC_RERANK_CONFIG__ [STRING, Default: "default"]: The name of the semantic configuration for the search service. When using the `KeywordWithSemanticRerank` or `HybridWithSemanticRerank` Search Mode, this configuration will be used to rerank the search results if the rerank feature is enabled on the deployed search service. If you are unsure if a custom semantic configuration exists, visit the service. Please note that this will throw a 400 `Azure.RequestFailedException` and fail all requests if semantic configuration cannot be found. <u> NOTE: Provisioning a semantic config with name that matches the default name on the application (i.e. `default`) is recommended in order to reduce the need to update the application configuration when the semantic config is updated. The semantic ranker can take up to 50 results. </u>
+
+  - __SEARCH_SELECT_FIELDS__ [ARRAY, DEFAULT: ["title", "content", "urls"]]: The fields to select from the search results.
+
+  - __SEARCH_TRANSFORM_FILE__ [STRING, REQUIRED]: The file used to transform search results. The documents in the index may not conform to the Doc file, this is a Jsonata template that will transform the results into the correct format.
+
+  - __MAX_CONCURRENT_SEARCHES__ [INTEGER, DEFAULT: 3]: The maximum number of concurrent searches.
+
+  - __MIN_RELEVANCE_SEARCH_SCORE__ [DECIMAL, DEFAULT: 0.0]: The minimum relevance search score. This is compared against the relevance search scores returned from Azure AI search results and is used to filter out irrelevant search results. Azure AI Search calculates the returned search score results differently based on the type of query. For example, a full text query may return a score of 76.57179, while a semantic query may return a score of 0.71832.
+
+  - __SEARCH_TOP__ [INTEGER, DEFAULT: 10]: The top scoring results to return from the search service per query.
+
+  - __PICK_DOCS_URL_FIELD__ [STRING, REQUIRED]: The field in the search results that contains the URL for the document.
 
 In addition to those settings, there are some settings that are available as part of the NetBricks integration, including:
 

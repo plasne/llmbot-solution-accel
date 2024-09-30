@@ -100,7 +100,7 @@ else
 builder.Services.AddTransient<InDomainOnlyIntent>();
 Console.WriteLine("- ApplyIntent will use ApplyIntent.");
 builder.Services.AddTransient<ApplyIntent>();
-if (!string.IsNullOrEmpty(config.SEARCH_INDEX))
+if (!string.IsNullOrEmpty(config.SEARCH_ENDPOINT_URI))
 {
     Console.WriteLine("- IGetDocuments will use GetDocumentsFromAzureAISearch.");
     Console.WriteLine("- IPickDocuments will use PickDocumentsFromAzureAISearch.");
