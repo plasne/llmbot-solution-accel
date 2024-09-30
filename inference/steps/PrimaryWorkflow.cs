@@ -21,7 +21,7 @@ public class PrimaryWorkflow(
     IGetDocuments getDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
-    GenerateAnswer generateAnswer,
+    IGenerateAnswer generateAnswer,
     ILogger<PrimaryWorkflow> logger)
     : IWorkflow
 {
@@ -31,7 +31,7 @@ public class PrimaryWorkflow(
     private readonly IGetDocuments getDocuments = getDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
-    private readonly GenerateAnswer generateAnswer = generateAnswer;
+    private readonly IGenerateAnswer generateAnswer = generateAnswer;
     private readonly ILogger<PrimaryWorkflow> logger = logger;
 
     public async Task<WorkflowResponse> Execute(

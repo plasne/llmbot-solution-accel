@@ -17,10 +17,8 @@ public class Config : IConfig
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
-        this.LLM_ENCODING_MODEL = null;
         this.EMBEDDING_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
         this.EMBEDDING_MODEL_NAME = config.Get<string>("EMBEDDING_MODEL_NAME");
-        this.EMBEDDING_ENCODING_MODEL = null;
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
@@ -69,13 +67,13 @@ public class Config : IConfig
 
     public string LLM_MODEL_NAME { get; }
 
-    public string? LLM_ENCODING_MODEL { get; set; }
+    public GptEncoding? LLM_ENCODING { get; set; }
 
     public List<ModelConnectionDetails> EMBEDDING_CONNECTION_STRINGS { get; }
 
     public string EMBEDDING_MODEL_NAME { get; }
 
-    public string? EMBEDDING_ENCODING_MODEL { get; set; }
+    public GptEncoding? EMBEDDING_ENCODING { get; set; }
 
     public string SEARCH_INDEX { get; }
 
@@ -156,8 +154,9 @@ public class Config : IConfig
         if (this.LLM_CONNECTION_STRINGS.Count > 0)
         {
             this.config.Require("LLM_MODEL_NAME", this.LLM_MODEL_NAME);
-            this.LLM_ENCODING_MODEL = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
-            this.config.Require("LLM_ENCODING_MODEL", this.LLM_ENCODING_MODEL);
+            var llmEncodingModelName = Model.GetEncodingNameForModel(this.LLM_MODEL_NAME);
+            this.LLM_ENCODING = GptEncoding.GetEncoding(llmEncodingModelName);
+            this.config.Require("LLM_ENCODING", llmEncodingModelName);
         }
 
         this.config.Optional("SEARCH_INDEX", this.SEARCH_INDEX);
@@ -177,8 +176,9 @@ public class Config : IConfig
                 ? $"({this.EMBEDDING_CONNECTION_STRINGS.Count} set)"
                 : string.Empty);
             this.config.Require("EMBEDDING_MODEL_NAME", this.EMBEDDING_MODEL_NAME);
-            this.EMBEDDING_ENCODING_MODEL = Model.GetEncodingNameForModel(this.EMBEDDING_MODEL_NAME);
-            this.config.Require("EMBEDDING_ENCODING_MODEL", this.EMBEDDING_ENCODING_MODEL);
+            var embeddingEncodingModelName = Model.GetEncodingNameForModel(this.EMBEDDING_MODEL_NAME);
+            this.EMBEDDING_ENCODING = GptEncoding.GetEncoding(embeddingEncodingModelName);
+            this.config.Require("EMBEDDING_ENCODING", embeddingEncodingModelName);
 
             this.config.Require("SEARCH_VECTOR_FIELDS", this.SEARCH_VECTOR_FIELDS);
             this.config.Require("SEARCH_VECTOR_EXHAUST_KNN", value: this.SEARCH_VECTOR_EXHAUST_KNN);

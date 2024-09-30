@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using SharpToken;
 
 namespace Inference;
 
@@ -28,8 +29,8 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     [JsonProperty(nameof(LLM_MODEL_NAME), NullValueHandling = NullValueHandling.Ignore)]
     public string LLM_MODEL_NAME => this.sysConfig.LLM_MODEL_NAME;
 
-    [JsonProperty(nameof(LLM_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
-    public string? LLM_ENCODING_MODEL { get => this.sysConfig.LLM_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
+    [JsonProperty(nameof(LLM_ENCODING), NullValueHandling = NullValueHandling.Ignore)]
+    public GptEncoding? LLM_ENCODING { get => this.sysConfig.LLM_ENCODING; set => throw new System.NotImplementedException(); }
 
     [JsonProperty(nameof(EMBEDDING_CONNECTION_STRINGS), NullValueHandling = NullValueHandling.Ignore)]
     [JsonConverter(typeof(JsonMaskConverter))]
@@ -38,8 +39,8 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     [JsonProperty(nameof(EMBEDDING_MODEL_NAME), NullValueHandling = NullValueHandling.Ignore)]
     public string EMBEDDING_MODEL_NAME => this.sysConfig.EMBEDDING_MODEL_NAME;
 
-    [JsonProperty(nameof(EMBEDDING_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
-    public string? EMBEDDING_ENCODING_MODEL { get => this.sysConfig.EMBEDDING_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
+    [JsonProperty(nameof(EMBEDDING_ENCODING), NullValueHandling = NullValueHandling.Ignore)]
+    public GptEncoding? EMBEDDING_ENCODING { get => this.sysConfig.EMBEDDING_ENCODING; set => throw new System.NotImplementedException(); }
 
     [JsonProperty(nameof(SEARCH_INDEX), NullValueHandling = NullValueHandling.Ignore)]
     public string SEARCH_INDEX => this.sysConfig.SEARCH_INDEX;

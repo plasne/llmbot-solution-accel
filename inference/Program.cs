@@ -84,31 +84,50 @@ builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<PrimaryWorkflow>();
 builder.Services.AddTransient<InDomainOnlyWorkflow>();
 builder.Services.AddTransient<PickDocumentsWorkflow>();
+
+// add the workflow steps
+Console.WriteLine("Workflow Step Configuration:");
 if (config.LLM_CONNECTION_STRINGS.Any())
 {
+    Console.WriteLine("- IDetermineIntent will use DetermineIntentWithLlm.");
     builder.Services.AddTransient<IDetermineIntent, DetermineIntentWithLlm>();
 }
 else
 {
+    Console.WriteLine("- IDetermineIntent will use InDomainOnlyIntent.");
     builder.Services.AddTransient<IDetermineIntent, InDomainOnlyIntent>();
 }
 builder.Services.AddTransient<InDomainOnlyIntent>();
+Console.WriteLine("- ApplyIntent will use ApplyIntent.");
 builder.Services.AddTransient<ApplyIntent>();
 if (!string.IsNullOrEmpty(config.SEARCH_INDEX))
 {
-    Console.WriteLine("IGetDocuments and IPickDocuments will use Azure AI Search.");
+    Console.WriteLine("- IGetDocuments will use GetDocumentsFromAzureAISearch.");
+    Console.WriteLine("- IPickDocuments will use PickDocumentsFromAzureAISearch.");
     builder.Services.AddTransient<IGetDocuments, GetDocumentsFromAzureAISearch>();
     builder.Services.AddTransient<IPickDocuments, PickDocumentsFromAzureAISearch>();
 }
 else
 {
-    Console.WriteLine("IGetDocuments and IPickDocuments will use the internal bicycle shop data.");
+    Console.WriteLine("- IGetDocuments will use GetDocumentsFromBicyleShop.");
+    Console.WriteLine("- IPickDocuments will use PickDocumentsFromBicycleShop.");
     builder.Services.AddTransient<IGetDocuments, GetDocumentsFromBicyleShop>();
     builder.Services.AddTransient<IPickDocuments, PickDocumentsFromBicycleShop>();
 }
+Console.WriteLine("- SortDocuments will use SortDocuments.");
 builder.Services.AddTransient<SortDocuments>();
+Console.WriteLine("- SelectGroundingData will use SelectGroundingData.");
 builder.Services.AddTransient<SelectGroundingData>();
-builder.Services.AddTransient<GenerateAnswer>();
+if (config.LLM_CONNECTION_STRINGS.Any())
+{
+    Console.WriteLine("- IGenerateAnswer will use GenerateAnswerWithLlm.");
+    builder.Services.AddTransient<IGenerateAnswer, GenerateAnswerWithLlm>();
+}
+else
+{
+    Console.WriteLine("- IGenerateAnswer will use AnswerWithCitationsOnly.");
+    builder.Services.AddTransient<IGenerateAnswer, AnswerWithCitationsOnly>();
+}
 
 // add filters
 builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();

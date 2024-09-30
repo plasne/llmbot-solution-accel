@@ -90,7 +90,7 @@ public class StepsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var generateAnswer = scope.ServiceProvider.GetRequiredService<GenerateAnswer>();
+        var generateAnswer = scope.ServiceProvider.GetRequiredService<IGenerateAnswer>();
         var answer = await generateAnswer.Execute(input, cancellationToken);
         return Ok(answer);
     }

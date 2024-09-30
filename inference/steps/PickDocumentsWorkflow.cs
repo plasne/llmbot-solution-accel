@@ -21,7 +21,7 @@ public class PickDocumentsWorkflow(
     IPickDocuments pickDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
-    GenerateAnswer generateAnswer,
+    IGenerateAnswer generateAnswer,
     ILogger<PrimaryWorkflow> logger)
     : IWorkflow
 {
@@ -31,7 +31,7 @@ public class PickDocumentsWorkflow(
     private readonly IPickDocuments pickDocuments = pickDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
-    private readonly GenerateAnswer generateAnswer = generateAnswer;
+    private readonly IGenerateAnswer generateAnswer = generateAnswer;
     private readonly ILogger<PrimaryWorkflow> logger = logger;
 
     public async Task<WorkflowResponse> Execute(

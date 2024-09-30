@@ -19,7 +19,7 @@ public class InDomainOnlyWorkflow(
     IGetDocuments getDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
-    GenerateAnswer generateAnswer,
+    IGenerateAnswer generateAnswer,
     ILogger<InDomainOnlyWorkflow> logger)
     : IWorkflow
 {
@@ -29,7 +29,7 @@ public class InDomainOnlyWorkflow(
     private readonly IGetDocuments getDocuments = getDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
-    private readonly GenerateAnswer generateAnswer = generateAnswer;
+    private readonly IGenerateAnswer generateAnswer = generateAnswer;
     private readonly ILogger<InDomainOnlyWorkflow> logger = logger;
 
     public async Task<WorkflowResponse> Execute(

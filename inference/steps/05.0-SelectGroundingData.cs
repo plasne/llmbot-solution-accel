@@ -20,7 +20,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
         // Some ideas on what to do here:
         // - summarize history
 
-        var encoding = GptEncoding.GetEncoding(context.Config.LLM_ENCODING_MODEL);
+        var encoding = this.context.Config.LLM_ENCODING;
         int historyCount = input.History?.Count ?? 0;
         int contextCount = input.Docs?.Count ?? 0;
 
@@ -29,7 +29,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
         output.History = [];
 
         // determine the available context window size
-        var lengthOfUserQuery = encoding.CountTokens(input.UserQuery);
+        var lengthOfUserQuery = encoding?.CountTokens(input.UserQuery) ?? 0;
         int contextWindowLimit = context.Config.SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT - lengthOfUserQuery;
         if (contextWindowLimit < 1)
         {
@@ -50,7 +50,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
                     if (currentDoc is not null)
                     {
                         var context = GetContext(currentDoc, output.Context.Count);
-                        int tokenCount = encoding.CountTokens(context.Text);
+                        int tokenCount = encoding?.CountTokens(context.Text) ?? 0;
                         if (currentTokenCount + tokenCount > contextWindowLimit)
                         {
                             this.LogDebug($"context window reached at context index {output.Context.Count}, discarded {input.Docs?.Count ?? 0 - contextCount} context, {input.History?.Count ?? 0 - historyCount} history, current context window: {currentTokenCount}");
@@ -70,7 +70,7 @@ public class SelectGroundingData(IWorkflowContext context, ILogger<SelectGroundi
                 var currentHistory = input.History?[output.History.Count];
                 if (currentHistory is not null)
                 {
-                    int tokenCount = encoding.CountTokens($"{currentHistory.Role}: {currentHistory.Msg}");
+                    int tokenCount = encoding?.CountTokens($"{currentHistory.Role}: {currentHistory.Msg}") ?? 0;
                     if (currentTokenCount + tokenCount > contextWindowLimit)
                     {
                         this.LogDebug($"context window reached at history index {output.History.Count}, discarded {input.Docs?.Count ?? 0 - contextCount} context, {input.History?.Count ?? 0 - historyCount} history, current context window: {currentTokenCount}");

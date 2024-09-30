@@ -16,12 +16,12 @@ using SharpToken;
 
 namespace Inference;
 
-public partial class GenerateAnswer(
+public partial class GenerateAnswerWithLlm(
     IWorkflowContext context,
     KernelFactory kernelFactory,
     IMemory memory,
-    ILogger<GenerateAnswer> logger)
-    : BaseStep<IntentAndData, Answer>(logger)
+    ILogger<GenerateAnswerWithLlm> logger)
+    : BaseStep<IntentAndData, Answer>(logger), IGenerateAnswer
 {
     private readonly IWorkflowContext context = context;
     private readonly KernelFactory kernelFactory = kernelFactory;
@@ -101,8 +101,7 @@ public partial class GenerateAnswer(
             var citationIds = new HashSet<string>(MatchRef().Matches(buffer.ToString()).Select(m => m.Value));
             input.Data?.Context?.ForEach(x =>
             {
-                if (citationIds.Contains($"[{x.Id}]"))
-                    citations.TryAdd(x.Id, x);
+                if (citationIds.Contains($"[{x.Id}]")) citations.TryAdd(x.Id, x);
             });
             await this.context.Stream("Generating answer...", fragment.ToString(), citations: citations.Values.ToList());
         }
@@ -116,9 +115,11 @@ public partial class GenerateAnswer(
         }
 
         // record completion token count using sharpToken
-        var encoding = GptEncoding.GetEncoding(this.context.Config.LLM_ENCODING_MODEL);
-        this.Usage.CompletionTokenCount = encoding.CountTokens(buffer.ToString());
-        DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.context.Config.LLM_MODEL_NAME);
+        if (this.context.Config.LLM_ENCODING is not null)
+        {
+            this.Usage.CompletionTokenCount = this.context.Config.LLM_ENCODING.CountTokens(buffer.ToString());
+            DiagnosticService.RecordCompletionTokenCount(this.Usage.CompletionTokenCount, this.context.Config.LLM_MODEL_NAME);
+        }
 
         // record tokens per second
         var tokensPerSecond = this.Usage.CompletionTokenCount / elapsedSeconds;
@@ -126,7 +127,7 @@ public partial class GenerateAnswer(
 
         // send response
         await this.context.Stream("Generated.", promptTokens: this.Usage.PromptTokenCount, completionTokens: this.Usage.CompletionTokenCount);
-        this.Continue = buffer.Length > 0 && (!this.context.Config.EXIT_WHEN_NO_CITATIONS || citations.Count > 0);
+        this.Continue = buffer.Length > 0 && (!this.context.Config.EXIT_WHEN_NO_CITATIONS || citations.Any());
         return new Answer { Text = buffer.ToString(), Context = citations.Values.ToList() };
     }
 

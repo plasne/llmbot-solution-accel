@@ -123,12 +123,12 @@ public class GetDocumentsFromAzureAISearch(
             try
             {
                 var results = await this.SearchAsync(query, cancellationToken: cancellationToken);
-                if (this.context.Config.SEARCH_MODE is SearchMode.Vector
+                if (this.context.Config.EMBEDDING_ENCODING is not null &&
+                    this.context.Config.SEARCH_MODE is SearchMode.Vector
                     or SearchMode.Hybrid
                     or SearchMode.HybridWithSemanticRerank)
                 {
-                    var encoding = GptEncoding.GetEncoding(context.Config.EMBEDDING_ENCODING_MODEL);
-                    var count = encoding.CountTokens(query);
+                    var count = this.context.Config.EMBEDDING_ENCODING.CountTokens(query);
                     Interlocked.Add(ref totalEmbeddingTokenCount, count);
                     DiagnosticService.RecordEmbeddingTokenCount(count, context.Config.EMBEDDING_MODEL_NAME);
                 }
