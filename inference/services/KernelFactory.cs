@@ -7,6 +7,7 @@ using Microsoft.SemanticKernel;
 using Shared;
 using System;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;
 
 namespace Inference;
 
@@ -21,27 +22,19 @@ public class KernelFactory(
     private readonly IWebHostEnvironment webHostEnvironment = webHostEnvironment;
     private readonly IServiceProvider serviceProvider = serviceProvider;
     private readonly SemaphoreSlim semaphore = new(1);
-    private readonly Dictionary<int, Kernel> kernelsForEvaluation = [];
-    private readonly Dictionary<int, Kernel> kernelsForInference = [];
+    private readonly Dictionary<string, Kernel> kernels = [];
+    private int llmIndex = 0;
+    private int embeddingIndex = 0;
 
-    private Kernel CreateKernel(HttpClient httpClient, ModelConnectionDetails? embedding, ModelConnectionDetails llm)
+    private Kernel CreateKernel(bool isForInference, Action<IKernelBuilder, HttpClient> func)
     {
         var kernelBuilder = Kernel.CreateBuilder();
 
-        kernelBuilder
-            .AddAzureOpenAIChatCompletion(
-                llm.DeploymentName,
-                llm.Endpoint,
-                llm.ApiKey,
-                httpClient: httpClient);
-        if (embedding is not null)
-        {
-            kernelBuilder.AddAzureOpenAITextEmbeddingGeneration(
-                embedding.DeploymentName,
-                embedding.Endpoint,
-                embedding.ApiKey,
-                httpClient: httpClient);
-        }
+        var httpClient = isForInference
+            ? this.httpClientFactory.CreateClient("openai-with-retry")
+            : this.httpClientFactory.CreateClient("openai-without-retry");
+
+        func(kernelBuilder, httpClient);
 
         if (!string.IsNullOrEmpty(this.config.OPEN_TELEMETRY_CONNECTION_STRING))
         {
@@ -58,18 +51,33 @@ public class KernelFactory(
         return kernel;
     }
 
-    public async Task<Kernel> GetOrCreateKernelForInferenceAsync(KernelIndex kernelIndex, CancellationToken cancellationToken = default)
+    public async Task<Kernel?> GetOrCreateLlmKernelAsync(bool isForInference, CancellationToken cancellationToken)
     {
-        if (this.kernelsForInference.TryGetValue(kernelIndex.Index, out var kernel))
-            return kernel;
+        if (!this.config.LLM_CONNECTION_STRINGS.Any())
+        {
+            return null;
+        }
+
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForInference.TryGetValue(kernelIndex.Index, out kernel))
+            var details = this.config.LLM_CONNECTION_STRINGS[this.llmIndex];
+            var key = $"llm.{this.llmIndex}";
+
+            if (this.kernels.TryGetValue(key, out var kernel))
                 return kernel;
-            var httpClient = this.httpClientFactory.CreateClient("openai-with-retry");
-            kernel = this.CreateKernel(httpClient, kernelIndex.EmbeddingConnectionDetails, kernelIndex.LlmConnectionDetails);
-            this.kernelsForInference.Add(kernelIndex.Index, kernel);
+
+            kernel = CreateKernel(isForInference, (builder, httpClient) =>
+            {
+                builder.AddAzureOpenAIChatCompletion(
+                    details.DeploymentName,
+                    details.Endpoint,
+                    details.ApiKey,
+                    httpClient: httpClient);
+            });
+
+            this.kernels.Add(key, kernel);
+            llmIndex++;
             return kernel;
         }
         finally
@@ -78,18 +86,33 @@ public class KernelFactory(
         }
     }
 
-    public async Task<Kernel> GetOrCreateKernelForEvaluationAsync(KernelIndex kernelIndex, CancellationToken cancellationToken = default)
+    public async Task<Kernel?> GetOrCreateEmbeddingKernelAsync(bool isForInference, CancellationToken cancellationToken)
     {
-        if (this.kernelsForEvaluation.TryGetValue(kernelIndex.Index, out var kernel))
-            return kernel;
+        if (!this.config.EMBEDDING_CONNECTION_STRINGS.Any())
+        {
+            return null;
+        }
+
         await this.semaphore.WaitAsync(cancellationToken);
         try
         {
-            if (this.kernelsForEvaluation.TryGetValue(kernelIndex.Index, out kernel))
+            var details = this.config.EMBEDDING_CONNECTION_STRINGS[this.llmIndex];
+            var key = $"embedding.{this.embeddingIndex}";
+
+            if (this.kernels.TryGetValue(key, out var kernel))
                 return kernel;
-            var httpClient = this.httpClientFactory.CreateClient("openai-without-retry");
-            kernel = this.CreateKernel(httpClient, kernelIndex.EmbeddingConnectionDetails, kernelIndex.LlmConnectionDetails);
-            this.kernelsForEvaluation.Add(kernelIndex.Index, kernel);
+
+            kernel = CreateKernel(isForInference, (builder, httpClient) =>
+            {
+                builder.AddAzureOpenAITextEmbeddingGeneration(
+                    details.DeploymentName,
+                    details.Endpoint,
+                    details.ApiKey,
+                    httpClient: httpClient);
+            });
+
+            this.kernels.Add(key, kernel);
+            embeddingIndex++;
             return kernel;
         }
         finally

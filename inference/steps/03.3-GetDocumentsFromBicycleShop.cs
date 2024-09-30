@@ -13,7 +13,7 @@ using SharpToken;
 
 namespace Inference;
 
-public class GetDocumentsHardcoded(
+public class GetDocumentsFromBicyleShop(
     IWorkflowContext context,
     KernelFactory kernelFactory,
     ILogger<GetDocumentsFromAzureAISearch> logger)

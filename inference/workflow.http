@@ -3,7 +3,7 @@ POST http://localhost:7030/api/workflows/primary HTTP/1.1
 Content-Type: application/json
 
 {
-  "user_query": "How many players can play Fury of Dracula 4th edition?"
+  "user_query": "When was the bicycle shop founded?"
 }
 
 ### run the in-domain-only workflow

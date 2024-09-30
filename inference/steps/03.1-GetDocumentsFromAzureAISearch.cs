@@ -9,6 +9,7 @@ using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel.Embeddings;
+using Shared;
 using SharpToken;
 
 namespace Inference;
@@ -44,9 +45,8 @@ public class GetDocumentsFromAzureAISearch(
             or SearchMode.HybridWithSemanticRerank)
         {
             // create the vector query
-            var kernel = this.context.IsForInference
-                ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.KernelIndex, cancellationToken)
-                : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.KernelIndex, cancellationToken);
+            var kernel = await this.context.GetEmbeddingKernelAsync();
+            if (kernel is null) throw new HttpException(500, "no embedding kernel is available.");
             var embedding = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
             ReadOnlyMemory<float> vector = await embedding.GenerateEmbeddingAsync(text, kernel, cancellationToken);
             VectorizedQuery vectorQuery = new(vector)

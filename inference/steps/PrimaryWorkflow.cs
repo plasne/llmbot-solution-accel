@@ -16,7 +16,7 @@ namespace Inference;
     Justification = "Required for dependency injection")]
 public class PrimaryWorkflow(
     IWorkflowContext context,
-    DetermineIntent determineIntent,
+    IDetermineIntent determineIntent,
     ApplyIntent applyIntent,
     IGetDocuments getDocuments,
     SortDocuments sortDocuments,
@@ -26,7 +26,7 @@ public class PrimaryWorkflow(
     : IWorkflow
 {
     private readonly IWorkflowContext context = context;
-    private readonly DetermineIntent determineIntent = determineIntent;
+    private readonly IDetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;
     private readonly IGetDocuments getDocuments = getDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;

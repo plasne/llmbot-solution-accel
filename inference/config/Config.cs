@@ -17,10 +17,10 @@ public class Config : IConfig
         this.MEMORY_TERM = config.Get<string>("MEMORY_TERM").AsEnum(() => MemoryTerm.Long);
         this.LLM_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
         this.LLM_MODEL_NAME = config.Get<string>("LLM_MODEL_NAME");
-        this.LLM_ENCODING_MODEL = "TBD";
+        this.LLM_ENCODING_MODEL = null;
         this.EMBEDDING_CONNECTION_STRINGS = config.GetSecret<string>("LLM_CONNECTION_STRINGS").Result.AsModelConnectionDetails(() => []);
         this.EMBEDDING_MODEL_NAME = config.Get<string>("EMBEDDING_MODEL_NAME");
-        this.EMBEDDING_ENCODING_MODEL = "TBD";
+        this.EMBEDDING_ENCODING_MODEL = null;
         this.SEARCH_INDEX = config.Get<string>("SEARCH_INDEX");
         this.SEARCH_ENDPOINT_URI = config.Get<string>("SEARCH_ENDPOINT_URI");
         this.SEARCH_API_KEY = config.GetSecret<string>("SEARCH_API_KEY").Result;
@@ -69,13 +69,13 @@ public class Config : IConfig
 
     public string LLM_MODEL_NAME { get; }
 
-    public string LLM_ENCODING_MODEL { get; set; }
+    public string? LLM_ENCODING_MODEL { get; set; }
 
     public List<ModelConnectionDetails> EMBEDDING_CONNECTION_STRINGS { get; }
 
     public string EMBEDDING_MODEL_NAME { get; }
 
-    public string EMBEDDING_ENCODING_MODEL { get; set; }
+    public string? EMBEDDING_ENCODING_MODEL { get; set; }
 
     public string SEARCH_INDEX { get; }
 
@@ -195,9 +195,7 @@ public class Config : IConfig
 
         this.config.Require("SEARCH_SELECT_FIELDS", this.SEARCH_SELECT_FIELDS);
         this.config.Optional("SEARCH_TRANSFORM_FILE", this.SEARCH_TRANSFORM_FILE);
-        this.config.Require("MAX_CONCURRENT_SEARCHES", this.MAX_CONCURRENT_SEARCHES > 0
-            ? $"({this.MAX_CONCURRENT_SEARCHES} set)"
-            : string.Empty);
+        this.config.Require("MAX_CONCURRENT_SEARCHES", this.MAX_CONCURRENT_SEARCHES);
         this.config.Require("MAX_SEARCH_QUERIES_PER_INTENT", this.MAX_SEARCH_QUERIES_PER_INTENT);
         this.config.Require("MIN_RELEVANCE_SEARCH_SCORE", ((double)this.MIN_RELEVANCE_SEARCH_SCORE).ToString());
         this.config.Require("SEARCH_TOP", this.SEARCH_TOP);

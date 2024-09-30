@@ -16,7 +16,7 @@ public class PickDocumentsFromAzureAISearch(
     IWorkflowContext context,
     IMemory memory,
     ILogger<GetDocumentsFromAzureAISearch> logger)
-    : AzureAISearchBaseStep<DeterminedIntent, List<Doc>>(context, memory, logger), IGetDocuments
+    : AzureAISearchBaseStep<DeterminedIntent, List<Doc>>(context, memory, logger), IPickDocuments
 {
     private readonly IWorkflowContext context = context;
 
@@ -65,6 +65,8 @@ public class PickDocumentsFromAzureAISearch(
         // require at least one uri
         if (!uris.Any())
         {
+            if (this.context.Config.EXIT_WHEN_NO_DOCUMENTS)
+                this.Continue = false;
             return new List<Doc>();
         }
 
@@ -83,6 +85,8 @@ public class PickDocumentsFromAzureAISearch(
         {
             docs.Add(result);
         }
+
+        this.Continue = (!this.context.Config.EXIT_WHEN_NO_DOCUMENTS || docs.Any());
         return [.. docs];
     }
 }

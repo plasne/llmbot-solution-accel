@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.SemanticKernel;
 using Shared.Models.Memory;
 
 namespace Inference;
@@ -9,7 +11,8 @@ public interface IWorkflowContext
 {
     public bool IsForInference { get; set; }
     public bool IsForEvaluation { get; set; }
-    public KernelIndex KernelIndex { get; }
+    public Task<Kernel?> GetLlmKernelAsync(CancellationToken cancellationToken = default);
+    public Task<Kernel?> GetEmbeddingKernelAsync(CancellationToken cancellationToken = default);
     public IConfig Config { get; set; }
     public WorkflowRequest? WorkflowRequest { get; set; }
 

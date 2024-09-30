@@ -10,10 +10,10 @@ public interface IConfig
     string OPEN_TELEMETRY_CONNECTION_STRING { get; }
     List<ModelConnectionDetails> LLM_CONNECTION_STRINGS { get; }
     string LLM_MODEL_NAME { get; }
-    string LLM_ENCODING_MODEL { get; set; }
+    string? LLM_ENCODING_MODEL { get; set; }
     List<ModelConnectionDetails> EMBEDDING_CONNECTION_STRINGS { get; }
     string EMBEDDING_MODEL_NAME { get; }
-    string EMBEDDING_ENCODING_MODEL { get; set; }
+    string? EMBEDDING_ENCODING_MODEL { get; set; }
     string SEARCH_INDEX { get; }
     string SEARCH_ENDPOINT_URI { get; }
     string SEARCH_API_KEY { get; }

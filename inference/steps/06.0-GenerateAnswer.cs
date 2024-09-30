@@ -53,9 +53,8 @@ public partial class GenerateAnswer(
         this.LogDebug($"using temperature: {temperature:0.0}...");
 
         // build the function
-        var kernel = this.context.IsForInference
-            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.KernelIndex, cancellationToken)
-            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.KernelIndex, cancellationToken);
+        var kernel = await this.context.GetLlmKernelAsync();
+        if (kernel is null) throw new HttpException(500, "no LLM kernel is available.");
         var func = kernel.CreateFunctionFromPrompt(
             new PromptTemplateConfig
             {

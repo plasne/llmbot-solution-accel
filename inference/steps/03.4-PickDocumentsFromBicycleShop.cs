@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,34 +16,11 @@ namespace Inference;
 public class PickDocumentsFromBicycleShop(
     IWorkflowContext context,
     ILogger<GetDocumentsFromAzureAISearch> logger)
-    : BicycleShopSearchBaseStep<DeterminedIntent, List<Doc>>(logger), IGetDocuments
+    : BicycleShopSearchBaseStep<DeterminedIntent, List<Doc>>(logger), IPickDocuments
 {
     private readonly IWorkflowContext context = context;
 
     public override string Name => "PickDocuments";
-
-    public Task<IList<Doc>> GetDocumentsAsync(string text, CancellationToken cancellationToken = default)
-    {
-        List<Doc> docs = [];
-        foreach (var part in text.Split(" OR "))
-        {
-            var kv = part.Split(":", 2);
-            if (kv.Length == 2)
-            {
-                var uri = kv[1].Trim('"');
-                if (this.BicyleDocs.ContainsKey(uri))
-                {
-                    docs.Add(new Doc
-                    {
-                        Title = uri,
-                        Urls = [uri],
-                        Content = this.BicyleDocs[uri],
-                    });
-                }
-            }
-        }
-        return Task.FromResult<IList<Doc>>(docs);
-    }
 
     public override async Task<List<Doc>> ExecuteInternal(
         DeterminedIntent intent,
@@ -60,29 +38,22 @@ public class PickDocumentsFromBicycleShop(
             )
             ?? [];
 
-        // FIX THIS!!!!!
-
-        // require at least one uri
-        if (!uris.Any())
-        {
-            return new List<Doc>();
-        }
-
-        // build the query
-        List<string> parts = [];
+        // find documents
+        List<Doc> docs = [];
         foreach (var uri in uris)
         {
-            parts.Add($"{this.context.Config.PICK_DOCS_URL_FIELD}:\"{uri}\"");
+            if (this.BicyleDocs.ContainsKey(uri.ToLower()))
+            {
+                docs.Add(new Doc
+                {
+                    Title = uri,
+                    Urls = [uri],
+                    Content = this.BicyleDocs[uri],
+                });
+            }
         }
-        var query = string.Join(" OR ", parts);
 
-        // get the documents
-        List<Doc> docs = [];
-        var results = await this.GetDocumentsAsync(query, cancellationToken: cancellationToken);
-        foreach (var result in results)
-        {
-            docs.Add(result);
-        }
-        return [.. docs];
+        this.Continue = (!this.context.Config.EXIT_WHEN_NO_DOCUMENTS || docs.Any());
+        return docs;
     }
 }

@@ -29,7 +29,7 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     public string LLM_MODEL_NAME => this.sysConfig.LLM_MODEL_NAME;
 
     [JsonProperty(nameof(LLM_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
-    public string LLM_ENCODING_MODEL { get => this.sysConfig.LLM_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
+    public string? LLM_ENCODING_MODEL { get => this.sysConfig.LLM_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
 
     [JsonProperty(nameof(EMBEDDING_CONNECTION_STRINGS), NullValueHandling = NullValueHandling.Ignore)]
     [JsonConverter(typeof(JsonMaskConverter))]
@@ -39,7 +39,7 @@ public class WorkflowConfig(IConfig sysConfig, WorkflowRequestParameters? parame
     public string EMBEDDING_MODEL_NAME => this.sysConfig.EMBEDDING_MODEL_NAME;
 
     [JsonProperty(nameof(EMBEDDING_ENCODING_MODEL), NullValueHandling = NullValueHandling.Ignore)]
-    public string EMBEDDING_ENCODING_MODEL { get => this.sysConfig.EMBEDDING_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
+    public string? EMBEDDING_ENCODING_MODEL { get => this.sysConfig.EMBEDDING_ENCODING_MODEL; set => throw new System.NotImplementedException(); }
 
     [JsonProperty(nameof(SEARCH_INDEX), NullValueHandling = NullValueHandling.Ignore)]
     public string SEARCH_INDEX => this.sysConfig.SEARCH_INDEX;

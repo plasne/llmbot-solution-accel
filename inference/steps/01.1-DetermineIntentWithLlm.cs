@@ -13,17 +13,17 @@ using Microsoft.SemanticKernel.Connectors.OpenAI;
 
 namespace Inference;
 
-public class DetermineIntent(
+public class DetermineIntentWithLlm(
     IWorkflowContext context,
     KernelFactory kernelFactory,
     IMemory memory,
-    ILogger<DetermineIntent> logger)
-    : BaseStep<WorkflowRequest, DeterminedIntent>(logger)
+    ILogger<DetermineIntentWithLlm> logger)
+    : BaseStep<WorkflowRequest, DeterminedIntent>(logger), IDetermineIntent
 {
     private readonly IWorkflowContext context = context;
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
-    private readonly ILogger<DetermineIntent> logger = logger;
+    private readonly ILogger<DetermineIntentWithLlm> logger = logger;
 
     public override string Name => "DetermineIntent";
 
@@ -53,9 +53,8 @@ public class DetermineIntent(
         this.LogDebug($"using temperature: {temperature:0.0}...");
 
         // build the function
-        var kernel = this.context.IsForInference
-            ? await this.kernelFactory.GetOrCreateKernelForInferenceAsync(context.KernelIndex, cancellationToken)
-            : await this.kernelFactory.GetOrCreateKernelForEvaluationAsync(context.KernelIndex, cancellationToken);
+        var kernel = await this.context.GetLlmKernelAsync();
+        if (kernel is null) throw new HttpException(500, "no LLM kernel is available.");
         var func = kernel.CreateFunctionFromPrompt(
             new()
             {

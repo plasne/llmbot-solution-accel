@@ -18,7 +18,7 @@ public class StepsController() : ControllerBase
        CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var determineIntent = scope.ServiceProvider.GetRequiredService<DetermineIntent>();
+        var determineIntent = scope.ServiceProvider.GetRequiredService<IDetermineIntent>();
         var intent = await determineIntent.Execute(request, cancellationToken);
         return Ok(intent);
     }
@@ -42,7 +42,7 @@ public class StepsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var getDocuments = scope.ServiceProvider.GetRequiredService<GetDocuments>();
+        var getDocuments = scope.ServiceProvider.GetRequiredService<IGetDocuments>();
         var docs = await getDocuments.Execute(intent, cancellationToken);
         return Ok(docs);
     }
@@ -54,7 +54,7 @@ public class StepsController() : ControllerBase
         CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var pickDocuments = scope.ServiceProvider.GetRequiredService<PickDocumentsFromAzureAISearch>();
+        var pickDocuments = scope.ServiceProvider.GetRequiredService<IPickDocuments>();
         var pickedDocs = await pickDocuments.Execute(intent, cancellationToken);
         return Ok(pickedDocs);
     }

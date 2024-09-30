@@ -12,6 +12,7 @@ using Polly;
 using Inference;
 using Microsoft.SemanticKernel;
 using Microsoft.Extensions.Hosting;
+using System.Linq;
 
 // load environment variables
 var ENV_FILES = NetBricks.Config.GetOnce("ENV_FILES").AsArray(() => ["local.env"]);
@@ -79,32 +80,35 @@ switch (config.MEMORY_TERM)
 }
 
 // add the workflow services
-builder.Services.AddSingleton<IServiceContext, ServiceContext>();
 builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<PrimaryWorkflow>();
 builder.Services.AddTransient<InDomainOnlyWorkflow>();
 builder.Services.AddTransient<PickDocumentsWorkflow>();
-builder.Services.AddTransient<DetermineIntent>();
-builder.Services.AddTransient<InDomainOnlyIntent>();
-builder.Services.AddTransient<ApplyIntent>();
-builder.Services.AddTransient<GetDocuments>();
-builder.Services.AddTransient<PickDocumentsFromAzureAISearch>();
-builder.Services.AddTransient<SortDocuments>();
-builder.Services.AddTransient<SelectGroundingData>();
-builder.Services.AddTransient<GenerateAnswer>();
-
-// add supporting services
-if (!string.IsNullOrEmpty(config.SEARCH_INDEX))
+if (config.LLM_CONNECTION_STRINGS.Any())
 {
-    Console.WriteLine("ADDING SERVICE: AzureAISearchService");
-    builder.Services.AddTransient<ISearchService, AzureAISearchService>();
+    builder.Services.AddTransient<IDetermineIntent, DetermineIntentWithLlm>();
 }
 else
 {
-    Console.WriteLine("ADDING SERVICE: HardcodedBicycleSearchService");
-    builder.Services.AddTransient<ISearchService, HardcodedBicycleSearchService>();
+    builder.Services.AddTransient<IDetermineIntent, InDomainOnlyIntent>();
 }
-
+builder.Services.AddTransient<InDomainOnlyIntent>();
+builder.Services.AddTransient<ApplyIntent>();
+if (!string.IsNullOrEmpty(config.SEARCH_INDEX))
+{
+    Console.WriteLine("IGetDocuments and IPickDocuments will use Azure AI Search.");
+    builder.Services.AddTransient<IGetDocuments, GetDocumentsFromAzureAISearch>();
+    builder.Services.AddTransient<IPickDocuments, PickDocumentsFromAzureAISearch>();
+}
+else
+{
+    Console.WriteLine("IGetDocuments and IPickDocuments will use the internal bicycle shop data.");
+    builder.Services.AddTransient<IGetDocuments, GetDocumentsFromBicyleShop>();
+    builder.Services.AddTransient<IPickDocuments, PickDocumentsFromBicycleShop>();
+}
+builder.Services.AddTransient<SortDocuments>();
+builder.Services.AddTransient<SelectGroundingData>();
+builder.Services.AddTransient<GenerateAnswer>();
 
 // add filters
 builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();

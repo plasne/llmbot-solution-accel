@@ -16,7 +16,7 @@ public class InDomainOnlyWorkflow(
     IWorkflowContext context,
     InDomainOnlyIntent inDomainOnly,
     ApplyIntent applyIntent,
-    GetDocuments getDocuments,
+    IGetDocuments getDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer,
@@ -26,7 +26,7 @@ public class InDomainOnlyWorkflow(
     private readonly IWorkflowContext context = context;
     private readonly InDomainOnlyIntent inDomainOnly = inDomainOnly;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly GetDocuments getDocuments = getDocuments;
+    private readonly IGetDocuments getDocuments = getDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;

@@ -16,9 +16,9 @@ namespace Inference;
     Justification = "Required for dependency injection")]
 public class PickDocumentsWorkflow(
     IWorkflowContext context,
-    DetermineIntent determineIntent,
+    IDetermineIntent determineIntent,
     ApplyIntent applyIntent,
-    PickDocumentsFromAzureAISearch pickDocuments,
+    IPickDocuments pickDocuments,
     SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
     GenerateAnswer generateAnswer,
@@ -26,9 +26,9 @@ public class PickDocumentsWorkflow(
     : IWorkflow
 {
     private readonly IWorkflowContext context = context;
-    private readonly DetermineIntent determineIntent = determineIntent;
+    private readonly IDetermineIntent determineIntent = determineIntent;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly PickDocumentsFromAzureAISearch pickDocuments = pickDocuments;
+    private readonly IPickDocuments pickDocuments = pickDocuments;
     private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
     private readonly GenerateAnswer generateAnswer = generateAnswer;

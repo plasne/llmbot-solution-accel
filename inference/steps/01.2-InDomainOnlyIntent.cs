@@ -6,7 +6,8 @@ using Shared.Models.Memory;
 
 namespace Inference;
 
-public class InDomainOnlyIntent(ILogger<DetermineIntent> logger) : BaseStep<WorkflowRequest, DeterminedIntent>(logger)
+public class InDomainOnlyIntent(ILogger<InDomainOnlyIntent> logger)
+    : BaseStep<WorkflowRequest, DeterminedIntent>(logger), IDetermineIntent
 {
     public override string Name => "InDomainOnlyIntent";
 
