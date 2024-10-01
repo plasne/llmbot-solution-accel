@@ -28,7 +28,7 @@ public partial class AnswerWithCitationsOnly(
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
 
-    public override string Name => "GenerateAnswer";
+    public override string Name => "AnswerWithCitationsOnly";
 
     public override async Task<Answer> ExecuteInternal(
         IntentAndData input,

@@ -27,7 +27,7 @@ public partial class GenerateAnswerWithLlm(
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly IMemory memory = memory;
 
-    public override string Name => "GenerateAnswer";
+    public override string Name => "GenerateAnswerWithLlm";
 
     public override async Task<Answer> ExecuteInternal(
         IntentAndData input,

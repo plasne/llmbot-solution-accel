@@ -23,7 +23,7 @@ public class GetDocumentsFromBicyleShop(
     private readonly IWorkflowContext context = context;
     private readonly KernelFactory kernelFactory = kernelFactory;
 
-    public override string Name => "GetDocuments";
+    public override string Name => "GetDocumentsFromBicyleShop";
 
     public override async Task<List<Doc>> ExecuteInternal(
         DeterminedIntent intent,
@@ -47,8 +47,6 @@ public class GetDocumentsFromBicyleShop(
             {
                 var worksOnlySource = new string(doc.Value.Where(c => !char.IsPunctuation(c)).ToArray());
                 var srcwords = worksOnlySource.Split(" ").Select(x => x.ToLower());
-                this.LogDebug($"a => {string.Join(",", keywords)}");
-                this.LogDebug($"b => {string.Join(",", srcwords)}");
                 if (keywords.Any(keyword => srcwords.Contains(keyword)))
                 {
                     docs.Add(new Doc

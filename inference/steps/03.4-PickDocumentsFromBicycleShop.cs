@@ -20,7 +20,7 @@ public class PickDocumentsFromBicycleShop(
 {
     private readonly IWorkflowContext context = context;
 
-    public override string Name => "PickDocuments";
+    public override string Name => "PickDocumentsFromBicycleShop";
 
     public override async Task<List<Doc>> ExecuteInternal(
         DeterminedIntent intent,

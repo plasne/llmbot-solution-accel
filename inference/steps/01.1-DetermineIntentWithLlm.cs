@@ -25,7 +25,7 @@ public class DetermineIntentWithLlm(
     private readonly IMemory memory = memory;
     private readonly ILogger<DetermineIntentWithLlm> logger = logger;
 
-    public override string Name => "DetermineIntent";
+    public override string Name => "DetermineIntentWithLlm";
 
     public override async Task<DeterminedIntent> ExecuteInternal(
         WorkflowRequest input,

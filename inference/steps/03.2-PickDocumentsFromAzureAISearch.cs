@@ -20,7 +20,7 @@ public class PickDocumentsFromAzureAISearch(
 {
     private readonly IWorkflowContext context = context;
 
-    public override string Name => "PickDocuments";
+    public override string Name => "PickDocumentsFromAzureAISearch";
 
     private async Task<IList<Doc>> GetDocumentsAsync(string text, CancellationToken cancellationToken = default)
     {

@@ -25,7 +25,7 @@ public class GetDocumentsFromAzureAISearch(
     private readonly KernelFactory kernelFactory = kernelFactory;
     private readonly SemaphoreSlim semaphore = new(context.Config.MAX_CONCURRENT_SEARCHES);
 
-    public override string Name => "GetDocuments";
+    public override string Name => "GetDocumentsFromAzureAISearch";
 
     private async Task<IList<Doc>> SearchAsync(string text, CancellationToken cancellationToken = default)
     {
