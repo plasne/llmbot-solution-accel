@@ -140,7 +140,6 @@ public class Config : IConfig
         this.config.Require("WEB_PORT", this.WEB_PORT);
         this.config.Optional("OPEN_TELEMETRY_CONNECTION_STRING", this.OPEN_TELEMETRY_CONNECTION_STRING, hideValue: true);
         this.config.Require("MEMORY_TERM", this.MEMORY_TERM.ToString());
-        this.config.Require("MAX_SEARCH_QUERIES_PER_INTENT", this.MAX_SEARCH_QUERIES_PER_INTENT);
         this.config.Require("MEMORY_URL", this.MEMORY_URL);
         this.config.Require("MAX_RETRY_ATTEMPTS", this.MAX_RETRY_ATTEMPTS);
         this.config.Require("SECONDS_BETWEEN_RETRIES", this.SECONDS_BETWEEN_RETRIES);
@@ -178,6 +177,7 @@ public class Config : IConfig
             this.config.Optional("SEARCH_TRANSFORM_FILE", this.SEARCH_TRANSFORM_FILE);
             this.config.Require("MAX_CONCURRENT_SEARCHES", this.MAX_CONCURRENT_SEARCHES);
             this.config.Require("MIN_RELEVANCE_SEARCH_SCORE", ((double)this.MIN_RELEVANCE_SEARCH_SCORE).ToString());
+            this.config.Require("MAX_SEARCH_QUERIES_PER_INTENT", this.MAX_SEARCH_QUERIES_PER_INTENT);
             this.config.Require("SEARCH_TOP", this.SEARCH_TOP);
             this.config.Require("PICK_DOCS_URL_FIELD", this.PICK_DOCS_URL_FIELD);
         }

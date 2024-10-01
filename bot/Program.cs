@@ -80,6 +80,7 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddHostedService<ChangeFeedLifecycle>();
 builder.Services.AddSingleton<StopUserMessageMemory>();
 builder.Services.AddEventHubChangeFeed<Bot.IConfig>();
+
 // build the app
 var app = builder.Build();
 app.Use(async (ctx, req) =>

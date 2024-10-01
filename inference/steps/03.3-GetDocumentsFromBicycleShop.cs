@@ -10,6 +10,7 @@ using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.SemanticKernel.Embeddings;
 using SharpToken;
+using YamlDotNet.Core.Events;
 
 namespace Inference;
 
@@ -24,26 +25,6 @@ public class GetDocumentsFromBicyleShop(
 
     public override string Name => "GetDocuments";
 
-    private Task<IList<Doc>> SearchAsync(string text, CancellationToken cancellationToken = default)
-    {
-        List<Doc> docs = [];
-        var keywords = text.Split(" ").Select(x => x.ToLower());
-        foreach (var doc in this.BicyleDocs)
-        {
-            var srcwords = doc.Value.Split(" ").Select(x => x.ToLower());
-            if (keywords.Any(keyword => srcwords.Contains(keyword)))
-            {
-                docs.Add(new Doc
-                {
-                    Title = doc.Key,
-                    Urls = [doc.Key],
-                    Content = doc.Value,
-                });
-            }
-        }
-        return Task.FromResult<IList<Doc>>(docs);
-    }
-
     public override async Task<List<Doc>> ExecuteInternal(
         DeterminedIntent intent,
         CancellationToken cancellationToken = default)
@@ -56,22 +37,32 @@ public class GetDocumentsFromBicyleShop(
             ? intent.SearchQueries
             : new List<string> { intent.Query };
 
-        // use Select to create a collection of search tasks
-        ConcurrentBag<Doc> docs = [];
-        var tasks = queries.Take(context.Config.MAX_SEARCH_QUERIES_PER_INTENT).Select(async query =>
+        // find in the bicycle docs
+        List<Doc> docs = [];
+        foreach (var query in queries)
         {
-            var results = await this.SearchAsync(query, cancellationToken: cancellationToken);
-            foreach (var result in results)
+            var wordsOnlyQuery = new string(query.Where(c => !char.IsPunctuation(c)).ToArray());
+            var keywords = wordsOnlyQuery.Split(" ").Select(x => x.ToLower());
+            foreach (var doc in this.BicyleDocs)
             {
-                docs.Add(result);
+                var worksOnlySource = new string(doc.Value.Where(c => !char.IsPunctuation(c)).ToArray());
+                var srcwords = worksOnlySource.Split(" ").Select(x => x.ToLower());
+                this.LogDebug($"a => {string.Join(",", keywords)}");
+                this.LogDebug($"b => {string.Join(",", srcwords)}");
+                if (keywords.Any(keyword => srcwords.Contains(keyword)))
+                {
+                    docs.Add(new Doc
+                    {
+                        Title = doc.Key,
+                        Urls = [doc.Key],
+                        Content = doc.Value,
+                    });
+                }
             }
-        });
-
-        // schedules all the tasks concurrently and awaits them
-        await Task.WhenAll(tasks);
+        }
 
         // decide whether to continue or not
-        this.Continue = (!this.context.Config.EXIT_WHEN_NO_DOCUMENTS || !docs.IsEmpty);
+        this.Continue = (!this.context.Config.EXIT_WHEN_NO_DOCUMENTS || docs.Any());
 
         // output
         await this.context.Stream(embeddingTokens: this.Usage.EmbeddingTokenCount);

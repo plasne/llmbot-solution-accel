@@ -18,8 +18,6 @@ __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The f
 
 - __MEMORY_TERM__ [STRING, DEFAULT: "Long"]: If long, once a prompt file is cached, it remains cached. If short, the prompt file is only cached for one execution.
 
-- __MAX_SEARCH_QUERIES_PER_INTENT__ [INTEGER, DEFAULT: 3]: The maximum number of search queries per intent.
-
 - __MEMORY_URL__ [STRING, DEFAULT: "http://localhost:7010"]: The URL for the memory service.
 
 - __MAX_RETRY_ATTEMPTS__ [INTEGER, DEFAULT: 3]: The maximum number of times to retry a request.
@@ -85,6 +83,8 @@ __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The f
   - __MIN_RELEVANCE_SEARCH_SCORE__ [DECIMAL, DEFAULT: 0.0]: The minimum relevance search score. This is compared against the relevance search scores returned from Azure AI search results and is used to filter out irrelevant search results. Azure AI Search calculates the returned search score results differently based on the type of query. For example, a full text query may return a score of 76.57179, while a semantic query may return a score of 0.71832.
 
   - __SEARCH_TOP__ [INTEGER, DEFAULT: 10]: The top scoring results to return from the search service per query.
+
+  - __MAX_SEARCH_QUERIES_PER_INTENT__ [INTEGER, DEFAULT: 3]: The maximum number of search queries per intent.
 
   - __PICK_DOCS_URL_FIELD__ [STRING, REQUIRED]: The field in the search results that contains the URL for the document.
 
@@ -153,7 +153,6 @@ docker build -t repo.azurecr.io/inference:2.5.0 -f inference.Dockerfile --platfo
 ## TODO
 
 - Add configuration details to the /workflow endpoint.
-- Extend HTTP workflow response to make it easier for evaluation to consume.
 - Implement retry when DetermineIntent fails to deserialize.
 - Convert to Fabrikam bike shop
   - including in-memory search capability - abstract search to interface.

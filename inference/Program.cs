@@ -94,8 +94,8 @@ if (config.LLM_CONNECTION_STRINGS.Any())
 }
 else
 {
-    Console.WriteLine("- IDetermineIntent will use InDomainOnlyIntent.");
-    builder.Services.AddTransient<IDetermineIntent, InDomainOnlyIntent>();
+    Console.WriteLine("- IDetermineIntent will use DetermineIntentWithKeywords.");
+    builder.Services.AddTransient<IDetermineIntent, DetermineIntentWithKeywords>();
 }
 builder.Services.AddTransient<InDomainOnlyIntent>();
 Console.WriteLine("- ApplyIntent will use ApplyIntent.");

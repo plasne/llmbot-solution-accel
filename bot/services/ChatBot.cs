@@ -363,7 +363,10 @@ public class ChatBot(
             }
             completeRequest.TimeToLastResponse = (int)(DateTime.UtcNow - started).TotalMilliseconds;
             DiagnosticService.RecordTimeToLastResponse(completeRequest.TimeToLastResponse);
-            DiagnosticService.RecordTimePerOutputToken((completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
+            if (completeRequest.CompletionTokenCount > 0)
+            {
+                DiagnosticService.RecordTimePerOutputToken((completeRequest.TimeToLastResponse - completeRequest.TimeToFirstResponse) / completeRequest.CompletionTokenCount);
+            }
 
             // if it is not supposed to be empty, interrorgate the message
             if (completeRequest.State != States.EMPTY)
@@ -430,7 +433,7 @@ public class ChatBot(
     {
         // verify authorization
         // get the user
-        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        var userId = this.ValidateAndGetUserId(turnContext.Activity);
         logger.LogDebug("OnMessageActivityAsync received a message from user {u}.", userId);
 
         // see if this is a command
@@ -457,7 +460,7 @@ public class ChatBot(
 
     protected override async Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
     {
-        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        var userId = this.ValidateAndGetUserId(turnContext.Activity);
         logger.LogDebug("OnMessageUpdateActivityAsync received a message from user {u}.", userId);
 
         UserMessageRequest request = new()
@@ -479,7 +482,7 @@ public class ChatBot(
 
     protected override async Task OnMessageDeleteActivityAsync(ITurnContext<IMessageDeleteActivity> turnContext, CancellationToken cancellationToken)
     {
-        var userId = this.ValdiateAndGetUserId(turnContext.Activity);
+        var userId = this.ValidateAndGetUserId(turnContext.Activity);
         logger.LogDebug("OnMessageDeleteActivityAsync received a message from user {u}.", userId);
 
         using var httpClient = httpClientFactory.CreateClient("retry");
@@ -493,7 +496,7 @@ public class ChatBot(
         }
     }
 
-    private string ValdiateAndGetUserId(IActivity activity)
+    private string ValidateAndGetUserId(IActivity activity)
     {
         // verify authorization
         if (!this.IsAuthorized(() => activity.ChannelData["tenant"]["id"].ToString()))
