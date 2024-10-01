@@ -36,9 +36,9 @@ public static class Ext
             Id = source.Id,
             Title = source.Title,
         };
-        if (!string.IsNullOrEmpty(source.Uri))
+        if (source.Uris is not null)
         {
-            target.Uri = source.Uri;
+            target.Uris.AddRange(source.Uris);
         }
         return target;
     }
@@ -64,11 +64,23 @@ public static class Ext
             : dflt();
     }
 
-    public static List<LlmConnectionDetails> AsLlmConnectionDetails(this string str, Func<List<LlmConnectionDetails>> dflt)
+    public static SearchMode AsSearchMode(this string str, Func<SearchMode> dflt)
+    {
+        if (string.IsNullOrWhiteSpace(str))
+        {
+            return dflt();
+        }
+
+        return Enum.TryParse(str, true, out SearchMode searchMode)
+            ? searchMode
+            : throw new ArgumentException($"Unknown SearchMode: {str}");
+    }
+
+    public static List<ModelConnectionDetails> AsModelConnectionDetails(this string str, Func<List<ModelConnectionDetails>> dflt)
     {
         try
         {
-            var list = new List<LlmConnectionDetails>();
+            var list = new List<ModelConnectionDetails>();
             var connectionStrings = str.Split(";;");
             foreach (var connectionString in connectionStrings)
             {
@@ -76,7 +88,7 @@ public static class Ext
                     .Split(';')
                     .Select(part => part.Split('='))
                     .ToDictionary(split => split[0].Trim(), split => split[1].Trim());
-                var details = new LlmConnectionDetails
+                var details = new ModelConnectionDetails
                 {
                     DeploymentName = parts["DeploymentName"],
                     Endpoint = parts["Endpoint"],

@@ -1,6 +1,8 @@
 using System;
 using System.Text;
 using Iso8601DurationHelper;
+using Newtonsoft.Json;
+using Shared.Models;
 using Shared;
 using Shared.Models.Memory;
 
@@ -90,12 +92,36 @@ public static class Ext
             UserId = userId,
             Role = Roles.SYSTEM,
             Message = res.Message,
+            Citations = JsonConvert.SerializeObject(res.Citations),
             Intent = res.Intent,
             State = res.State,
             PromptTokenCount = res.PromptTokenCount,
             CompletionTokenCount = res.CompletionTokenCount,
+            EmbeddingTokenCount = res.EmbeddingTokenCount,
             TimeToFirstResponse = res.TimeToFirstResponse,
             TimeToLastResponse = res.TimeToLastResponse
+        };
+    }
+
+    public static Interaction ToInteraction(this UserMessageRequest res, string userId)
+    {
+        return new Interaction
+        {
+            ActivityId = res.ActivityId,
+            UserId = userId,
+            Role = Roles.USER,
+            Message = res.Message,
+        };
+    }
+
+    public static FeedbackRequest ToFeedBackRequest(this Interaction res)
+    {
+        return new FeedbackRequest
+        {
+            Rating = string.IsNullOrEmpty(res.Rating) ? null : res.Rating,
+            Comment = string.IsNullOrEmpty(res.Comment) ? null : res.Comment,
+            Message = string.IsNullOrEmpty(res.Message) ? null : res.Message,
+            Citations = string.IsNullOrEmpty(res.Citations) ? null : res.Citations,
         };
     }
 }

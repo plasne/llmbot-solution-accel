@@ -1,15 +1,16 @@
 using System.Collections.Generic;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 
 namespace Inference;
 
-public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, List<LogEntry> logs, Usage usage) : IWorkflowStepResponse
+public class WorkflowStepResponse<TInput, TOutput>(List<LogEntry> logs, Usage usage) : IWorkflowStepResponse
 {
-    [JsonProperty("name", Required = Required.Always)]
-    public string Name { get; set; } = name;
+    [JsonProperty("name", NullValueHandling = NullValueHandling.Ignore)]
+    public string? Name { get; set; }
 
-    [JsonProperty("input", Required = Required.Always)]
-    public TInput Input { get; set; } = input;
+    [JsonProperty("input", NullValueHandling = NullValueHandling.Ignore)]
+    public TInput? Input { get; set; }
 
     [JsonProperty("output", NullValueHandling = NullValueHandling.Ignore)]
     public TOutput? Output { get; set; }
@@ -19,4 +20,7 @@ public class WorkflowStepResponse<TInput, TOutput>(string name, TInput input, Li
 
     [JsonProperty("usage", Required = Required.Always)]
     public Usage Usage { get; set; } = usage;
+
+    [JsonProperty("continue", Required = Required.Always)]
+    public bool Continue { get; set; } = true;
 }

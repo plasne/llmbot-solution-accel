@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -7,69 +8,76 @@ using Shared;
 
 namespace Inference;
 
+[SuppressMessage(
+    "Major Code Smell",
+    "S107:Methods should not have too many parameters",
+    Justification = "Required for dependency injection")]
 public class InDomainOnlyWorkflow(
+    IWorkflowContext context,
     InDomainOnlyIntent inDomainOnly,
     ApplyIntent applyIntent,
-    GetDocuments getDocuments,
+    IGetDocuments getDocuments,
+    SortDocuments sortDocuments,
     SelectGroundingData selectGroundingData,
-    GenerateAnswer generateAnswer,
+    IGenerateAnswer generateAnswer,
     ILogger<InDomainOnlyWorkflow> logger)
     : IWorkflow
 {
+    private readonly IWorkflowContext context = context;
     private readonly InDomainOnlyIntent inDomainOnly = inDomainOnly;
     private readonly ApplyIntent applyIntent = applyIntent;
-    private readonly GetDocuments getDocuments = getDocuments;
+    private readonly IGetDocuments getDocuments = getDocuments;
+    private readonly SortDocuments sortDocuments = sortDocuments;
     private readonly SelectGroundingData selectGroundingData = selectGroundingData;
-    private readonly GenerateAnswer generateAnswer = generateAnswer;
+    private readonly IGenerateAnswer generateAnswer = generateAnswer;
     private readonly ILogger<InDomainOnlyWorkflow> logger = logger;
 
     public async Task<WorkflowResponse> Execute(
         WorkflowRequest workflowRequest,
         CancellationToken cancellationToken = default)
     {
-        var response = new WorkflowResponse();
+        var response = new WorkflowResponse { Config = this.context.Config };
         try
         {
             // STEP 1: in-domain only intent
-            var step1 = new WorkflowStepResponse<WorkflowRequest, DeterminedIntent>("InDomainOnly", workflowRequest, this.inDomainOnly.Logs, this.inDomainOnly.Usage);
-            response.Steps.Add(step1);
-            step1.Output = await this.inDomainOnly.Execute(workflowRequest, cancellationToken);
+            response.Steps.Add(this.inDomainOnly.StepResponse);
+            var inDomainOnlyOutput = await this.inDomainOnly.Execute(workflowRequest, cancellationToken);
+            if (!this.inDomainOnly.Continue)
+                return response;
 
             // STEP 2: apply intent
-            var step2 = new WorkflowStepResponse<DeterminedIntent, AppliedIntent>("ApplyIntent", step1.Output, this.applyIntent.Logs, this.applyIntent.Usage);
-            response.Steps.Add(step2);
-            step2.Output = await this.applyIntent.Execute(step1.Output, cancellationToken);
-            if (!step2.Output.Continue)
-            {
+            response.Steps.Add(this.applyIntent.StepResponse);
+            _ = await this.applyIntent.Execute(inDomainOnlyOutput, cancellationToken);
+            if (!this.applyIntent.Continue)
                 return response;
-            }
 
             // STEP 3: get documents
-            var step3 = new WorkflowStepResponse<DeterminedIntent, List<Doc>>("GetDocuments", step1.Output, this.getDocuments.Logs, this.getDocuments.Usage);
-            response.Steps.Add(step3);
-            step3.Output = await this.getDocuments.Execute(step1.Output, cancellationToken);
-            if (step3.Output.Count == 0)
-            {
+            response.Steps.Add(this.getDocuments.StepResponse);
+            var getDocumentsOutput = await this.getDocuments.Execute(inDomainOnlyOutput, cancellationToken);
+            if (!this.getDocuments.Continue)
                 return response;
-            }
 
-            // STEP 4: select grounding data
-            var step4Input = new GroundingData { UserQuery = step1.Input.UserQuery, Docs = step3.Output, History = workflowRequest.History };
-            var step4 = new WorkflowStepResponse<GroundingData, GroundingData>("SelectGroundingData", step4Input, this.selectGroundingData.Logs, this.selectGroundingData.Usage);
-            response.Steps.Add(step4);
-            step4.Output = await this.selectGroundingData.Execute(step4Input, cancellationToken);
-
-            // STEP 5: generate answer
-            var step5Input = new IntentAndData { Intent = step1.Output, Data = step4.Output };
-            var step5 = new WorkflowStepResponse<IntentAndData, Answer>("GenerateAnswer", step5Input, this.generateAnswer.Logs, this.generateAnswer.Usage);
-            response.Steps.Add(step5);
-            step5.Output = await this.generateAnswer.Execute(step5Input, cancellationToken);
-            if (step5.Output.Text.Equals("NULL", StringComparison.OrdinalIgnoreCase))
-            {
+            // STEP 4: sort documents
+            response.Steps.Add(this.sortDocuments.StepResponse);
+            var sortDocumentsOutput = await this.sortDocuments.Execute(getDocumentsOutput, cancellationToken);
+            if (!this.sortDocuments.Continue)
                 return response;
-            }
 
-            response.Answer = step5.Output;
+            // STEP 5: select grounding data
+            var selectGroundingDataInput = new GroundingData { UserQuery = inDomainOnlyOutput.Query, Docs = sortDocumentsOutput, History = workflowRequest.History };
+            response.Steps.Add(this.selectGroundingData.StepResponse);
+            var selectGroundingDataOutput = await this.selectGroundingData.Execute(selectGroundingDataInput, cancellationToken);
+            if (!this.selectGroundingData.Continue)
+                return response;
+
+            // STEP 6: generate answer
+            var generateAnswerInput = new IntentAndData { Intent = inDomainOnlyOutput, Data = selectGroundingDataOutput };
+            response.Steps.Add(this.generateAnswer.StepResponse);
+            var generateAnswerOutput = await this.generateAnswer.Execute(generateAnswerInput, cancellationToken);
+            if (!this.generateAnswer.Continue)
+                return response;
+
+            response.Answer = generateAnswerOutput;
             return response;
         }
         catch (Exception ex)

@@ -16,10 +16,4 @@ public class DeterminedIntent
 
     [JsonProperty("search_queries", NullValueHandling = NullValueHandling.Ignore)]
     public List<string>? SearchQueries { get; set; }
-
-    [JsonProperty("game_name", NullValueHandling = NullValueHandling.Ignore)]
-    public string? GameName { get; set; }
-
-    [JsonProperty("edition", NullValueHandling = NullValueHandling.Ignore)]
-    public string? Edition { get; set; }
 }

@@ -16,6 +16,7 @@ public class Config : IConfig
         this.SQL_SERVER_SECONDS_BETWEEN_RETRIES = this.config.Get<string>("SQL_SERVER_SECONDS_BETWEEN_RETRIES").AsInt(() => 2);
         this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING = this.config.GetSecret<string>("SQL_SERVER_HISTORY_SERVICE_CONNSTRING").Result;
         this.DEFAULT_RETENTION = this.config.Get<string>("DEFAULT_RETENTION").AsDuration(() => Duration.FromMonths(3));
+        this.RUN_RETENTION_EVERY_X_HOURS = this.config.Get<string>("RUN_RETENTION_EVERY_X_HOURS").AsInt(() => 8);
     }
 
     public int PORT { get; }
@@ -30,6 +31,8 @@ public class Config : IConfig
 
     public Duration DEFAULT_RETENTION { get; }
 
+    public int RUN_RETENTION_EVERY_X_HOURS { get; }
+
     public void Validate()
     {
         this.config.Require("PORT", this.PORT);
@@ -38,5 +41,6 @@ public class Config : IConfig
         this.config.Optional("SQL_SERVER_SECONDS_BETWEEN_RETRIES", this.SQL_SERVER_SECONDS_BETWEEN_RETRIES);
         this.config.Optional("SQL_SERVER_HISTORY_SERVICE_CONNSTRING", this.SQL_SERVER_HISTORY_SERVICE_CONNSTRING, hideValue: true);
         this.config.Optional("DEFAULT_RETENTION", this.DEFAULT_RETENTION.ToString());
+        this.config.Optional("RUN_RETENTION_EVERY_X_HOURS", this.RUN_RETENTION_EVERY_X_HOURS);
     }
 }

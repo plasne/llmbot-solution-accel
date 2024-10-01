@@ -11,9 +11,14 @@ using Polly.Extensions.Http;
 using Polly;
 using Inference;
 using Microsoft.SemanticKernel;
+using Microsoft.Extensions.Hosting;
+using System.Linq;
 
-DotEnv.Load();
+// load environment variables
+var ENV_FILES = NetBricks.Config.GetOnce("ENV_FILES").AsArray(() => ["local.env"]);
+DotEnv.Load(new DotEnvOptions(envFilePaths: ENV_FILES, overwriteExistingVars: false));
 
+// create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
 
 // add config
@@ -75,25 +80,61 @@ switch (config.MEMORY_TERM)
 }
 
 // add the workflow services
-builder.Services.AddSingleton<IServiceContext, ServiceContext>();
 builder.Services.AddScoped<IWorkflowContext, WorkflowContext>();
 builder.Services.AddTransient<PrimaryWorkflow>();
 builder.Services.AddTransient<InDomainOnlyWorkflow>();
-builder.Services.AddTransient<DetermineIntent>();
-builder.Services.AddTransient<InDomainOnlyIntent>();
-builder.Services.AddTransient<ApplyIntent>();
-builder.Services.AddTransient<GetDocuments>();
-builder.Services.AddTransient<SelectGroundingData>();
-builder.Services.AddTransient<GenerateAnswer>();
+builder.Services.AddTransient<PickDocumentsWorkflow>();
 
-// add supporting services
-builder.Services.AddTransient<SearchService>();
+// add the workflow steps
+Console.WriteLine("Workflow Step Configuration:");
+if (config.LLM_CONNECTION_STRINGS.Any())
+{
+    Console.WriteLine("- IDetermineIntent will use DetermineIntentWithLlm.");
+    builder.Services.AddTransient<IDetermineIntent, DetermineIntentWithLlm>();
+}
+else
+{
+    Console.WriteLine("- IDetermineIntent will use DetermineIntentWithKeywords.");
+    builder.Services.AddTransient<IDetermineIntent, DetermineIntentWithKeywords>();
+}
+builder.Services.AddTransient<InDomainOnlyIntent>();
+Console.WriteLine("- ApplyIntent will use ApplyIntent.");
+builder.Services.AddTransient<ApplyIntent>();
+if (!string.IsNullOrEmpty(config.SEARCH_ENDPOINT_URI))
+{
+    Console.WriteLine("- IGetDocuments will use GetDocumentsFromAzureAISearch.");
+    Console.WriteLine("- IPickDocuments will use PickDocumentsFromAzureAISearch.");
+    builder.Services.AddTransient<IGetDocuments, GetDocumentsFromAzureAISearch>();
+    builder.Services.AddTransient<IPickDocuments, PickDocumentsFromAzureAISearch>();
+}
+else
+{
+    Console.WriteLine("- IGetDocuments will use GetDocumentsFromBicyleShop.");
+    Console.WriteLine("- IPickDocuments will use PickDocumentsFromBicycleShop.");
+    builder.Services.AddTransient<IGetDocuments, GetDocumentsFromBicyleShop>();
+    builder.Services.AddTransient<IPickDocuments, PickDocumentsFromBicycleShop>();
+}
+Console.WriteLine("- SortDocuments will use SortDocuments.");
+builder.Services.AddTransient<SortDocuments>();
+Console.WriteLine("- SelectGroundingData will use SelectGroundingData.");
+builder.Services.AddTransient<SelectGroundingData>();
+if (config.LLM_CONNECTION_STRINGS.Any())
+{
+    Console.WriteLine("- IGenerateAnswer will use GenerateAnswerWithLlm.");
+    builder.Services.AddTransient<IGenerateAnswer, GenerateAnswerWithLlm>();
+}
+else
+{
+    Console.WriteLine("- IGenerateAnswer will use AnswerWithCitationsOnly.");
+    builder.Services.AddTransient<IGenerateAnswer, AnswerWithCitationsOnly>();
+}
 
 // add filters
 builder.Services.AddSingleton<IPromptRenderFilter, PromptTokenCountFilter>();
 
 // add other services
 builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
 builder.Services.AddControllers().AddNewtonsoftJson();
 
 // listen (disable TLS)
@@ -119,6 +160,8 @@ app.UseSwaggerUI();
 app.UseRouting();
 app.UseMiddleware<HttpExceptionMiddleware>();
 app.MapGrpcService<ChatService>();
+app.MapGrpcReflectionService();
+
 app.MapControllers();
 
 // run

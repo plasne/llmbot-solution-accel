@@ -14,6 +14,9 @@ public class CompleteGenerationRequest
     [JsonProperty("message", NullValueHandling = NullValueHandling.Ignore)]
     public string? Message { get; set; }
 
+    [JsonProperty("citations", NullValueHandling = NullValueHandling.Ignore)]
+    public IEnumerable<Citation>? Citations { get; set; }
+
     [JsonProperty("intent", Required = Required.Always)]
     [JsonConverter(typeof(StringEnumConverter))]
     public required Intents Intent { get; set; }

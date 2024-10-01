@@ -10,6 +10,7 @@ public interface IConfig
     int SQL_SERVER_SECONDS_BETWEEN_RETRIES { get; }
     string SQL_SERVER_HISTORY_SERVICE_CONNSTRING { get; }
     Duration DEFAULT_RETENTION { get; }
+    int RUN_RETENTION_EVERY_X_HOURS { get; }
 
     void Validate();
 }

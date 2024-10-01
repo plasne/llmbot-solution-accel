@@ -10,8 +10,8 @@ You must follow these rules in order:
   - Use "GREETING" if the user's query is a greeting with no question or other statement.
   - Use "GOODBYE" if the user's query is a message of closure with no question or other statement.
   - Use "TOPIC_CHANGE" if the user indicates they want to start a new topic of conversation.
-  - Use "IN_DOMAIN" if the user asks a question about board game rules or is continuing a conversation.
-  - Use "OUT_OF_DOMAIN" if the user's message is related to something other than board game rules.
+  - Use "IN_DOMAIN" if the user asks a question about a bicycle shop.
+  - Use "OUT_OF_DOMAIN" if the user's message is related to something other than a bicycle shop.
 2. Determine the "query" by restating the user's question or statement into a complete sentence.
   - If "IN_DOMAIN", the history should be considered in restating the "query".
   - If "TOPIC_CHANGE" and the user ONLY announced their intent to change the topic, then "query" should be empty.
@@ -23,8 +23,6 @@ You must follow these rules in order:
   - The search queries should be in English.
   - If there is no information you need, you should return an empty array.
   - If you are not sure what information you might need, you must use the "query" from step 2 as the search query.
-4. Determine the "game_name" that the user is asking about as a string. This can be found anywhere in the query or conversation history.
-5. Determine the "edition" of the game that the user is asking about as an string. The value should always be an integer.
 
 You must use the following examples as a guidance. You will generate a JSON object as your response conforming to the examples provided.
 
@@ -35,73 +33,59 @@ user: Hello
 {
   "intent": "GREETING",
   "query": "Hello.",
-  "search_queries": [],
-  "game_name": "",
-  "edition": ""
+  "search_queries": []
 }
 
 [EXAMPLE 2 INPUT]
-user: In Fury of Dracula, what is Dracula's hand size?
+user: When was the bicycle shop founded?
 
 [EXAMPLE 2 OUTPUT]
 {
   "intent": "IN_DOMAIN",
-  "query": "In Fury of Dracula, what is Dracula's hand size?",
-  "search_queries": ["What is Dracula's hand size?"],
-  "game_name": "Fury of Dracula",
-  "edition": ""
+  "query": "When was the bicycle shop founded?",
+  "search_queries": ["When was the bicycle shop founded?"]
 }
 
 [EXAMPLE 3 INPUT]
-user: In Fury of Dracula 3rd edition, what is Dracula's hand size?
-assistant: Dracula has a hand size of 4 cards.
-user: and a hunter?
+user: When was the bicycle shop founded?
+assistant: My Bicycle Shop was founded in 2010.
+user: by who?
 
 [EXAMPLE 3 OUTPUT]
 {
   "intent": "IN_DOMAIN",
-  "query": "In Fury of Dracula 3rd edition, what is a hunter's hand size?",
-  "search_queries": ["What is the hand size of a hunter?"],
-  "game_name": "Fury of Dracula",
-  "edition": "3"
+  "query": "Who founded the bicycle shop?",
+  "search_queries": ["Who founded the bicycle shop?"]
 }
 
 [EXAMPLE 4 INPUT]
-user: In Fury of Dracula 3rd edition, what is Dracula's hand size?
-assistant: Dracula has a hand size of 4 cards.
-user: Do hunters have a different hand size? And does that vary per hunter?
+user: When was the bicycle shop founded and by whom?
 
 [EXAMPLE 4 OUTPUT]
 {
   "intent": "IN_DOMAIN"
-  "query": "Do hunters have a different hand size and does that vary per hunter?",
-  "search_queries": ["What is the hand size of a hunter?", "Do different hunters have different hand sizes?"],
-  "game_name": "Fury of Dracula",
-  "edition": "3"
+  "query": "When was the bicycle shop founded and by whom?",
+  "search_queries": ["When was the bicycle shop founded?", "Who founded the bicycle shop?"]
 }
 
 [EXAMPLE 5 INPUT]
-user: Can you tell me a joke about board games?
+user: Can you tell me a joke?
 
 [EXAMPLE 5 OUTPUT]
 {
   "intent": "OUT_OF_DOMAIN"
-  "query": "Can you tell me a joke about board games?",
-  "search_queries": ["What is a board game joke?"],
-  "game_name": "",
-  "edition": ""
+  "query": "Can you tell me a joke?",
+  "search_queries": ["Tell me a joke?"]
 }
 
 [EXAMPLE 6 INPUT]
-user: new question. How does Dracula pick a starting location?
+user: new question. What locations have stores?
 
 [EXAMPLE 6 OUTPUT]
 {
   "intent": "TOPIC_CHANGE"
-  "query": "How does Dracula pick a starting location?",
-  "search_queries": ["How does Dracula pick a starting location?"],
-  "game_name": "",
-  "edition": ""
+  "query": "What locations have stores?",
+  "search_queries": ["What locations have stores?"]
 }
 </message>
 

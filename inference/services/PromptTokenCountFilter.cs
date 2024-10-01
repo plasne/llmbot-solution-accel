@@ -12,8 +12,10 @@ public class PromptTokenCountFilter(IConfig config) : IPromptRenderFilter
     public async Task OnPromptRenderAsync(PromptRenderContext context, Func<PromptRenderContext, Task> next)
     {
         await next(context);
-        var encoding = GptEncoding.GetEncoding(this.config.LLM_ENCODING_MODEL);
-        var count = encoding.CountTokens(context.RenderedPrompt);
-        context.Arguments.Add("internaluse:prompt-token-count", count);
+        if (this.config.LLM_ENCODING is not null)
+        {
+            var count = this.config.LLM_ENCODING.CountTokens(context.RenderedPrompt);
+            context.Arguments.Add("internaluse:prompt-token-count", count);
+        }
     }
 }

@@ -19,6 +19,7 @@ enum Intent {
 message ChatRequest {
   string userId = 1;
   int32 minCharsToStream = 2;
+  bool previousTopicChange = 3;
 }
 
 message Citation {

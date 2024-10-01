@@ -1,5 +1,4 @@
 using System;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Shared;
 using Shared.Models.Memory;
 using SharpToken;
@@ -89,12 +88,12 @@ public abstract class MemoryStoreBase
             throw new HttpException(400, "Message must be empty if the state is EMPTY.");
         }
 
-        if (interaction.State != States.EMPTY && interaction.State != States.FAILED && string.IsNullOrEmpty(interaction.Message))
+        if (interaction.State != States.EMPTY && interaction.State != States.STOPPED && interaction.State != States.FAILED && string.IsNullOrEmpty(interaction.Message))
         {
-            throw new HttpException(400, "Message must be provided if the state is not EMPTY or FAILED.");
+            throw new HttpException(400, "Message must be provided if the state is not EMPTY, STOPPED, or FAILED.");
         }
 
-        if (interaction.State != States.FAILED && interaction.Intent == Intents.UNKNOWN)
+        if (interaction.State != States.FAILED && interaction.State != States.STOPPED && interaction.Intent == Intents.UNKNOWN)
         {
             throw new HttpException(400, "Intent must be specified unless the state is FAILED.");
         }
@@ -150,6 +149,19 @@ public abstract class MemoryStoreBase
             || interaction.TimeToLastResponse != 0)
         {
             throw new HttpException(400, "PromptTokenCount, CompletionTokenCount, TimeToFirstResponse, TimeToLastResponse must not be set in a new interaction.");
+        }
+    }
+
+    public void ValidateInteractionForUserMessage(Interaction interaction)
+    {
+        if (string.IsNullOrEmpty(interaction.ActivityId))
+        {
+            throw new HttpException(400, "ActivityId must be provided.");
+        }
+
+        if (string.IsNullOrEmpty(interaction.UserId))
+        {
+            throw new HttpException(400, "UserId must be provided.");
         }
     }
 

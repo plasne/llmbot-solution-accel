@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +19,10 @@ public class UsersController : ControllerBase
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return BadRequest($"User ID cannot be null or empty.");
+        }
         var conversation = await store.GetLastConversationAsync(userId, maxTokens, modelName, cancellationToken);
         return Ok(conversation);
     }
@@ -45,6 +51,18 @@ public class UsersController : ControllerBase
         return Ok();
     }
 
+    [HttpPut("activities/{activityId}")]
+    public async Task<IActionResult> UpdateUserMessage(
+        [FromRoute] string userId,
+        [FromRoute] string activityId,
+        [FromServices] IMemoryStore store,
+        [FromBody] UserMessageRequest body,
+        CancellationToken cancellationToken)
+    {
+        await store.UpdateUserMessageAsync(body.ToInteraction(userId), cancellationToken);
+        return Ok();
+    }
+
     [HttpDelete("activities/{activityId}")]
     public async Task<IActionResult> DeleteActivityAsync(
         [FromRoute] string userId,
@@ -57,14 +75,13 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("activities/:last")]
-    public async Task<IActionResult> DeleteLastActivitiesAsync(
+    public async Task<ActionResult<List<DeletedUserMessage>>> DeleteLastActivitiesAsync(
         [FromRoute] string userId,
         [FromServices] IMemoryStore store,
         CancellationToken cancellationToken,
         [FromQuery] int count = 1)
     {
-        await store.DeleteActivitiesAsync(userId, count, cancellationToken);
-        return Ok();
+        return new OkObjectResult(await store.DeleteActivitiesAsync(userId, count, cancellationToken));
     }
 
     [HttpPut("conversations")]
@@ -137,6 +154,57 @@ public class UsersController : ControllerBase
         }
 
         return Ok();
+    }
+
+    [HttpGet("activities/:last/feedback")]
+    public async Task<ActionResult<Interaction>> GetFeedbackAsync(
+            [FromRoute] string userId,
+            [FromServices] IMemoryStore store,
+            CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(userId))
+        {
+            return this.BadRequest("userId cannot be null or empty.");
+        }
+
+        var interaction = await store.GetLastInteractionAsync(userId, cancellationToken);
+        if (string.IsNullOrEmpty(interaction?.ActivityId))
+        {
+            return NotFound($"Last Interaction for user ID '{userId}' not found.");
+        }
+
+        var feedback = interaction.ToFeedBackRequest();
+
+        return Ok(feedback);
+    }
+
+    [HttpGet("activities/{activityId}/feedback")]
+    public async Task<ActionResult<Interaction>> GetFeedbackAsync(
+            [FromRoute] string userId,
+            [FromRoute] string activityId,
+            [FromServices] IMemoryStore store,
+            CancellationToken cancellationToken)
+    {
+        var decodedActivityId = activityId.Decode();
+        if (string.IsNullOrEmpty(decodedActivityId))
+        {
+            return this.BadRequest("activityId cannot be null or empty.");
+        }
+
+        if (string.IsNullOrEmpty(userId))
+        {
+            return this.BadRequest("userId cannot be null or empty.");
+        }
+
+        var interaction = await store.GetInteractionAsync(userId, decodedActivityId, cancellationToken);
+
+        if (string.IsNullOrEmpty(interaction?.ActivityId))
+        {
+            return NotFound($"Last Interaction for user ID '{userId}' not found.");
+        }
+
+        var feedback = interaction.ToFeedBackRequest();
+        return Ok(feedback);
     }
 
     [HttpDelete("activities/:last/feedback")]

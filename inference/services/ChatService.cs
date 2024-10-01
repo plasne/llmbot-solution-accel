@@ -28,6 +28,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         public List<Context> Citations { get; } = [];
         public int PromptTokens { get; set; }
         public int CompletionTokens { get; set; }
+        public int EmbeddingTokens { get; set; }
     }
 
     private static async Task Flush(Buffer buffer, IServerStreamWriter<ChatResponse> responseStream)
@@ -80,7 +81,11 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             response.CompletionTokens = buffer.CompletionTokens;
             buffer.CompletionTokens = 0;
         }
-
+        if (buffer.EmbeddingTokens > 0)
+        {
+            response.EmbeddingTokens = buffer.EmbeddingTokens;
+            buffer.EmbeddingTokens = 0;
+        }
         // send the message
         await responseStream.WriteAsync(response);
     }
@@ -93,7 +98,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         // get current conversation
         using var httpClient = this.httpClientFactory.CreateClient("retry");
         var res = await httpClient.GetAsync(
-            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/:last",
+            $"{this.config.MEMORY_URL}/api/users/{request.UserId}/conversations/:last?max-tokens={this.config.SELECT_GROUNDING_CONTEXT_WINDOW_LIMIT}&model-name={this.config.LLM_MODEL_NAME}",
             context.CancellationToken);
         var responseContent = await res.Content.ReadAsStringAsync();
         if (!res.IsSuccessStatusCode)
@@ -117,6 +122,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         var workflowRequest = new WorkflowRequest
         {
             UserQuery = userQuery.Msg,
+            PreviousTopicChange = request.PreviousTopicChange,
             History = turns,
             CustomInstructions = conversation.CustomInstructions,
         };
@@ -130,7 +136,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
         // add stream event
         // NOTE: we should always end on a status change or it isn't flushed
         var buffer = new Buffer();
-        workflowContext.OnStream += async (status, message, intent, citations, promptTokens, completionTokens) =>
+        workflowContext.OnStream += async (status, message, intent, citations, promptTokens, completionTokens, embeddingTokens) =>
         {
             // add to the buffer
             buffer.Message.Append(message);
@@ -144,6 +150,7 @@ public class ChatService(IConfig config, IServiceProvider serviceProvider, IHttp
             }
             buffer.PromptTokens += promptTokens;
             buffer.CompletionTokens += completionTokens;
+            buffer.EmbeddingTokens += embeddingTokens;
 
             // always flush if status change
             if (!string.IsNullOrEmpty(status) && status != buffer.Status)

@@ -12,9 +12,11 @@ using System;
 using Polly;
 using Polly.Extensions.Http;
 using Bot;
-using AdaptiveExpressions;
+using ChangeFeed;
 
-DotEnv.Load();
+// load environment variables
+var ENV_FILES = NetBricks.Config.GetOnce("ENV_FILES").AsArray(() => ["local.env"]);
+DotEnv.Load(new DotEnvOptions(envFilePaths: ENV_FILES, overwriteExistingVars: false));
 
 // create a new web app builder
 var builder = WebApplication.CreateBuilder(args);
@@ -75,6 +77,9 @@ builder.WebHost.UseKestrel(options =>
     options.ListenAnyIP(config.PORT);
 });
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHostedService<ChangeFeedLifecycle>();
+builder.Services.AddSingleton<StopUserMessageMemory>();
+builder.Services.AddEventHubChangeFeed<Bot.IConfig>();
 
 // build the app
 var app = builder.Build();
