@@ -14,7 +14,6 @@ Create a .env file in the root of the project (or create Environment Variables s
 MicrosoftAppType=MultiTenant
 MicrosoftAppId=???
 MicrosoftAppPassword=???
-OPEN_TELEMETRY_CONNECTION_STRING=???
 ```
 
 The settings available are:
@@ -46,6 +45,24 @@ The settings available are:
 - __MAX_PAYLOAD_SIZE__ [INTEGER, DEFAULT: 36864]: The maximum payload size for the adaptive card. The default size comes from <https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/format-your-bot-messages>, but is less to account for metadata in the bot message.
 
 - __VALID_TENANTS__ [ARRAY OF STRINGS, OPTIONAL]: The list of valid tenants. If this is empty, all tenants are valid.
+
+## Running locally
+
+For Teams to be able to talk to the bot, you need to expose the bot to the internet. You can use [ngrok](https://ngrok.com/) for this. Run the following command:
+
+```bash
+ngrok http 7000
+```
+
+In the Azure Bot configuration in Azure, set the Messaging endpoint to the Forwarding address (appending /api/messages) from ngrok.
+
+![ngrok](../images/ngrok.png)
+
+![config](../images/config.png)
+
+Click on "Open in Teams" in the Teams channel in Azure Bot, and you should be able to chat with the bot directly in Teams.
+
+![channels](../images/channels.png)
 
 ## Building a container
 

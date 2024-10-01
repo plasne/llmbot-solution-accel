@@ -55,7 +55,23 @@ cd bot
 dotnet run
 ```
 
-Click on the Teams channel in Azure Bot, and you should be able to chat with the bot directly in Teams. Try some of these things:
+For Teams to be able to talk to the bot, you need to expose the bot to the internet. You can use [ngrok](https://ngrok.com/) for this. Run the following command:
+
+```bash
+ngrok http 7000
+```
+
+In the Azure Bot configuration in Azure, set the Messaging endpoint to the Forwarding address (appending /api/messages) from ngrok.
+
+![ngrok](./images/ngrok.png)
+
+![config](./images/config.png)
+
+Click on "Open in Teams" in the Teams channel in Azure Bot, and you should be able to chat with the bot directly in Teams.
+
+![channels](./images/channels.png)
+
+Try some of these things:
 
 - hello
 - What do you sell?
