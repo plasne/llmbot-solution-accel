@@ -63,6 +63,22 @@ Click on the Teams channel in Azure Bot, and you should be able to chat with the
 - new topic. do you sell helmets?
 - goodbye
 
+To configure memory to use a SQL Server, you must set at least the following environment variable:
+
+- SQL_SERVER_HISTORY_SERVICE_CONNSTRING
+
+To configure inference to use an LLM, you must set at least the following environment variables:
+
+- LLM_CONNECTION_STRINGS
+- LLM_MODEL_NAME
+
+To configure inference to use Azure AI Search, you must set at least the following environment variables:
+
+- SEARCH_MODE=Keyword
+- SEARCH_ENDPOINT_URI
+- SEARCH_INDEX
+- SEARCH_API_KEY
+
 ## More Info
 
 These components can be used together or separately. For more information on each component or to see the many configuration items, see the READMEs in their respective folders.

@@ -77,7 +77,13 @@ public class KernelFactory(
             });
 
             this.kernels.Add(key, kernel);
+
             llmIndex++;
+            if (llmIndex >= this.config.LLM_CONNECTION_STRINGS.Count)
+            {
+                llmIndex = 0;
+            }
+
             return kernel;
         }
         finally
@@ -112,7 +118,13 @@ public class KernelFactory(
             });
 
             this.kernels.Add(key, kernel);
+
             embeddingIndex++;
+            if (embeddingIndex >= this.config.EMBEDDING_CONNECTION_STRINGS.Count)
+            {
+                embeddingIndex = 0;
+            }
+
             return kernel;
         }
         finally
