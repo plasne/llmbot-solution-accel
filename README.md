@@ -14,6 +14,8 @@ There are 3 components:
 
 This accelerator is designed to get up and going with as little configuration as possible. You can run the memory and inference components with no configuration. The bot component requires provisioning an Azure Bot with a Teams channel. With that one configuration, you can have a fully functioning bot that can communicate with users over Teams.
 
+There is a getting started video here: <https://youtu.be/60X0qeFEhXw>.
+
 Without configuration, the memory component will use an in-memory store for conversation turns. Later, you can configure a SQL Server for durable storage.
 
 Without configuration, the inference component will use a simple keyword solution to determine intent, search an in-memory bicycle shop database, and return citations only. Later, you can configure an LLM to determine intent and generate answers. You can configure Azure AI Search instead of the hardcoded bicycle shop data.

@@ -8,7 +8,7 @@ Deploy an Azure Bot Service and make note of the CLIENT_ID and CLIENT_SECRET for
 
 ## Config
 
-Create a .env file in the root of the project (or create Environment Variables some other way) with at least the following content:
+Create a "local.env" file in the root of the project (or create Environment Variables some other way) with at least the following content:
 
 ```bash
 MicrosoftAppType=MultiTenant
@@ -18,15 +18,19 @@ MicrosoftAppPassword=???
 
 The settings available are:
 
+__ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The files are loaded in order, so later files take precedence. The default is "local.env".
+
 - __PORT__ [INTEGER, DEFAULT: 3978]: The port the bot will listen on.
 
 - __OPEN_TELEMETRY_CONNECTION_STRING__ [STRING, REQUIRED]: The connection string for Open Telemetry. This is used to send telemetry data to Azure Monitor.
 
-- __MicrosoftAppType__ [ONE-OF: MultiTenant, SingleTenent, ManagedIdentity, REQUIRED]: The type of the Microsoft App. Only `MultiTenant` has been tested, but perhaps `SingleTenant` would be suitable as well. When deploying in production, also consider `ManagedIdentity`.
+- __MicrosoftAppType__ [ONE-OF: MultiTenant, SingleTenent, ManagedIdentity, REQUIRED]: The type of the Microsoft App. ManagedIdentity has not be tested.
 
 - __MicrosoftAppId__ [GUID, REQUIRED]: The App ID of the Microsoft App. This is the ID of the App Registration in Azure AD. This is also known as the CLIENT_ID.
 
 - __MicrosoftAppPassword__ [STRING, REQUIRED]: The password of the Microsoft App. This is the password of the App Registration in Azure AD. This is also known as the CLIENT_SECRET.
+
+- __MicrosoftAppTenantId__ [GUID, *]: The Entra Directory ID (Tenant) of the Microsoft App. This is required if SingleTenant is used.
 
 - __MEMORY_URI__ [STRING, DEFAULT: http://localhost:7010]: The URI of the memory service.
 
@@ -45,6 +49,20 @@ The settings available are:
 - __MAX_PAYLOAD_SIZE__ [INTEGER, DEFAULT: 36864]: The maximum payload size for the adaptive card. The default size comes from <https://learn.microsoft.com/en-us/microsoftteams/platform/bots/how-to/format-your-bot-messages>, but is less to account for metadata in the bot message.
 
 - __VALID_TENANTS__ [ARRAY OF STRINGS, OPTIONAL]: The list of valid tenants. If this is empty, all tenants are valid.
+
+In addition to those settings, there are some settings that are available as part of the NetBricks integration, including:
+
+- __LOG_LEVEL__ [STRING, DEFAULT: "Information"]: The log level for the application. This can be set to "None", "Trace", "Debug", "Information", "Warning", "Error", or "Critical".
+
+- __DISABLE_COLORS__ [STRING, DEFAULT: false]: If true, colors will be disabled in the logs. This is helpful for many logging systems other than the console.
+
+- __APPCONFIG_URL__ [STRING, OPTIONAL]: The URL for the App Configuration service. This is used to pull settings from Azure App Configuration.
+
+- __CONFIG_KEYS__ [STRING, OPTIONAL]: This is a comma-delimited list of configuration keys to pull for the specific service. All keys matching the pattern will be pulled. A setting that is already set is not replaced (so left-most patterns take precident). For example, the dev environment of the auth service might contain "app:auth:dev:*, app:common:dev:*". If you do not specify any CONFIG_KEYS, no variables will be set from App Configuration.
+
+- __ASPNETCORE_ENVIRONMENT__ [STRING, DEFAULT: "Development"]: This is a common .NET setting. It is used by INCLUDE_CREDENTIAL_TYPES.
+
+- __INCLUDE_CREDENTIAL_TYPES__ [STRING, *]: This is a comma-delimited list of credential types to consider when connecting to App Configuration, Key Vault, or using DefaultAzureCredential. It can include "env", "mi", "token", "vs", "vscode", "azcli", and/or "browser". If __ASPNETCORE_ENVIRONMENT__ is "Development", then the default is "azcli, env"; otherwise, the default is "env, mi". You can find out more about the options [here](https://learn.microsoft.com/en-us/dotnet/api/azure.identity.defaultazurecredential?view=azure-dotnet).
 
 ## Running locally
 

@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.InteropServices;
 using ChangeFeed;
 using NetBricks;
@@ -68,6 +69,10 @@ public class Config : IConfig, IEventHubChangeFeedConfig
         this.config.Require("MicrosoftAppType");
         this.config.Require("MicrosoftAppId");
         this.config.Require("MicrosoftAppPassword", hideValue: true);
+        if (this.config.Get<string>("MicrosoftAppType").Equals("SingleTenant", StringComparison.InvariantCultureIgnoreCase))
+        {
+            this.config.Require("MicrosoftAppTenantId");
+        }
         this.config.Optional("CHANGEFEED_CONNSTRING", this.CHANGEFEED_CONNSTRING, hideValue: true);
         this.config.Optional("CHANGEFEED_CONSUMER_GROUPS", this.CHANGEFEED_CONSUMER_GROUPS);
     }

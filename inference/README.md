@@ -4,9 +4,7 @@ This inference solution takes input via gRPC or HTTP and sends it to the LLM for
 
 ## Config
 
-The provided .env file should contain all settings required to run.
-
-The settings available are:
+Create a "local.env" file in the root of the project (or create Environment Variables some other way). The settings available are:
 
 __ENV_FILES__ [STRING, OPTIONAL]: A comma-delimited list of files to load. The files are loaded in order, so later files take precedence. The default is "local.env".
 
