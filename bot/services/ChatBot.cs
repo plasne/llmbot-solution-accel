@@ -181,7 +181,10 @@ public class ChatBot(
 
         // try the help command if nothing else found
         var helpCommand = commands.OfType<HelpCommand>().FirstOrDefault();
-        helpCommand?.ShowHelp(turnContext, cancellationToken);
+        if (helpCommand is not null)
+        {
+            await helpCommand.ShowHelp(turnContext, cancellationToken);
+        }
         return true;
     }
 
@@ -432,7 +435,6 @@ public class ChatBot(
     protected override async Task OnMessageActivityAsync(ITurnContext<IMessageActivity> turnContext, CancellationToken cancellationToken)
     {
         // verify authorization
-        // get the user
         var userId = this.ValidateAndGetUserId(turnContext.Activity);
         logger.LogDebug("OnMessageActivityAsync received a message from user {u}.", userId);
 
@@ -455,7 +457,6 @@ public class ChatBot(
         {
             await this.ProcessNextRequest(turnContext, userId, cancellationToken);
         }
-
     }
 
     protected override async Task OnMessageUpdateActivityAsync(ITurnContext<IMessageUpdateActivity> turnContext, CancellationToken cancellationToken)
